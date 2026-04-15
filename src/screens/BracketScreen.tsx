@@ -166,6 +166,20 @@ export default function BracketScreen() {
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Bracket Grid */}
         <div className="flex-1 p-4 overflow-auto">
+          {/* Column headers */}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 mb-1">
+            <span className="w-8 shrink-0" />
+            <span className="w-16 shrink-0" />
+            <span className="flex-1 font-condensed text-xs text-muted uppercase tracking-wide">Player</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="font-condensed text-xs text-muted uppercase w-8 text-right">Rank</span>
+              <span className="font-condensed text-xs text-muted uppercase w-12 text-right">ESPN</span>
+              <span className="font-condensed text-xs text-muted uppercase w-16 text-center">Value</span>
+              <span className="font-condensed text-xs text-muted uppercase w-12 text-center">Need</span>
+              <span className="w-5 shrink-0" />
+            </div>
+          </div>
+
           <div className="space-y-1">
             {DRAFT_ORDER.map((slot, i) => {
               const pick = picks[i];
@@ -243,73 +257,80 @@ export default function BracketScreen() {
                     </span>
                   )}
 
-                  {/* Inline stats (only when player selected) */}
-                  {pick && prospect && (
-                    <div className="hidden sm:flex items-center gap-2 shrink-0">
-                      {/* Consensus rank */}
-                      <span className="font-mono text-xs text-muted w-8 text-right">
-                        #{prospect.rank}
-                      </span>
-
-                      {/* ESPN pick probability */}
-                      {prospect && (() => {
-                        const prob = getPickProb(slot.pick, prospect.name);
-                        return (
-                          <span
-                            className={`font-mono text-xs w-12 text-right ${
-                              prob >= 20
-                                ? "text-green"
-                                : prob >= 10
-                                  ? "text-amber"
-                                  : prob > 0
-                                    ? "text-muted"
-                                    : "text-muted/50"
-                            }`}
-                          >
-                            {prob > 0 ? `${prob}%` : "—"}
-                          </span>
-                        );
-                      })()}
-
-                      {/* Reach/Value badge */}
-                      <span
-                        className={`font-condensed text-xs font-bold uppercase w-16 text-center ${
-                          rankDiff > 8
-                            ? "text-red"
-                            : rankDiff > 3
-                              ? "text-red/70"
-                              : rankDiff < -8
-                                ? "text-green"
-                                : rankDiff < -3
-                                  ? "text-green/70"
-                                  : "text-amber"
-                        }`}
-                      >
-                        {rankDiff > 8
-                          ? "REACH"
-                          : rankDiff > 3
-                            ? "REACH"
-                            : rankDiff < -8
-                              ? "STEAL"
-                              : rankDiff < -3
-                                ? "VALUE"
-                                : "BPA"}
-                      </span>
-
-                      {/* Need match */}
-                      {needsMatch && (
-                        <span className="font-condensed text-xs font-bold text-amber uppercase">
-                          NEED
+                  {/* Inline stats — always rendered for alignment */}
+                  <div className="hidden sm:flex items-center gap-2 shrink-0">
+                    {pick && prospect ? (
+                      <>
+                        {/* Consensus rank */}
+                        <span className="font-mono text-xs text-muted w-8 text-right">
+                          #{prospect.rank}
                         </span>
-                      )}
-                    </div>
-                  )}
+
+                        {/* ESPN pick probability */}
+                        {(() => {
+                          const prob = getPickProb(slot.pick, prospect.name);
+                          return (
+                            <span
+                              className={`font-mono text-xs w-12 text-right ${
+                                prob >= 20
+                                  ? "text-green"
+                                  : prob >= 10
+                                    ? "text-amber"
+                                    : prob > 0
+                                      ? "text-muted"
+                                      : "text-muted/50"
+                              }`}
+                            >
+                              {prob > 0 ? `${prob}%` : "—"}
+                            </span>
+                          );
+                        })()}
+
+                        {/* Reach/Value badge */}
+                        <span
+                          className={`font-condensed text-xs font-bold uppercase w-16 text-center ${
+                            rankDiff > 8
+                              ? "text-red"
+                              : rankDiff > 3
+                                ? "text-red/70"
+                                : rankDiff < -8
+                                  ? "text-green"
+                                  : rankDiff < -3
+                                    ? "text-green/70"
+                                    : "text-amber"
+                          }`}
+                        >
+                          {rankDiff > 8
+                            ? "REACH"
+                            : rankDiff > 3
+                              ? "REACH"
+                              : rankDiff < -8
+                                ? "STEAL"
+                                : rankDiff < -3
+                                  ? "VALUE"
+                                  : "BPA"}
+                        </span>
+
+                        {/* Need match */}
+                        <span className="font-condensed text-xs font-bold uppercase w-12 text-center">
+                          {needsMatch ? <span className="text-amber">NEED</span> : ""}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-8 shrink-0" />
+                        <span className="w-12 shrink-0" />
+                        <span className="w-16 shrink-0" />
+                        <span className="w-12 shrink-0" />
+                      </>
+                    )}
+                  </div>
 
                   {/* Status indicator */}
                   {pick ? (
-                    <span className="text-green text-sm shrink-0">✓</span>
+                    <span className="text-green text-sm w-5 text-center shrink-0">✓</span>
                   ) : (
-                    <span className="text-muted text-sm shrink-0">›</span>
+                    <span className="text-muted text-sm w-5 text-center shrink-0">›</span>
                   )}
                 </button>
               );
