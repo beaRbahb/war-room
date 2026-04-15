@@ -5,7 +5,7 @@ import { PROSPECTS } from "../data/prospects";
 import { BRACKET_LOCK_TIME } from "../data/scoring";
 import { TEAM_NEEDS } from "../data/teamNeeds";
 import { getPickProb } from "../data/prospectOdds";
-import { getTeamLogo } from "../data/teams";
+import { getTeamLogo, getTeamAbbrev } from "../data/teams";
 import { saveBracket, getBracket, onRoomConfig, updateRoomStatus } from "../lib/storage";
 import { getSession } from "../lib/session";
 import PlayerSelectionPanel from "../components/PlayerSelectionPanel";
@@ -235,7 +235,7 @@ export default function BracketScreen() {
 
                   {/* Trade column */}
                   <span className="font-mono text-xs text-muted w-20 shrink-0 hidden md:block">
-                    {slot.fromTeam ? `via ${slot.fromTeam.split(" ").pop()}` : ""}
+                    {slot.fromTeam ? `via ${getTeamAbbrev(slot.fromTeam)}` : ""}
                   </span>
 
                   {/* Player display or placeholder */}

@@ -43,3 +43,11 @@ export const TEAMS: Record<string, TeamInfo> = {
 export function getTeamLogo(abbrev: string): string | undefined {
   return TEAMS[abbrev]?.logo;
 }
+
+/** Get team abbreviation from full team name */
+export function getTeamAbbrev(name: string): string {
+  for (const [abbrev, info] of Object.entries(TEAMS)) {
+    if (info.name === name) return abbrev;
+  }
+  return name;
+}
