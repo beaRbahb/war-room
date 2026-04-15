@@ -1,0 +1,59 @@
+{
+  "rules": {
+    "rooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true,
+        "config": {
+          ".validate": "newData.hasChildren(['roomCode', 'commissionerId', 'commissionerName', 'status', 'createdAt'])"
+        },
+        "users": {
+          "$userId": {
+            ".validate": "newData.hasChildren(['name', 'id', 'joinedAt', 'isCommissioner', 'isActive'])"
+          }
+        },
+        "brackets": {
+          "$userName": {
+            ".validate": "newData.hasChildren(['userName', 'picks'])"
+          }
+        },
+        "live": {
+          ".validate": "newData.hasChildren(['currentPick', 'windowOpen', 'teamOnClock'])"
+        },
+        "live_guesses": {
+          "$pickKey": {
+            "$userName": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            }
+          }
+        },
+        "results": {
+          "$pickKey": {
+            ".validate": "newData.hasChildren(['pick', 'playerName', 'teamAbbrev', 'confirmedAt', 'isBearsPick'])"
+          }
+        },
+        "reactions": {
+          "$pickKey": {
+            "$userName": {
+              ".validate": "newData.hasChildren(['reaction'])"
+            }
+          }
+        },
+        "wagers": {
+          "$pickKey": {
+            "$userName": {
+              ".validate": "newData.hasChildren(['amount', 'playerName'])"
+            }
+          }
+        },
+        "scores": {
+          "$userName": {
+            ".validate": "newData.hasChildren(['bracketScore', 'liveScore'])"
+          }
+        }
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}

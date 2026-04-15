@@ -207,10 +207,6 @@ export default function JoinScreen() {
         </div>
       </div>
 
-      {/* Footer */}
-      <p className="relative z-10 mt-8 text-muted text-xs font-mono">
-        BEARS PICK #25
-      </p>
     </div>
   );
 }

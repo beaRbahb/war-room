@@ -70,8 +70,8 @@ npm run lint     # ESLint check
   - Bracket screen + PlayerSelectionPanel: Done
   - Live Draft screen: Done
   - Leaderboard, Reactions, Bears mode: Not started
-- **Phase 6 (Styled Build)**: Not started
-- **Phase 7 (Integration)**: Not started — no Firebase project connected yet
+- **Phase 6 (Styled Build)**: Complete
+- **Phase 7 (Integration)**: Complete — Firebase project `war-room-f1fc5` connected
 - **Phase 8 (Ship)**: Not started
 
 ## Firebase Schema
@@ -83,5 +83,6 @@ rooms/{code}/live       — LiveState
 rooms/{code}/live_guesses/pick{N}/{userName} — string (player name)
 rooms/{code}/results/pick{N} — ConfirmedPick
 rooms/{code}/reactions/pick{N}/{userName} — UserReaction
+rooms/{code}/wagers/pick{N}/{userName} — Wager
 rooms/{code}/scores/{userName} — UserScores
 ```

@@ -11,6 +11,7 @@ import {
   getGuessCount,
   setLiveState,
   updateRoomStatus,
+  updateLiveState,
   onGuesses,
 } from "../lib/storage";
 import { DRAFT_ORDER } from "../data/draftOrder";
@@ -67,6 +68,7 @@ export default function LiveDraftScreen() {
     entries: LeaderboardEntry[];
   } | null>(null);
   const processedPicks = useRef<Set<number>>(new Set());
+  const bearsDoublePicks = useRef<Set<number>>(new Set());
 
   // Redirect if no session
   useEffect(() => {
@@ -105,6 +107,15 @@ export default function LiveDraftScreen() {
     updateRoomStatus(roomCode, "live");
   }, [roomCode, session?.isCommissioner, liveState]);
 
+  // Safety reset: if trubiskyActive stays true for >10s, reset it
+  useEffect(() => {
+    if (!roomCode || !liveState?.trubiskyActive) return;
+    const t = setTimeout(() => {
+      updateLiveState(roomCode, { trubiskyActive: false });
+    }, 10000);
+    return () => clearTimeout(t);
+  }, [roomCode, liveState?.trubiskyActive]);
+
   // Track guess count when window is open
   useEffect(() => {
     if (!roomCode || !liveState?.windowOpen) return;
@@ -141,6 +152,11 @@ export default function LiveDraftScreen() {
       setChaosFlash({ slot: latest.pick, playerName: latest.playerName });
     }
 
+    // Track bears double picks
+    if (liveState?.bearsDoubleActive) {
+      bearsDoublePicks.current.add(latest.pick);
+    }
+
     // Bears mode?
     if (latest.isBearsPick) {
       setShowBearsMode(true);
@@ -168,7 +184,7 @@ export default function LiveDraftScreen() {
             user.name,
             confirmedPicks,
             { ...allGuesses, [pickGuessKey]: guesses },
-            new Set() // TODO: track bears double picks
+            bearsDoublePicks.current
           );
           updateScores(roomCode, user.name, {
             bracketScore: bracket.score,
