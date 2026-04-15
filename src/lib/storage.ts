@@ -5,6 +5,7 @@ import {
   get,
   onValue,
   update,
+  remove,
   type Unsubscribe,
 } from "firebase/database";
 import type {
@@ -103,6 +104,20 @@ export function onBrackets(
   });
 }
 
+// ── Reset Draft (testing only) ──
+
+export async function resetDraft(code: string): Promise<void> {
+  await Promise.all([
+    remove(ref(db, `${roomPath(code)}/live`)),
+    remove(ref(db, `${roomPath(code)}/live_guesses`)),
+    remove(ref(db, `${roomPath(code)}/results`)),
+    remove(ref(db, `${roomPath(code)}/scores`)),
+    remove(ref(db, `${roomPath(code)}/reactions`)),
+    remove(ref(db, `${roomPath(code)}/wagers`)),
+  ]);
+  await update(ref(db, `${roomPath(code)}/config`), { status: "bracket" });
+}
+
 // ── Live State ──
 
 export async function setLiveState(
@@ -153,6 +168,13 @@ export function onGuesses(
       cb(snap.exists() ? (snap.val() as Record<string, string>) : {});
     }
   );
+}
+
+export async function clearGuesses(
+  code: string,
+  pickNum: number
+): Promise<void> {
+  await remove(ref(db, `${roomPath(code)}/live_guesses/pick${pickNum}`));
 }
 
 export async function getGuessCount(

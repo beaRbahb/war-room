@@ -29,6 +29,8 @@ interface DraftRowProps {
   onSubmit?: () => void;
   /** Live mode: whether guess has been submitted */
   submitted?: boolean;
+  /** Live mode: whether the pick window is open */
+  windowOpen?: boolean;
   /** Children for expanded content (reactions) */
   children?: React.ReactNode;
 }
@@ -50,6 +52,7 @@ export default function DraftRow({
   shouldScroll,
   onSubmit,
   submitted,
+  windowOpen,
   children,
 }: DraftRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -95,9 +98,11 @@ export default function DraftRow({
   const borderClass =
     rowState === "active"
       ? "border-amber animate-pulse-border"
-      : rowState === "completed"
-        ? "border-border"
-        : "border-border hover:border-border-bright";
+      : rowState === "completed" && isCorrect
+        ? "border-green"
+        : rowState === "completed" && isCorrect === false
+          ? "border-red/50"
+          : "border-border hover:border-border-bright";
 
   const isClickable = rowState === "editable" || rowState === "active";
   const isExpandable = rowState === "completed" && confirmedPick;
@@ -110,7 +115,7 @@ export default function DraftRow({
           if (isExpandable) onToggleExpand();
         }}
         disabled={rowState === "locked"}
-        className={`w-full flex items-center gap-2 ${rowBg} border rounded px-3 py-3 text-left transition-colors ${borderClass} ${
+        className={`w-full flex items-center gap-2 ${rowBg} border rounded px-3 h-12 text-left transition-colors ${borderClass} ${
           rowState === "locked" ? "opacity-40 cursor-not-allowed" : ""
         } ${bears ? "border-l-2 border-l-bears-orange" : ""}`}
       >
@@ -124,14 +129,14 @@ export default function DraftRow({
         </span>
 
         {/* Team logo + abbrev */}
-        <div className="flex items-center gap-1.5 w-20 shrink-0">
+        <div className="flex items-center gap-1.5 w-24 shrink-0">
           <img
             src={getTeamLogo(slot.abbrev)}
             alt={slot.abbrev}
-            className="w-6 h-6 object-contain shrink-0"
+            className="w-8 h-8 object-contain shrink-0"
           />
           <div>
-            <span className="font-condensed text-sm text-white uppercase block">
+            <span className="font-condensed text-base text-white uppercase block">
               {slot.abbrev}
             </span>
             {slot.fromTeam && (
@@ -145,30 +150,20 @@ export default function DraftRow({
         {/* Player display */}
         <div className="flex-1 min-w-0">
           {rowState === "completed" && confirmedPick ? (
-            <div>
-              <span className="font-condensed font-bold text-sm text-white truncate block">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <span className="font-mono text-sm text-white truncate">
                 {confirmedPick.playerName}
               </span>
-              {/* User's guess vs actual */}
-              {userPick && (
-                <span
-                  className={`font-mono text-xs block ${
-                    isCorrect ? "text-green" : "text-red/70"
-                  }`}
-                >
-                  {isCorrect ? "You nailed it!" : `You: ${userPick}`}
-                </span>
-              )}
-              {!userPick && (
-                <span className="font-mono text-xs text-muted block">
-                  No guess
+              {userPick && !isCorrect && (
+                <span className="font-mono text-sm text-muted/50 line-through truncate shrink-0">
+                  {userPick}
                 </span>
               )}
             </div>
           ) : rowState === "active" && displayName && prospect ? (
-            <div className="flex items-center justify-between gap-2">
-              <span className={`font-condensed font-bold text-sm truncate ${submitted ? "text-green" : "text-white"}`}>
-                {submitted ? `✓ ${prospect.name}` : prospect.name}
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm text-white truncate">
+                {prospect.name}
               </span>
               {!submitted && onSubmit && (
                 <button
@@ -183,9 +178,13 @@ export default function DraftRow({
             <span className="font-condensed font-bold text-sm text-white truncate block">
               {prospect.name}
             </span>
-          ) : rowState === "active" ? (
+          ) : rowState === "active" && windowOpen ? (
             <span className="font-mono text-sm text-amber animate-pulse">
               Tap to pick →
+            </span>
+          ) : rowState === "active" ? (
+            <span className="font-mono text-sm text-muted">
+              — Waiting on commissioner —
             </span>
           ) : rowState === "locked" ? (
             <span className="font-mono text-sm text-muted">—</span>
@@ -234,19 +233,12 @@ export default function DraftRow({
           )}
         </div>
 
-        {/* Status indicator */}
+        {/* Status indicator (non-completed rows only) */}
         <span className="text-sm w-5 text-center shrink-0">
-          {rowState === "completed" ? (
-            isCorrect ? (
-              <span className="text-green">✓</span>
-            ) : isCorrect === false ? (
-              <span className="text-red">✗</span>
-            ) : (
-              <span className="text-muted">—</span>
-            )
-          ) : rowState === "editable" && userPick ? (
+          {rowState === "completed" ? null
+          : rowState === "editable" && userPick ? (
             <span className="text-green">✓</span>
-          ) : rowState === "active" && userPick ? (
+          ) : rowState === "active" && submitted ? (
             <span className="text-green">✓</span>
           ) : (
             <span className="text-muted">›</span>

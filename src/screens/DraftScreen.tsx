@@ -23,6 +23,8 @@ import {
   submitWager,
   getAllGuesses,
   getAllReactions,
+  clearGuesses,
+  resetDraft,
 } from "../lib/storage";
 import { getSession } from "../lib/session";
 import { calcBracketScore, calcLiveScore } from "../lib/scoring";
@@ -41,6 +43,8 @@ import BearsMode from "../components/BearsMode";
 import Confetti from "../components/Confetti";
 import TrubiskyOverlay from "../components/TrubiskyOverlay";
 import ChaosFlash from "../components/ChaosFlash";
+import RunningChaosMeter from "../components/RunningChaosMeter";
+import PickReaction from "../components/PickReaction";
 import RecapCard from "../components/RecapCard";
 import RoomRecap from "../components/RoomRecap";
 
@@ -100,7 +104,12 @@ export default function DraftScreen() {
   // ── Overlays ──
   const [showBearsMode, setShowBearsMode] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [chaosFlash, setChaosFlash] = useState<{ slot: number; playerName: string } | null>(null);
+  const [chaosFlash, setChaosFlash] = useState<{
+    slot: number;
+    playerName: string;
+    teamAbbrev: string;
+    priorPicks: { position: string }[];
+  } | null>(null);
   const [, setRevealedPicks] = useState<Set<number>>(new Set());
   const [personas, setPersonas] = useState<Record<string, PersonaType>>({});
   const [showRecap, setShowRecap] = useState(false);
@@ -282,10 +291,17 @@ export default function DraftScreen() {
       setRevealedPicks((prev) => new Set([...prev, latest.pick]));
     }, REVEAL_PAUSE_MS);
 
-    const chaos = calcChaosScore(latest.pick, latest.playerName);
-    if (chaos.score > 30) {
-      setChaosFlash({ slot: latest.pick, playerName: latest.playerName });
-    }
+    const priorPicks = confirmedPicks
+      .filter((p) => p.pick < latest.pick)
+      .map((p) => ({
+        position: PROSPECTS.find((pr) => pr.name === p.playerName)?.position ?? "",
+      }));
+    setChaosFlash({
+      slot: latest.pick,
+      playerName: latest.playerName,
+      teamAbbrev: latest.teamAbbrev,
+      priorPicks,
+    });
 
     if (liveState?.bearsDoubleActive) {
       bearsDoublePicks.current.add(latest.pick);
@@ -461,7 +477,7 @@ export default function DraftScreen() {
   function handleSwapRowClick(pickNum: number) {
     if (!swapMode || !liveState) return;
     // Only future picks can be swapped
-    if (pickNum <= liveState.currentPick) return;
+    if (pickNum < liveState.currentPick) return;
     if (swapFirst === null) {
       setSwapFirst(pickNum);
     } else if (swapFirst === pickNum) {
@@ -473,9 +489,25 @@ export default function DraftScreen() {
 
   async function handleConfirmSwap() {
     if (!swapConfirm || !roomCode || !liveState) return;
+    const currentPick = liveState.currentPick;
+    const involvesCurrentPick =
+      swapConfirm.pickA === currentPick || swapConfirm.pickB === currentPick;
+
+    // Clear guesses if the current pick's team is changing
+    if (involvesCurrentPick) {
+      await clearGuesses(roomCode, currentPick);
+      setCurrentGuess(null);
+      setGuessSubmitted(false);
+      setWagerAmount(0);
+    }
+
     const currentSwaps = liveState.swaps ?? [];
     await updateLiveState(roomCode, {
       swaps: [...currentSwaps, swapConfirm],
+      // Reset the window timer so users can re-guess for the new team
+      ...(involvesCurrentPick && liveState.windowOpen
+        ? { windowOpenedAt: new Date().toISOString() }
+        : {}),
     });
     setSwapMode(false);
     setSwapFirst(null);
@@ -498,6 +530,8 @@ export default function DraftScreen() {
         <ChaosFlash
           slot={chaosFlash.slot}
           playerName={chaosFlash.playerName}
+          teamAbbrev={chaosFlash.teamAbbrev}
+          priorPicks={chaosFlash.priorPicks}
           onComplete={() => setChaosFlash(null)}
         />
       )}
@@ -569,6 +603,11 @@ export default function DraftScreen() {
         />
       )}
 
+      {/* Running chaos meter — pinned below timer bar */}
+      {isLive && confirmedPicks.length > 0 && commissionerTab !== "admin" && (
+        <RunningChaosMeter confirmedPicks={confirmedPicks} />
+      )}
+
       {/* Recap overlay */}
       {showRecap && recapData && (
         <div className="fixed inset-0 z-[90] bg-bg/95 overflow-auto">
@@ -602,8 +641,8 @@ export default function DraftScreen() {
                 <div className="bg-white/5 border border-white/20 rounded px-3 py-1.5 flex items-center justify-between mb-2">
                   <span className="font-condensed text-xs text-white uppercase">
                     {swapFirst
-                      ? `Pick #${swapFirst} selected — tap another future pick to swap`
-                      : "Tap a future pick to start swap"}
+                      ? `Pick #${swapFirst} selected — tap another pick to trade`
+                      : "Tap a pick to start trade"}
                   </span>
                   <button
                     onClick={() => { setSwapMode(false); setSwapFirst(null); }}
@@ -619,7 +658,7 @@ export default function DraftScreen() {
                 const isCurrent = pickNum === liveState.currentPick;
                 const isPast = pickNum < liveState.currentPick;
                 const isFuture = pickNum > liveState.currentPick;
-                const isSwapTarget = swapMode && isFuture;
+                const isSwapTarget = swapMode && (isFuture || isCurrent);
                 const isSwapSelected = swapFirst === pickNum;
 
                 return (
@@ -672,6 +711,22 @@ export default function DraftScreen() {
                   </div>
                 );
               })}
+              {/* Reset draft — testing only */}
+              <button
+                onClick={async () => {
+                  if (!confirm("Reset draft? This clears all picks, guesses, scores, and returns to bracket phase.")) return;
+                  await resetDraft(roomCode);
+                  setCurrentGuess(null);
+                  setGuessSubmitted(false);
+                  setWagerAmount(0);
+                  setSwapMode(false);
+                  setSwapFirst(null);
+                  setSwapConfirm(null);
+                }}
+                className="mt-4 w-full bg-red/20 border border-red text-red font-condensed font-bold uppercase py-2 rounded text-sm hover:bg-red/30 transition-all"
+              >
+                RESET DRAFT (TESTING)
+              </button>
             </div>
           ) : (
             <>
@@ -744,13 +799,52 @@ export default function DraftScreen() {
                         shouldScroll={shouldScroll}
                         onSubmit={rowState === "active" && isLive && currentGuess && !guessSubmitted ? handleLiveSubmit : undefined}
                         submitted={rowState === "active" && isLive ? guessSubmitted : undefined}
+                        windowOpen={rowState === "active" && isLive ? liveState?.windowOpen : undefined}
                       >
-                        {/* Reaction content for expanded completed rows */}
-                        {rowState === "completed" && confirmed && (
-                          <p className="font-mono text-xs text-muted">
-                            Reactions coming soon
-                          </p>
-                        )}
+                        {/* Expanded content: chaos tags + reaction buttons */}
+                        {rowState === "completed" && confirmed && (() => {
+                          const prior = confirmedPicks
+                            .filter((p) => p.pick < confirmed.pick)
+                            .map((p) => ({
+                              position: PROSPECTS.find((pr) => pr.name === p.playerName)?.position ?? "",
+                            }));
+                          const chaos = calcChaosScore(confirmed.pick, confirmed.playerName, confirmed.teamAbbrev, prior);
+                          return (
+                            <div className="space-y-2">
+                              {/* Chaos context tags */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`font-mono text-xs font-bold ${
+                                  chaos.level === "CHALK" ? "text-muted"
+                                    : chaos.level === "MILD" ? "text-amber"
+                                    : chaos.level === "SPICY" ? "text-bears-orange"
+                                    : "text-red"
+                                }`}>
+                                  {chaos.level} {chaos.score}
+                                </span>
+                                {chaos.tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className={`font-mono text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                      chaos.level === "CHALK" ? "bg-muted/15 text-muted"
+                                        : chaos.level === "MILD" ? "bg-amber/10 text-amber"
+                                        : chaos.level === "SPICY" ? "bg-bears-orange/15 text-bears-orange"
+                                        : "bg-red/15 text-red"
+                                    }`}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                              {/* Reaction buttons */}
+                              <PickReaction
+                                roomCode={roomCode}
+                                pickNum={confirmed.pick}
+                                userName={session.name}
+                                isBearsPick={confirmed.isBearsPick}
+                              />
+                            </div>
+                          );
+                        })()}
                       </DraftRow>
                     </div>
                   );
@@ -930,12 +1024,12 @@ export default function DraftScreen() {
         </button>
       )}
 
-      {/* Swap confirm dialog */}
+      {/* Trade confirm dialog */}
       {swapConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="bg-surface border border-white/30 rounded-xl p-6 max-w-sm w-full">
             <p className="font-display text-xl text-white mb-3">
-              CONFIRM SWAP
+              CONFIRM TRADE
             </p>
             <div className="flex items-center justify-center gap-3 mb-4">
               <div className="text-center">
@@ -965,7 +1059,7 @@ export default function DraftScreen() {
                 onClick={handleConfirmSwap}
                 className="flex-1 bg-white text-bg font-condensed font-bold uppercase py-2.5 rounded"
               >
-                SWAP
+                TRADE
               </button>
               <button
                 onClick={() => { setSwapConfirm(null); setSwapFirst(null); }}

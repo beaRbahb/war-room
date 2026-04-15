@@ -130,7 +130,7 @@ export default function CommissionerControls({
                 : "bg-white/10 text-white hover:bg-white/20"
             }`}
           >
-            SWAP
+            TRADE
           </button>
         )}
       </div>

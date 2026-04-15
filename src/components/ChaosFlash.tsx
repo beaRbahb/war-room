@@ -4,6 +4,8 @@ import { calcChaosScore, type ChaosLevel } from "../lib/chaos";
 interface ChaosFlashProps {
   slot: number;
   playerName: string;
+  teamAbbrev?: string;
+  priorPicks?: { position: string }[];
   onComplete: () => void;
 }
 
@@ -21,6 +23,13 @@ const TEXT_COLORS: Record<ChaosLevel, string> = {
   CHAOS: "text-red",
 };
 
+const BORDER_COLORS: Record<ChaosLevel, string> = {
+  CHALK: "border-muted/30",
+  MILD: "border-amber/30",
+  SPICY: "border-bears-orange/30",
+  CHAOS: "border-red/30",
+};
+
 const DURATIONS: Record<ChaosLevel, number> = {
   CHALK: 1500,
   MILD: 1500,
@@ -30,11 +39,12 @@ const DURATIONS: Record<ChaosLevel, number> = {
 
 /**
  * Brief full-screen chaos score flash on pick confirmation.
+ * Shows score, level, and context tags explaining why.
  * Pointer-events-none so it doesn't block interaction.
  */
-export default function ChaosFlash({ slot, playerName, onComplete }: ChaosFlashProps) {
+export default function ChaosFlash({ slot, playerName, teamAbbrev, priorPicks, onComplete }: ChaosFlashProps) {
   const [visible, setVisible] = useState(true);
-  const { score, level } = calcChaosScore(slot, playerName);
+  const { score, level, tags } = calcChaosScore(slot, playerName, teamAbbrev, priorPicks);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -58,6 +68,18 @@ export default function ChaosFlash({ slot, playerName, onComplete }: ChaosFlashP
         <p className={`font-display text-3xl sm:text-5xl tracking-wider ${TEXT_COLORS[level]}`}>
           {level}
         </p>
+        {tags.length > 0 && (
+          <div className="flex gap-2 justify-center mt-4 flex-wrap">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className={`font-condensed text-sm sm:text-lg font-bold uppercase px-3 py-1 rounded border ${TEXT_COLORS[level]} ${BORDER_COLORS[level]}`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
