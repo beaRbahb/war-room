@@ -5,6 +5,7 @@ import { BRACKET_LOCK_TIME } from "../data/scoring";
 import { createRoom, addUser, getRoom, getUsers } from "../lib/storage";
 import { saveSession, generateUserId } from "../lib/session";
 import type { RoomConfig, RoomUser } from "../types";
+import TecmoCanvas from "../components/TecmoCanvas";
 
 export default function JoinScreen() {
   const navigate = useNavigate();
@@ -138,17 +139,20 @@ export default function JoinScreen() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-4 bg-bg">
+    <div className="relative min-h-dvh flex flex-col items-center justify-center px-4 bg-bg">
+      {/* Tecmo Bowl background animation */}
+      <TecmoCanvas />
+
       {/* Title */}
-      <h1 className="font-display text-6xl sm:text-8xl tracking-wider text-amber mb-2">
+      <h1 className="relative z-10 font-display text-6xl sm:text-8xl tracking-wider text-amber mb-2">
         WAR ROOM
       </h1>
-      <p className="font-condensed text-lg text-muted tracking-wide mb-10 uppercase">
+      <p className="relative z-10 font-condensed text-lg text-muted tracking-wide mb-10 uppercase">
         NFL Draft Companion
       </p>
 
       {/* Card */}
-      <div className="w-full max-w-sm bg-surface border border-border rounded-lg p-6 space-y-4">
+      <div className="relative z-10 w-full max-w-sm bg-surface border border-border rounded-lg p-6 space-y-4">
         {/* Name */}
         <div>
           <label className="block font-condensed text-sm text-muted uppercase tracking-wide mb-1">
@@ -204,7 +208,7 @@ export default function JoinScreen() {
       </div>
 
       {/* Footer */}
-      <p className="mt-8 text-muted text-xs font-mono">
+      <p className="relative z-10 mt-8 text-muted text-xs font-mono">
         BEARS PICK #25
       </p>
     </div>
