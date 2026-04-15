@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
+import trubiskyImg from "../assets/images/trubisky.jpg";
 
 interface TrubiskyOverlayProps {
   onComplete: () => void;
 }
-
-const TRUBISKY_IMG =
-  "https://a.espncdn.com/i/headshots/nfl/players/full/3116406.png";
 
 /**
  * Full-screen Trubisky overlay. Pure vibes, no gameplay impact.
@@ -51,7 +49,7 @@ export default function TrubiskyOverlay({ onComplete }: TrubiskyOverlayProps) {
         {phase === "reveal" && (
           <div className="animate-fade-in-up">
             <img
-              src={TRUBISKY_IMG}
+              src={trubiskyImg}
               alt="Mitchell Trubisky"
               className="w-40 h-40 sm:w-52 sm:h-52 rounded-full border-4 border-bears-orange mx-auto mb-4 object-cover bg-surface"
             />
