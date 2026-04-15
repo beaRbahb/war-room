@@ -37,7 +37,7 @@ export default function Confetti({ duration = 5000 }: ConfettiProps) {
 
   const pieces: Piece[] = useMemo(
     () =>
-      Array.from({ length: 200 }, (_, i) => ({
+      Array.from({ length: 1000 }, (_, i) => ({
         id: i,
         x: Math.random() * 100,
         delay: Math.random() * 1.5,
