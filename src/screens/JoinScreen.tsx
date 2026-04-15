@@ -139,12 +139,12 @@ export default function JoinScreen() {
   }
 
   return (
-    <div className="relative min-h-dvh flex flex-col items-center justify-center px-4 bg-bg">
+    <div className="relative min-h-dvh flex flex-col items-center justify-center px-4 bg-bg scanlines">
       {/* Tecmo Bowl background animation */}
       <TecmoCanvas />
 
       {/* Title */}
-      <h1 className="relative z-10 font-display text-6xl sm:text-8xl tracking-wider text-amber mb-2">
+      <h1 className="relative z-10 font-display text-6xl sm:text-8xl tracking-wider text-amber mb-2 war-room-title">
         WAR ROOM
       </h1>
       <p className="relative z-10 font-condensed text-lg text-muted tracking-wide mb-10 uppercase">

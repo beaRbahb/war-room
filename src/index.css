@@ -87,3 +87,40 @@ body {
 .animate-bears-flash { animation: bears-flash 0.6s ease-in-out 3; }
 .animate-score-flip { animation: score-flip 0.4s ease-in-out; }
 .animate-fade-in-up { animation: fade-in-up 0.3s ease-out; }
+
+/* ── CRT / Tecmo Title Effect ── */
+@keyframes crt-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  96% { opacity: 0.9; }
+  97% { opacity: 1; }
+}
+
+.war-room-title {
+  text-shadow:
+    0 0 10px rgba(245, 166, 35, 0.6),
+    0 0 30px rgba(245, 166, 35, 0.3),
+    0 0 60px rgba(245, 166, 35, 0.15);
+  animation: crt-flicker 4s ease-in-out 1;
+}
+
+.scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  z-index: 1;
+}

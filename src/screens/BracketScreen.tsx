@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { DRAFT_ORDER } from "../data/draftOrder";
+import { DRAFT_ORDER, isBearsPick } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
 import { BRACKET_LOCK_TIME } from "../data/scoring";
 import { TEAM_NEEDS } from "../data/teamNeeds";
@@ -176,13 +176,21 @@ export default function BracketScreen() {
               const rankDiff = prospect
                 ? prospect.rank - slot.pick
                 : 0;
+              const bears = isBearsPick(slot.abbrev);
+              const rowBg = bears
+                ? "bg-bears-navy/15"
+                : i % 2 === 0
+                  ? "bg-surface"
+                  : "bg-surface-elevated/50";
 
               return (
                 <button
                   key={slot.pick}
                   onClick={() => !locked && setActiveSlot(i)}
                   disabled={locked}
-                  className={`w-full flex items-center gap-2 bg-surface border rounded px-3 py-2 text-left transition-colors disabled:opacity-50 ${
+                  className={`w-full flex items-center gap-2 ${rowBg} border rounded px-3 py-2 text-left transition-colors disabled:opacity-50 ${
+                    bears ? "border-l-2 border-l-bears-orange" : ""
+                  } ${
                     activeSlot === i
                       ? "border-amber"
                       : pick
@@ -191,7 +199,9 @@ export default function BracketScreen() {
                   }`}
                 >
                   {/* Pick number */}
-                  <span className="font-mono text-sm text-muted w-8 text-right shrink-0">
+                  <span className={`font-mono text-sm w-8 text-right shrink-0 ${
+                    bears ? "text-bears-orange font-bold" : "text-muted"
+                  }`}>
                     {slot.pick}
                   </span>
 
@@ -205,10 +215,12 @@ export default function BracketScreen() {
                     <span className="font-condensed text-sm text-white uppercase">
                       {slot.abbrev}
                     </span>
-                    {slot.trade && (
-                      <span className="text-amber text-xs font-mono">T</span>
-                    )}
                   </div>
+                  {slot.trade && (
+                    <span className="font-condensed text-xs bg-amber-dim/30 text-amber border border-amber-dim rounded px-1.5 py-0.5 uppercase font-bold tracking-wide shrink-0">
+                      TRADE
+                    </span>
+                  )}
 
                   {/* Player display or placeholder */}
                   {pick && prospect ? (
@@ -308,9 +320,13 @@ export default function BracketScreen() {
           {!locked && (
             <button
               onClick={handleSubmit}
-              className="mt-4 w-full bg-amber text-bg font-condensed font-bold uppercase tracking-wide py-3 rounded hover:brightness-110 transition-all"
+              className={`mt-4 w-full font-condensed font-bold uppercase tracking-wide py-3 rounded transition-all ${
+                submitted
+                  ? "bg-green/20 border border-green text-green hover:bg-green/30"
+                  : "bg-amber text-bg hover:brightness-110"
+              }`}
             >
-              {submitted ? "UPDATE BRACKET" : "SUBMIT BRACKET"}
+              {submitted ? "\u2713 BRACKET SUBMITTED — TAP TO UPDATE" : "SUBMIT BRACKET"}
             </button>
           )}
         </div>
@@ -333,20 +349,40 @@ export default function BracketScreen() {
               CONSENSUS BOARD
             </h2>
             <div className="space-y-0.5">
-              {PROSPECTS.map((p) => (
-                <div
-                  key={p.rank}
-                  className={`flex items-baseline gap-2 text-xs font-mono py-0.5 ${
-                    selectedPlayers.has(p.name)
-                      ? "text-muted line-through"
-                      : "text-white"
-                  }`}
-                >
-                  <span className="text-muted w-6 text-right">{p.rank}</span>
-                  <span className="flex-1">{p.name}</span>
-                  <span className="text-muted">{p.position}</span>
-                </div>
-              ))}
+              {PROSPECTS.map((p, idx) => {
+                const showTierBreak = idx === 5 || idx === 15 || idx === 32;
+                const selected = selectedPlayers.has(p.name);
+                return (
+                  <div key={p.rank}>
+                    {showTierBreak && (
+                      <div className="border-t border-border-bright my-1.5 pt-1">
+                        <span className="font-condensed text-xs text-amber-dim uppercase">
+                          {idx === 5 ? "TIER 2" : idx === 15 ? "TIER 3" : "DAY 2"}
+                        </span>
+                      </div>
+                    )}
+                    <div
+                      className={`flex items-baseline gap-2 text-xs font-mono py-0.5 ${
+                        selected
+                          ? "text-muted line-through opacity-50"
+                          : p.rank <= 5
+                            ? "text-white font-bold"
+                            : p.rank <= 15
+                              ? "text-white"
+                              : "text-white/70"
+                      }`}
+                    >
+                      <span className={`w-6 text-right ${
+                        selected ? "text-muted" : p.rank <= 5 ? "text-amber" : "text-muted"
+                      }`}>
+                        {p.rank}
+                      </span>
+                      <span className="flex-1">{p.name}</span>
+                      <span className="text-muted">{p.position}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
           {/* Mobile close */}

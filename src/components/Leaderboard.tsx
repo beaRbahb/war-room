@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { UserScores, LeaderboardEntry } from "../types";
 import PersonaBadge from "./PersonaBadge";
 import type { PersonaType } from "../lib/personas";
@@ -17,6 +17,8 @@ type LeaderboardTab = "live" | "bracket";
 export default function Leaderboard({ scores, roomCode, totalPicks, personas }: LeaderboardProps) {
   const [tab, setTab] = useState<LeaderboardTab>("live");
   const [expanded, setExpanded] = useState(false);
+  const [flippingScores, setFlippingScores] = useState<Set<string>>(new Set());
+  const prevScoresRef = useRef<Record<string, number>>({});
 
   // Build sorted leaderboard
   const entries: LeaderboardEntry[] = Object.entries(scores)
@@ -35,6 +37,23 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
       if (scoreB !== scoreA) return scoreB - scoreA;
       return a.name.localeCompare(b.name);
     });
+
+  // Detect score changes for flip animation
+  useEffect(() => {
+    const newFlipping = new Set<string>();
+    entries.forEach((entry) => {
+      const score = tab === "live" ? entry.liveScore : entry.bracketScore;
+      const prevScore = prevScoresRef.current[entry.name] ?? score;
+      if (score !== prevScore) {
+        newFlipping.add(entry.name);
+      }
+      prevScoresRef.current[entry.name] = score;
+    });
+    if (newFlipping.size > 0) {
+      setFlippingScores(newFlipping);
+      setTimeout(() => setFlippingScores(new Set()), 400);
+    }
+  }, [entries, tab]);
 
   function exportCsv() {
     const headers = "Name,Bracket Score,Live Score,Total Score\n";
@@ -86,14 +105,23 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
           {entries.map((entry, i) => {
             const score =
               tab === "live" ? entry.liveScore : entry.bracketScore;
+            const rankStyle = i === 0
+              ? "border-amber bg-amber/10"
+              : i === 1
+                ? "border-border-bright bg-surface-elevated/50"
+                : i === 2
+                  ? "border-amber-dim bg-amber-dim/10"
+                  : "border-border";
             return (
               <div
                 key={entry.name}
-                className="flex items-center justify-between bg-bg border border-border rounded px-3 py-2"
+                className={`flex items-center justify-between bg-bg border rounded px-3 py-2 ${rankStyle}`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted w-5 text-right">
-                    {i + 1}.
+                  <span className={`font-mono text-xs w-5 text-right ${
+                    i === 0 ? "text-amber font-bold" : i <= 2 ? "text-white" : "text-muted"
+                  }`}>
+                    {i === 0 ? "\u{1F451}" : `${i + 1}.`}
                   </span>
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -113,7 +141,9 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
                     </p>
                   </div>
                 </div>
-                <span className="font-mono text-lg text-amber font-bold">
+                <span className={`font-mono text-lg text-amber font-bold ${
+                  flippingScores.has(entry.name) ? "animate-score-flip" : ""
+                }`}>
                   {score}
                 </span>
               </div>
@@ -151,9 +181,22 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
           <span className="font-display text-sm text-amber tracking-wide">
             LEADERBOARD
           </span>
-          <span className="font-mono text-xs text-muted">
-            {expanded ? "\u25BC" : "\u25B2"}
-          </span>
+          <div className="flex items-center gap-3">
+            {entries.slice(0, 3).map((entry, i) => (
+              <span key={entry.name} className="font-mono text-xs text-muted">
+                <span className={i === 0 ? "text-amber" : "text-white"}>
+                  {entry.name.slice(0, 6)}
+                </span>
+                {" "}
+                <span className="text-amber font-bold">
+                  {tab === "live" ? entry.liveScore : entry.bracketScore}
+                </span>
+              </span>
+            ))}
+            <span className="font-mono text-xs text-muted">
+              {expanded ? "\u25BC" : "\u25B2"}
+            </span>
+          </div>
         </button>
 
         {expanded && (
