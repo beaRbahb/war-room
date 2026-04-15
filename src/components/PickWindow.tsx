@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { PROSPECTS } from "../data/prospects";
 import { GUESS_WINDOW_SECONDS, FLASH_WARNING_SECONDS } from "../data/scoring";
 import { submitGuess } from "../lib/storage";
+import { getTeamLogo } from "../data/teams";
 interface PickWindowProps {
   roomCode: string;
   userName: string;
@@ -96,6 +97,13 @@ export default function PickWindow({
           <p className="font-condensed text-sm text-muted uppercase tracking-wide">
             On The Clock
           </p>
+          {(() => {
+            const abbrev = teamOnClock.split(" — ")[0]?.trim();
+            const logo = abbrev ? getTeamLogo(abbrev) : undefined;
+            return logo ? (
+              <img src={logo} alt={abbrev} className="w-12 h-12 object-contain mx-auto mb-1" />
+            ) : null;
+          })()}
           <p className="font-display text-4xl text-amber tracking-wide">
             PICK #{pickNumber}
           </p>

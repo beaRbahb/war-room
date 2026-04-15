@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSession } from "../lib/session";
 import {
@@ -14,7 +14,9 @@ import {
   onGuesses,
 } from "../lib/storage";
 import { DRAFT_ORDER } from "../data/draftOrder";
+import { REVEAL_PAUSE_MS } from "../data/scoring";
 import { calcBracketScore, getBracketHitsForPick, calcLiveScore } from "../lib/scoring";
+import { getTeamLogo } from "../data/teams";
 import type {
   LiveState,
   ConfirmedPick,
@@ -47,6 +49,7 @@ export default function LiveDraftScreen() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [revealedPicks, setRevealedPicks] = useState<Set<number>>(new Set());
   const [, setLastRevealedPick] = useState<number>(0);
+  const processedPicks = useRef<Set<number>>(new Set());
 
   // Redirect if no session
   useEffect(() => {
@@ -106,10 +109,13 @@ export default function LiveDraftScreen() {
     if (confirmedPicks.length === 0) return;
 
     const latest = confirmedPicks[confirmedPicks.length - 1];
-    if (revealedPicks.has(latest.pick)) return;
+    if (processedPicks.current.has(latest.pick)) return;
+    processedPicks.current.add(latest.pick);
 
-    // Mark as revealed
-    setRevealedPicks((prev) => new Set([...prev, latest.pick]));
+    // Reactions unlock after reveal pause
+    setTimeout(() => {
+      setRevealedPicks((prev) => new Set([...prev, latest.pick]));
+    }, REVEAL_PAUSE_MS);
     setLastRevealedPick(latest.pick);
 
     // Bears mode?
@@ -147,7 +153,7 @@ export default function LiveDraftScreen() {
         unsub();
       });
     }
-  }, [confirmedPicks, roomCode, session, revealedPicks, users, brackets, allGuesses]);
+  }, [confirmedPicks, roomCode, session, users, brackets, allGuesses]);
 
   // List of officially picked player names
   const pickedPlayers = useMemo(
@@ -188,18 +194,27 @@ export default function LiveDraftScreen() {
             {session.name} — Room {roomCode}
           </p>
         </div>
-        <div className="text-right">
-          <p className="font-mono text-sm text-amber">
-            PICK #{liveState?.currentPick || 1}
-          </p>
-          <p className="font-condensed text-xs text-muted uppercase">
-            {currentSlot?.abbrev} on the clock
-          </p>
-          {liveState?.tradeMode && (
-            <p className="font-condensed text-xs text-amber uppercase font-bold">
-              TRADE PENDING
-            </p>
+        <div className="flex items-center gap-3">
+          {currentSlot && getTeamLogo(currentSlot.abbrev) && (
+            <img
+              src={getTeamLogo(currentSlot.abbrev)}
+              alt={currentSlot.abbrev}
+              className="w-8 h-8 object-contain"
+            />
           )}
+          <div className="text-right">
+            <p className="font-mono text-sm text-amber">
+              PICK #{liveState?.currentPick || 1}
+            </p>
+            <p className="font-condensed text-xs text-muted uppercase">
+              {currentSlot?.abbrev} on the clock
+            </p>
+            {liveState?.tradeMode && (
+              <p className="font-condensed text-xs text-amber uppercase font-bold">
+                TRADE PENDING
+              </p>
+            )}
+          </div>
         </div>
       </header>
 

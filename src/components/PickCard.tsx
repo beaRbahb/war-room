@@ -8,6 +8,8 @@ import type {
 } from "../types";
 import { onReactions, submitReaction, onGuesses } from "../lib/storage";
 import { BEARS_TIER_COMPS, getCompsByTier } from "../data/bearsTiers";
+import { getTeamLogo } from "../data/teams";
+import { getHeadshot } from "../lib/headshots";
 
 interface PickCardProps {
   pick: ConfirmedPick;
@@ -33,6 +35,8 @@ export default function PickCard({
   const slot = DRAFT_ORDER.find((s) => s.pick === pick.pick);
   const isBears = pick.isBearsPick;
   const myReaction = reactions[userName];
+  const teamLogo = getTeamLogo(pick.teamAbbrev);
+  const headshot = getHeadshot(pick.playerName);
 
   useEffect(() => {
     const unsub1 = onReactions(roomCode, pick.pick, setReactions);
@@ -75,30 +79,51 @@ export default function PickCard({
         isBears ? "border-bears-orange" : "border-border"
       }`}
     >
-      {/* Pick header */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm text-muted">#{pick.pick}</span>
-          <span className="font-condensed font-bold text-white uppercase">
-            {slot?.abbrev || "??"}
-          </span>
-          {isBears && (
-            <span className="bg-bears-navy text-bears-orange font-condensed text-xs font-bold px-2 py-0.5 rounded uppercase">
-              DA BEARS
-            </span>
-          )}
-        </div>
-        {slot?.fromTeam && (
-          <span className="font-mono text-xs text-muted">
-            via {slot.fromTeam}
-          </span>
+      {/* Pick header + player */}
+      <div className="flex gap-3 mb-2">
+        {/* Headshot */}
+        {headshot ? (
+          <img
+            src={headshot}
+            alt={pick.playerName}
+            className="w-14 h-14 rounded-lg object-cover bg-surface-elevated flex-shrink-0"
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-lg bg-surface-elevated flex-shrink-0 flex items-center justify-center">
+            <span className="font-mono text-xs text-muted">?</span>
+          </div>
         )}
-      </div>
 
-      {/* Player name */}
-      <p className="font-display text-2xl text-amber tracking-wide mb-2">
-        {pick.playerName}
-      </p>
+        <div className="flex-1 min-w-0">
+          {/* Team + pick number row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {teamLogo && (
+                <img src={teamLogo} alt={slot?.abbrev} className="w-5 h-5 object-contain" />
+              )}
+              <span className="font-mono text-sm text-muted">#{pick.pick}</span>
+              <span className="font-condensed font-bold text-white uppercase">
+                {slot?.abbrev || "??"}
+              </span>
+              {isBears && (
+                <span className="bg-bears-navy text-bears-orange font-condensed text-xs font-bold px-2 py-0.5 rounded uppercase">
+                  DA BEARS
+                </span>
+              )}
+            </div>
+            {slot?.fromTeam && (
+              <span className="font-mono text-xs text-muted">
+                via {slot.fromTeam}
+              </span>
+            )}
+          </div>
+
+          {/* Player name */}
+          <p className="font-display text-2xl text-amber tracking-wide">
+            {pick.playerName}
+          </p>
+        </div>
+      </div>
 
       {/* Correct guessers */}
       {correctGuessers.length > 0 && (

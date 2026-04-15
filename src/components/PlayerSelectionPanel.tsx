@@ -287,6 +287,17 @@ export default function PlayerSelectionPanel({
 
         {/* ─── Prospect List ─── */}
         <div className="flex-1 overflow-auto">
+          {/* Column headers */}
+          <div className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-1.5 flex items-center gap-3">
+            <span className="w-12 shrink-0" />
+            <div className="flex-1 flex items-center gap-4">
+              <span className="font-condensed text-xs text-muted uppercase">Player</span>
+            </div>
+            <div className="shrink-0 text-right">
+              <span className="font-condensed text-xs text-muted uppercase">ESPN Prob · Value</span>
+            </div>
+          </div>
+
           {filtered.length === 0 ? (
             <div className="p-8 text-center text-muted font-mono text-sm">
               No prospects match your filters
