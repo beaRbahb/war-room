@@ -5,8 +5,8 @@
   --color-bg: #0a0a0a;
   --color-surface: #111111;
   --color-surface-elevated: #1a1a1a;
-  --color-border: #222222;
-  --color-border-bright: #333333;
+  --color-border: #2a2a2a;
+  --color-border-bright: #3d3d3d;
   --color-amber: #f5a623;
   --color-amber-dim: #7a5010;
   --color-bears-navy: #0b1f4a;
@@ -14,7 +14,7 @@
   --color-green: #00ff41;
   --color-red: #ff2233;
   --color-white: #e8e8e8;
-  --color-muted: #555555;
+  --color-muted: #888888;
 
   --font-mono: "JetBrains Mono", "Courier New", monospace;
   --font-display: "Bebas Neue", "Impact", sans-serif;

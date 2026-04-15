@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { onRoomConfig } from "../lib/storage";
 import { getSession } from "../lib/session";
-import BracketScreen from "./BracketScreen";
-import LiveDraftScreen from "./LiveDraftScreen";
+import DraftScreen from "./DraftScreen";
 
 /**
  * Routes to the correct screen based on room status.
- * /room/:roomCode lands here and shows Bracket or Live depending on state.
+ * /room/:roomCode lands here — DraftScreen handles both bracket and live phases.
  */
 export default function RoomRouter() {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -41,9 +40,5 @@ export default function RoomRouter() {
     );
   }
 
-  if (status === "live" || status === "done") {
-    return <LiveDraftScreen />;
-  }
-
-  return <BracketScreen />;
+  return <DraftScreen />;
 }

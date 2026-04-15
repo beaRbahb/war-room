@@ -79,6 +79,31 @@ export const DRAFT_ORDER: DraftSlot[] = [
   { pick: 32, team: "Seattle Seahawks", abbrev: "SEA" },
 ];
 
+/**
+ * Returns a new DraftSlot[] with teams swapped at the specified pick positions.
+ * Pick numbers stay fixed (1-32); only the team assignment at each slot changes.
+ */
+export function getEffectiveDraftOrder(
+  swaps: Array<{ pickA: number; pickB: number }>
+): DraftSlot[] {
+  const order = DRAFT_ORDER.map((slot) => ({ ...slot }));
+  for (const { pickA, pickB } of swaps) {
+    const a = order[pickA - 1];
+    const b = order[pickB - 1];
+    const swap = <K extends keyof DraftSlot>(key: K) => {
+      const tmp = a[key];
+      a[key] = b[key];
+      b[key] = tmp;
+    };
+    swap("team");
+    swap("abbrev");
+    swap("fromTeam");
+    swap("trade");
+    swap("tradeNote");
+  }
+  return order;
+}
+
 /** Pick number where Bears are on the clock */
 export const BEARS_PICK = 25;
 

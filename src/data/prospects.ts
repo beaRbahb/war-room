@@ -180,7 +180,11 @@ export const PROSPECTS: Prospect[] = [
     note: "Brother of AJ Terrell. 8 forced fumbles last 2 seasons. Feisty, short-area quickness, cover instincts.",
   },
   {
-    rank: 28, name: "Peter Woods", position: "DL", college: "Clemson" },
+    rank: 28, name: "Peter Woods", position: "DL", college: "Clemson",
+    height: "6'2½\"", weight: 298, age: 21,
+    proComp: "Christian Wilkins",
+    note: "Active brawler, not a tree stump. Lower-body explosiveness, splits doubles, good shed quickness. Short arms let blockers crowd him. Solid starter in an even front.",
+  },
   {
     rank: 29, name: "T.J. Parker", position: "EDGE", college: "Clemson",
     height: "6'3\"", weight: 263, age: 21, ras: 9.39,
@@ -200,8 +204,17 @@ export const PROSPECTS: Prospect[] = [
     note: "Classic run-stuffing nose tackle. Occupies double teams. Eats space. Needs to develop pass rush plan.",
   },
   {
-    rank: 32, name: "Cashius Howell", position: "EDGE", college: "Texas A&M" },
-  { rank: 33, name: "Ty Simpson", position: "QB", college: "Alabama" },
+    rank: 32, name: "Cashius Howell", position: "EDGE", college: "Texas A&M",
+    height: "6'2½\"", weight: 253, age: 23,
+    proComp: "Will McDonald IV",
+    note: "Bendy rusher with wicked inside spin counter. Three straight years of big sack totals. Gets knocked around in run defense. Designated rusher floor, three-down upside.",
+  },
+  {
+    rank: 33, name: "Ty Simpson", position: "QB", college: "Alabama",
+    height: "6'1\"", weight: 211, age: 22,
+    proComp: "Mac Jones",
+    note: "One-year starter, mechanically sound. Exceptional footwork, decisive in intermediate zones. Average arm limits ceiling. Needs patience and a developmental roadmap.",
+  },
   { rank: 34, name: "C.J. Allen", position: "LB", college: "Georgia" },
   { rank: 35, name: "Colton Hood", position: "CB", college: "Tennessee" },
   {

@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { PROSPECTS } from "../data/prospects";
 import { TEAM_NEEDS } from "../data/teamNeeds";
 import { getSlotOdds, getPickProb } from "../data/prospectOdds";
-import { getTeamLogo } from "../data/teams";
+import { getTeamLogo, getTeamColor } from "../data/teams";
 import { getHeadshot } from "../lib/headshots";
+import WagerInput from "./WagerInput";
 import type { DraftSlot } from "../data/draftOrder";
 
 interface Props {
@@ -13,12 +14,19 @@ interface Props {
   onSelect: (playerName: string) => void;
   onClear: () => void;
   onClose: () => void;
+  /** "bracket" = pre-draft, "live" = during draft */
+  mode?: "bracket" | "live";
+  /** Wager props for live mode */
+  wagerProps?: {
+    roomCode: string;
+    pickNumber: number;
+    currentLiveScore: number;
+    onWagerChange: (amount: number) => void;
+  };
+  /** Whether the user already submitted their guess (live mode) */
+  liveSubmitted?: boolean;
 }
 
-/** All unique positions for filter chips */
-const POSITIONS = [...new Set(PROSPECTS.map((p) => p.position))];
-
-type SortMode = "rank" | "value" | "need";
 
 export default function PlayerSelectionPanel({
   slot,
@@ -27,16 +35,16 @@ export default function PlayerSelectionPanel({
   onSelect,
   onClear,
   onClose,
+  mode = "bracket",
+  wagerProps,
+  liveSubmitted = false,
 }: Props) {
-  const [search, setSearch] = useState("");
-  const [posFilter, setPosFilter] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortMode>("rank");
-
   const teamNeeds = useMemo(
     () => TEAM_NEEDS[slot.abbrev] ?? [],
     [slot.abbrev]
   );
   const slotOdds = getSlotOdds(slot.pick);
+  const teamColor = getTeamColor(slot.abbrev);
 
   /** Available prospects (not already picked elsewhere, unless it's the current pick) */
   const available = useMemo(() => {
@@ -45,50 +53,11 @@ export default function PlayerSelectionPanel({
     );
   }, [selectedPlayers, currentPick]);
 
-  /** Filtered + sorted list */
-  const filtered = useMemo(() => {
-    let list = available;
-
-    // Search — also searches pro comp
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.college.toLowerCase().includes(q) ||
-          p.position.toLowerCase().includes(q) ||
-          (p.proComp && p.proComp.toLowerCase().includes(q))
-      );
-    }
-
-    // Position filter
-    if (posFilter) {
-      list = list.filter(
-        (p) => p.position === posFilter || p.position.includes(posFilter)
-      );
-    }
-
-    // Sort
-    if (sort === "rank") {
-      list = [...list].sort((a, b) => a.rank - b.rank);
-    } else if (sort === "value") {
-      // Partition: values first (rank < slot), then BPA, then reaches
-      list = [...list].sort((a, b) => a.rank - b.rank);
-      const values = list.filter((p) => p.rank <= slot.pick);
-      const reaches = list.filter((p) => p.rank > slot.pick);
-      list = [...values, ...reaches];
-    } else if (sort === "need") {
-      // Team needs first, then by rank
-      list = [...list].sort((a, b) => {
-        const aMatch = teamNeeds.includes(a.position) ? 0 : 1;
-        const bMatch = teamNeeds.includes(b.position) ? 0 : 1;
-        if (aMatch !== bMatch) return aMatch - bMatch;
-        return a.rank - b.rank;
-      });
-    }
-
-    return list;
-  }, [available, search, posFilter, sort, slot.pick, teamNeeds]);
+  /** Sorted by rank */
+  const filtered = useMemo(
+    () => [...available].sort((a, b) => a.rank - b.rank),
+    [available]
+  );
 
   function getReachValue(rank: number): {
     label: string;
@@ -113,176 +82,120 @@ export default function PlayerSelectionPanel({
       />
 
       {/* Panel — side panel on desktop, full sheet on mobile */}
-      <div className="fixed inset-y-0 right-0 z-50 w-full lg:w-[640px] xl:w-[720px] bg-bg border-l border-border flex flex-col animate-fade-in-up">
+      <div className="fixed inset-y-0 right-0 z-50 w-full lg:w-[720px] xl:w-[840px] bg-bg border-l border-border flex flex-col animate-fade-in-up">
         {/* ─── Team Context Header ─── */}
-        <div className="shrink-0 bg-surface border-b border-border px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {/* Team logo */}
-              <img
-                src={getTeamLogo(slot.abbrev)}
-                alt={slot.abbrev}
-                className="w-10 h-10 object-contain shrink-0"
-              />
-              <div>
+        <div className="shrink-0 border-t-[5px]" style={{ borderColor: teamColor }}>
+          <div className="flex items-center gap-5 px-5 py-4">
+            {/* Team logo — large */}
+            <img
+              src={getTeamLogo(slot.abbrev)}
+              alt={slot.abbrev}
+              className="w-24 h-24 object-contain shrink-0"
+            />
+
+            {/* All team info beside logo */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
                 <div className="flex items-baseline gap-2">
-                  <span className="font-mono text-sm text-muted">
+                  <span className="font-mono text-sm text-amber">
                     #{slot.pick}
                   </span>
-                  <span className="font-display text-xl text-white tracking-wide">
+                  <span className="font-display text-2xl text-white tracking-wide">
                     {slot.team}
                   </span>
                 </div>
-                {slot.fromTeam && (
-                  <p className="font-mono text-xs text-muted">
-                    via {slot.fromTeam}
-                  </p>
-                )}
-                {slot.trade && slot.tradeNote && (
-                  <p className="font-mono text-xs text-amber-dim">
-                    {slot.tradeNote}
-                  </p>
-                )}
+                <button
+                  onClick={onClose}
+                  className="text-muted hover:text-white font-mono text-xl px-2"
+                >
+                  ✕
+                </button>
               </div>
+
+              {slot.fromTeam && (
+                <p className="font-mono text-xs text-muted">
+                  via {slot.fromTeam}
+                </p>
+              )}
+              {slot.trade && slot.tradeNote && (
+                <p className="font-mono text-xs text-amber-dim">
+                  {slot.tradeNote}
+                </p>
+              )}
+
+              {/* Team needs */}
+              {teamNeeds.length > 0 && (
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <span className="font-condensed text-xs text-muted uppercase">
+                    Needs:
+                  </span>
+                  {teamNeeds.map((pos) => (
+                    <span
+                      key={pos}
+                      className="font-mono text-xs bg-surface-elevated border border-border rounded px-1.5 py-0.5 text-amber"
+                    >
+                      {pos}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Chalk + odds */}
+              {slotOdds && (
+                <div className="mt-1 flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-condensed text-xs text-muted uppercase">
+                      Chalk:
+                    </span>
+                    <span className="font-mono text-xs text-white">
+                      {slotOdds.expectedPlayer}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-condensed text-xs text-muted uppercase">
+                      Odds:
+                    </span>
+                    <span
+                      className={`font-mono text-xs ${
+                        slotOdds.odds.startsWith("-")
+                          ? "text-green"
+                          : "text-white"
+                      }`}
+                    >
+                      {slotOdds.odds}
+                    </span>
+                    <span className="font-mono text-xs text-muted">
+                      ({slotOdds.oddsType})
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-            <button
-              onClick={onClose}
-              className="text-muted hover:text-white font-mono text-xl px-2"
-            >
-              ✕
-            </button>
           </div>
-
-          {/* Team needs */}
-          {teamNeeds.length > 0 && (
-            <div className="mt-2 flex items-center gap-1.5">
-              <span className="font-condensed text-xs text-muted uppercase">
-                Needs:
-              </span>
-              {teamNeeds.map((pos) => (
-                <span
-                  key={pos}
-                  className="font-mono text-xs bg-surface-elevated border border-border rounded px-1.5 py-0.5 text-amber"
-                >
-                  {pos}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Slot odds + consensus pick */}
-          {slotOdds && (
-            <div className="mt-2 flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className="font-condensed text-xs text-muted uppercase">
-                  Chalk:
-                </span>
-                <span className="font-mono text-xs text-white">
-                  {slotOdds.expectedPlayer}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-condensed text-xs text-muted uppercase">
-                  Odds:
-                </span>
-                <span
-                  className={`font-mono text-xs ${
-                    slotOdds.odds.startsWith("-")
-                      ? "text-green"
-                      : "text-white"
-                  }`}
-                >
-                  {slotOdds.odds}
-                </span>
-                <span className="font-mono text-xs text-muted">
-                  ({slotOdds.oddsType})
-                </span>
-              </div>
-            </div>
-          )}
 
           {/* Current selection */}
           {currentPick && (
-            <div className="mt-2 flex items-center justify-between bg-surface-elevated border border-green/30 rounded px-3 py-1.5">
+            <div className="mx-5 mb-3 flex items-center justify-between bg-surface-elevated border border-green/30 rounded px-3 py-1.5">
               <span className="font-mono text-sm text-green">
-                Selected: {currentPick}
+                {liveSubmitted ? "LOCKED IN: " : "Selected: "}{currentPick}
               </span>
-              <button
-                onClick={onClear}
-                className="font-condensed text-xs text-red uppercase hover:text-red/80"
-              >
-                CLEAR
-              </button>
+              {!liveSubmitted && (
+                <button
+                  onClick={onClear}
+                  className="font-condensed text-xs text-red uppercase hover:text-red/80"
+                >
+                  CLEAR
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {/* ─── Search + Filter Bar ─── */}
-        <div className="shrink-0 px-4 py-3 border-b border-border space-y-2">
-          {/* Search input */}
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, college, position, pro comp..."
-            className="w-full bg-surface border border-border rounded px-3 py-2 text-sm text-white font-mono placeholder:text-muted focus:border-amber focus:outline-none"
-            autoFocus
-          />
-
-          {/* Position filter chips */}
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={() => setPosFilter(null)}
-              className={`font-condensed text-xs uppercase px-2 py-1 rounded border ${
-                posFilter === null
-                  ? "bg-amber text-bg border-amber"
-                  : "bg-surface border-border text-muted hover:text-white"
-              }`}
-            >
-              ALL
-            </button>
-            {POSITIONS.map((pos) => (
-              <button
-                key={pos}
-                onClick={() =>
-                  setPosFilter(posFilter === pos ? null : pos)
-                }
-                className={`font-condensed text-xs uppercase px-2 py-1 rounded border ${
-                  posFilter === pos
-                    ? "bg-amber text-bg border-amber"
-                    : "bg-surface border-border text-muted hover:text-white"
-                }`}
-              >
-                {pos}
-              </button>
-            ))}
-          </div>
-
-          {/* Sort toggle */}
-          <div className="flex items-center gap-1">
-            <span className="font-condensed text-xs text-muted uppercase mr-1">
-              Sort:
-            </span>
-            {(
-              [
-                ["rank", "RANK"],
-                ["value", "VALUE"],
-                ["need", "NEED"],
-              ] as [SortMode, string][]
-            ).map(([mode, label]) => (
-              <button
-                key={mode}
-                onClick={() => setSort(mode)}
-                className={`font-condensed text-xs uppercase px-2 py-1 rounded border ${
-                  sort === mode
-                    ? "bg-amber text-bg border-amber"
-                    : "bg-surface border-border text-muted hover:text-white"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        {/* ─── Divider with instruction ─── */}
+        <div className="shrink-0 flex items-center gap-3 px-5 py-2 bg-surface border-y border-border">
+          <div className="flex-1 h-px bg-border" />
+          <span className="font-condensed text-xs text-muted uppercase tracking-widest">Select a player</span>
+          <div className="flex-1 h-px bg-border" />
         </div>
 
         {/* ─── Prospect List ─── */}
@@ -290,11 +203,13 @@ export default function PlayerSelectionPanel({
           {/* Column headers */}
           <div className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-1.5 flex items-center gap-3">
             <span className="w-12 shrink-0" />
-            <div className="flex-1 flex items-center gap-4">
+            <div className="flex-1">
               <span className="font-condensed text-xs text-muted uppercase">Player</span>
             </div>
-            <div className="shrink-0 text-right">
-              <span className="font-condensed text-xs text-muted uppercase">ESPN Prob · Value</span>
+            <div className="shrink-0 flex items-center gap-2">
+              <span className="font-condensed text-xs text-muted uppercase w-12 text-right hidden sm:block">ESPN</span>
+              <span className="font-condensed text-xs text-muted uppercase w-16 text-center hidden sm:block">Value</span>
+              <span className="font-condensed text-xs text-muted uppercase w-12 text-center hidden sm:block">Need</span>
             </div>
           </div>
 
@@ -316,8 +231,9 @@ export default function PlayerSelectionPanel({
                 return (
                   <button
                     key={prospect.name}
-                    onClick={() => onSelect(prospect.name)}
-                    className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-colors hover:bg-surface-elevated ${
+                    onClick={() => !liveSubmitted && onSelect(prospect.name)}
+                    disabled={liveSubmitted}
+                    className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-colors ${liveSubmitted ? "opacity-50 cursor-not-allowed" : "hover:bg-surface-elevated"} ${
                       isSelected
                         ? "bg-surface-elevated border-l-2 border-l-green"
                         : isChalk
@@ -398,15 +314,7 @@ export default function PlayerSelectionPanel({
                             </span>
                           )}
                           {prospect.ras && (
-                            <span
-                              className={`font-mono text-xs ${
-                                prospect.ras >= 9.0
-                                  ? "text-green"
-                                  : prospect.ras >= 7.0
-                                    ? "text-amber"
-                                    : "text-muted"
-                              }`}
-                            >
+                            <span className="font-mono text-xs text-muted">
                               RAS {prospect.ras.toFixed(2)}
                             </span>
                           )}
@@ -421,31 +329,23 @@ export default function PlayerSelectionPanel({
                       )}
                     </div>
 
-                    {/* Right side: probability + reach/value + need */}
-                    <div className="shrink-0 text-right space-y-0.5 mt-0.5">
-                      {pickProb > 0 && (
-                        <div
-                          className={`font-mono text-xs font-bold ${
-                            pickProb >= 20
-                              ? "text-green"
-                              : pickProb >= 10
-                                ? "text-amber"
-                                : "text-muted"
-                          }`}
-                        >
-                          {pickProb}%
-                        </div>
-                      )}
-                      <div
-                        className={`font-condensed text-xs font-bold uppercase ${reachValue.color}`}
-                      >
+                    {/* Right side: ESPN prob, value, need as columns */}
+                    <div className="shrink-0 flex items-center gap-2 mt-0.5">
+                      <span className={`font-mono text-xs font-bold w-12 text-right hidden sm:block ${
+                        pickProb >= 20
+                          ? "text-green"
+                          : pickProb >= 10
+                            ? "text-amber"
+                            : "text-muted"
+                      }`}>
+                        {pickProb > 0 ? `${pickProb}%` : "—"}
+                      </span>
+                      <span className={`font-condensed text-xs font-bold uppercase w-16 text-center hidden sm:block ${reachValue.color}`}>
                         {reachValue.label}
-                      </div>
-                      {needsMatch && (
-                        <div className="font-condensed text-xs font-bold text-amber uppercase">
-                          NEED
-                        </div>
-                      )}
+                      </span>
+                      <span className="font-condensed text-xs font-bold uppercase w-12 text-center hidden sm:block">
+                        {needsMatch ? <span className="text-amber">NEED</span> : "—"}
+                      </span>
                     </div>
                   </button>
                 );
@@ -453,6 +353,19 @@ export default function PlayerSelectionPanel({
             </div>
           )}
         </div>
+
+        {/* ─── Wager (live mode only) ─── */}
+        {mode === "live" && wagerProps && !liveSubmitted && (
+          <div className="shrink-0 px-4 pb-2">
+            <WagerInput
+              roomCode={wagerProps.roomCode}
+              pickNumber={wagerProps.pickNumber}
+              currentLiveScore={wagerProps.currentLiveScore}
+              onWagerChange={wagerProps.onWagerChange}
+              submitted={liveSubmitted}
+            />
+          </div>
+        )}
 
         {/* ─── Footer: count ─── */}
         <div className="shrink-0 bg-surface border-t border-border px-4 py-2">

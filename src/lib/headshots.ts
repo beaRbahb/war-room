@@ -26,11 +26,19 @@ function toKebab(name: string): string {
     .replace(/[^a-z0-9-]/g, ""); // strip anything else
 }
 
+/** Name overrides for mismatched filenames */
+const NAME_OVERRIDES: Record<string, string> = {
+  "Akheem Mesidor": "ahkeem-mesidor",
+  "Omar Cooper Jr.": "omar-cooper",
+  "Kevin Concepcion": "kc-concepcion",
+  "Anthony Hill Jr.": "anthony-hill",
+};
+
 /**
  * Get the headshot URL for a prospect name.
  * Returns undefined if no image exists.
  */
 export function getHeadshot(name: string): string | undefined {
-  const key = toKebab(name);
+  const key = NAME_OVERRIDES[name] ?? toKebab(name);
   return imageByFilename[key];
 }

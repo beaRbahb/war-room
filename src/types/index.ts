@@ -39,6 +39,8 @@ export interface LiveState {
   tradeMode: boolean;
   bearsDoubleActive: boolean;
   trubiskyActive?: boolean;
+  /** Cumulative pick swaps — each entry swaps the teams at pickA and pickB */
+  swaps?: Array<{ pickA: number; pickB: number }>;
 }
 
 /** An official confirmed pick */
