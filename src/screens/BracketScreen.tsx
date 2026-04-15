@@ -170,6 +170,7 @@ export default function BracketScreen() {
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 mb-1 border-b border-border">
             <span className="w-8 shrink-0" />
             <span className="w-16 shrink-0" />
+            <span className="font-condensed text-sm text-white/70 uppercase w-20 hidden md:block font-bold">Trade</span>
             <span className="flex-1 font-condensed text-sm text-white/70 uppercase tracking-wide font-bold">Player</span>
             <div className="flex items-center gap-2 shrink-0">
               <span className="font-condensed text-sm text-white/70 uppercase w-14 text-center hidden md:block font-bold">Pos</span>
@@ -231,11 +232,11 @@ export default function BracketScreen() {
                       {slot.abbrev}
                     </span>
                   </div>
-                  {slot.trade && (
-                    <span className="font-condensed text-xs bg-amber-dim/30 text-amber border border-amber-dim rounded px-1.5 py-0.5 uppercase font-bold tracking-wide shrink-0">
-                      TRADE
-                    </span>
-                  )}
+
+                  {/* Trade column */}
+                  <span className="font-mono text-xs text-muted w-20 shrink-0 hidden md:block">
+                    {slot.fromTeam ? `via ${slot.fromTeam.split(" ").pop()}` : ""}
+                  </span>
 
                   {/* Player display or placeholder */}
                   {pick && prospect ? (
