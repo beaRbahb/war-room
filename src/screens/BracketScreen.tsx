@@ -173,7 +173,6 @@ export default function BracketScreen() {
             <span className="flex-1 font-condensed text-xs text-muted uppercase tracking-wide">Player</span>
             <div className="flex items-center gap-2 shrink-0">
               <span className="font-condensed text-xs text-muted uppercase w-14 text-center hidden md:block">Pos</span>
-              <span className="font-condensed text-xs text-muted uppercase w-32 hidden lg:block">Comp</span>
               <span className="font-condensed text-xs text-muted uppercase w-8 text-right">Rank</span>
               <span className="font-condensed text-xs text-muted uppercase w-12 text-right">ESPN</span>
               <span className="font-condensed text-xs text-muted uppercase w-16 text-center">Value</span>
@@ -258,11 +257,6 @@ export default function BracketScreen() {
                           {prospect.position}
                         </span>
 
-                        {/* Pro comp */}
-                        <span className="font-body text-xs text-muted italic truncate w-32 hidden lg:block">
-                          {prospect.proComp || "—"}
-                        </span>
-
                         {/* Consensus rank */}
                         <span className="font-mono text-xs text-muted w-8 text-right">
                           #{prospect.rank}
@@ -321,7 +315,6 @@ export default function BracketScreen() {
                     ) : (
                       <>
                         <span className="w-14 shrink-0 hidden md:block" />
-                        <span className="w-32 shrink-0 hidden lg:block" />
                         <span className="w-8 shrink-0" />
                         <span className="w-12 shrink-0" />
                         <span className="w-16 shrink-0" />
