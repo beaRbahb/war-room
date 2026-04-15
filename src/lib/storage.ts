@@ -15,6 +15,7 @@ import type {
   ConfirmedPick,
   UserReaction,
   UserScores,
+  Wager,
 } from "../types";
 
 // ── Path helpers ──
@@ -223,6 +224,60 @@ export function onAllReactions(
         : {}
     );
   });
+}
+
+// ── Wagers ──
+
+export async function submitWager(
+  code: string,
+  pickNum: number,
+  userName: string,
+  wager: Wager
+): Promise<void> {
+  await set(
+    ref(db, `${roomPath(code)}/wagers/pick${pickNum}/${userName}`),
+    wager
+  );
+}
+
+export function onWagers(
+  code: string,
+  pickNum: number,
+  cb: (wagers: Record<string, Wager>) => void
+): Unsubscribe {
+  return onValue(
+    ref(db, `${roomPath(code)}/wagers/pick${pickNum}`),
+    (snap) => {
+      cb(snap.exists() ? (snap.val() as Record<string, Wager>) : {});
+    }
+  );
+}
+
+export async function getAllWagers(
+  code: string
+): Promise<Record<string, Record<string, Wager>>> {
+  const snap = await get(ref(db, `${roomPath(code)}/wagers`));
+  return snap.exists()
+    ? (snap.val() as Record<string, Record<string, Wager>>)
+    : {};
+}
+
+export async function getAllGuesses(
+  code: string
+): Promise<Record<string, Record<string, string>>> {
+  const snap = await get(ref(db, `${roomPath(code)}/live_guesses`));
+  return snap.exists()
+    ? (snap.val() as Record<string, Record<string, string>>)
+    : {};
+}
+
+export async function getAllReactions(
+  code: string
+): Promise<Record<string, Record<string, UserReaction>>> {
+  const snap = await get(ref(db, `${roomPath(code)}/reactions`));
+  return snap.exists()
+    ? (snap.val() as Record<string, Record<string, UserReaction>>)
+    : {};
 }
 
 // ── Scores ──

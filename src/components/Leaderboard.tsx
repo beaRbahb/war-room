@@ -1,14 +1,20 @@
 import { useState } from "react";
 import type { UserScores, LeaderboardEntry } from "../types";
+import PersonaBadge from "./PersonaBadge";
+import type { PersonaType } from "../lib/personas";
 
 interface LeaderboardProps {
   scores: Record<string, UserScores>;
   roomCode: string;
+  /** Number of confirmed picks so far */
+  totalPicks: number;
+  /** Persona assignments (post-draft only) */
+  personas?: Record<string, PersonaType>;
 }
 
 type LeaderboardTab = "live" | "bracket";
 
-export default function Leaderboard({ scores, roomCode }: LeaderboardProps) {
+export default function Leaderboard({ scores, roomCode, totalPicks, personas }: LeaderboardProps) {
   const [tab, setTab] = useState<LeaderboardTab>("live");
   const [expanded, setExpanded] = useState(false);
 
@@ -19,6 +25,9 @@ export default function Leaderboard({ scores, roomCode }: LeaderboardProps) {
       bracketScore: s.bracketScore,
       liveScore: s.liveScore,
       totalScore: s.bracketScore + s.liveScore,
+      liveHits: s.liveHits || 0,
+      bracketExact: s.bracketExact || 0,
+      bracketPartial: s.bracketPartial || 0,
     }))
     .sort((a, b) => {
       const scoreA = tab === "live" ? a.liveScore : a.bracketScore;
@@ -86,9 +95,23 @@ export default function Leaderboard({ scores, roomCode }: LeaderboardProps) {
                   <span className="font-mono text-xs text-muted w-5 text-right">
                     {i + 1}.
                   </span>
-                  <span className="font-condensed text-sm text-white font-bold">
-                    {entry.name}
-                  </span>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-condensed text-sm text-white font-bold">
+                        {entry.name}
+                      </span>
+                      {personas?.[entry.name] && (
+                        <PersonaBadge persona={personas[entry.name]} />
+                      )}
+                    </div>
+                    <p className="font-mono text-xs text-muted">
+                      {tab === "live" ? (
+                        `${entry.liveHits}/${totalPicks} correct`
+                      ) : (
+                        `${entry.bracketExact} exact · ${entry.bracketPartial} partial`
+                      )}
+                    </p>
+                  </div>
                 </div>
                 <span className="font-mono text-lg text-amber font-bold">
                   {score}

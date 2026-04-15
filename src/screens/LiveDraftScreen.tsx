@@ -31,6 +31,15 @@ import CommissionerPanel from "../components/CommissionerPanel";
 import Leaderboard from "../components/Leaderboard";
 import BearsMode from "../components/BearsMode";
 import Confetti from "../components/Confetti";
+import TrubiskyOverlay from "../components/TrubiskyOverlay";
+import ChaosFlash from "../components/ChaosFlash";
+import { calcChaosScore } from "../lib/chaos";
+import { assignPersonas, type PersonaType } from "../lib/personas";
+import { getAllGuesses, getAllReactions } from "../lib/storage";
+import { calcUserRecap, calcRoomRecap, type UserRecapStats, type RoomRecapStats } from "../lib/recap";
+import RecapCard from "../components/RecapCard";
+import RoomRecap from "../components/RoomRecap";
+import type { LeaderboardEntry } from "../types";
 
 export default function LiveDraftScreen() {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -47,8 +56,16 @@ export default function LiveDraftScreen() {
   const [guessCount, setGuessCount] = useState(0);
   const [showBearsMode, setShowBearsMode] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [chaosFlash, setChaosFlash] = useState<{ slot: number; playerName: string } | null>(null);
   const [revealedPicks, setRevealedPicks] = useState<Set<number>>(new Set());
   const [, setLastRevealedPick] = useState<number>(0);
+  const [personas, setPersonas] = useState<Record<string, PersonaType>>({});
+  const [showRecap, setShowRecap] = useState(false);
+  const [recapData, setRecapData] = useState<{
+    users: UserRecapStats[];
+    room: RoomRecapStats;
+    entries: LeaderboardEntry[];
+  } | null>(null);
   const processedPicks = useRef<Set<number>>(new Set());
 
   // Redirect if no session
@@ -118,6 +135,12 @@ export default function LiveDraftScreen() {
     }, REVEAL_PAUSE_MS);
     setLastRevealedPick(latest.pick);
 
+    // Chaos flash (only for non-chalk picks)
+    const chaos = calcChaosScore(latest.pick, latest.playerName);
+    if (chaos.score > 30) {
+      setChaosFlash({ slot: latest.pick, playerName: latest.playerName });
+    }
+
     // Bears mode?
     if (latest.isBearsPick) {
       setShowBearsMode(true);
@@ -131,23 +154,29 @@ export default function LiveDraftScreen() {
 
         if (guesses[session.name] === latest.playerName) {
           setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 3000);
+          setTimeout(() => setShowConfetti(false), 5500);
         }
 
         // Recalculate scores for all users
         const allUsers = Object.values(users);
         allUsers.forEach((user) => {
-          const bracketScore = calcBracketScore(
+          const bracket = calcBracketScore(
             brackets[user.name] || null,
             confirmedPicks
           );
-          const liveScore = calcLiveScore(
+          const live = calcLiveScore(
             user.name,
             confirmedPicks,
             { ...allGuesses, [pickGuessKey]: guesses },
             new Set() // TODO: track bears double picks
           );
-          updateScores(roomCode, user.name, { bracketScore, liveScore });
+          updateScores(roomCode, user.name, {
+            bracketScore: bracket.score,
+            liveScore: live.score,
+            liveHits: live.hits,
+            bracketExact: bracket.exact,
+            bracketPartial: bracket.partial,
+          });
         });
 
         unsub();
@@ -166,6 +195,51 @@ export default function LiveDraftScreen() {
     (s) => s.pick === (liveState?.currentPick || 1)
   );
 
+  // Compute personas + recap data when all 32 picks are in
+  useEffect(() => {
+    if (!roomCode || confirmedPicks.length < 32) return;
+
+    async function compute() {
+      const [guesses, reactions] = await Promise.all([
+        getAllGuesses(roomCode!),
+        getAllReactions(roomCode!),
+      ]);
+
+      // Personas
+      const personaResult = assignPersonas(confirmedPicks, guesses, brackets, scores, reactions);
+      setPersonas(personaResult);
+
+      // Recap data
+      const sortedEntries: LeaderboardEntry[] = Object.entries(scores)
+        .map(([name, s]) => ({
+          name,
+          bracketScore: s.bracketScore,
+          liveScore: s.liveScore,
+          totalScore: s.bracketScore + s.liveScore,
+          liveHits: s.liveHits || 0,
+          bracketExact: s.bracketExact || 0,
+          bracketPartial: s.bracketPartial || 0,
+        }))
+        .sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name));
+
+      const userRecaps = sortedEntries.map((entry, i) =>
+        calcUserRecap(
+          entry.name,
+          brackets[entry.name] || null,
+          confirmedPicks,
+          guesses,
+          scores[entry.name],
+          i + 1
+        )
+      );
+
+      const roomRecap = calcRoomRecap(confirmedPicks, guesses, scores);
+
+      setRecapData({ users: userRecaps, room: roomRecap, entries: sortedEntries });
+    }
+    compute();
+  }, [roomCode, confirmedPicks, brackets, scores]);
+
   const handleBearsModeComplete = useCallback(() => {
     setShowBearsMode(false);
   }, []);
@@ -180,6 +254,20 @@ export default function LiveDraftScreen() {
     <div className="min-h-dvh bg-bg flex flex-col">
       {/* Bears Mode overlay */}
       {showBearsMode && <BearsMode onComplete={handleBearsModeComplete} />}
+
+      {/* Trubisky overlay */}
+      {liveState?.trubiskyActive && (
+        <TrubiskyOverlay onComplete={() => {/* Firebase auto-resets via commissioner timeout */}} />
+      )}
+
+      {/* Chaos flash */}
+      {chaosFlash && (
+        <ChaosFlash
+          slot={chaosFlash.slot}
+          playerName={chaosFlash.playerName}
+          onComplete={() => setChaosFlash(null)}
+        />
+      )}
 
       {/* Confetti */}
       {showConfetti && <Confetti />}
@@ -215,8 +303,46 @@ export default function LiveDraftScreen() {
               </p>
             )}
           </div>
+          {confirmedPicks.length >= 32 && recapData && (
+            <button
+              onClick={() => setShowRecap(true)}
+              className="bg-amber text-bg font-condensed font-bold uppercase text-xs px-3 py-1.5 rounded hover:brightness-110 transition-all"
+            >
+              VIEW RECAP
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Recap overlay */}
+      {showRecap && recapData && (
+        <div className="fixed inset-0 z-[90] bg-bg/95 overflow-auto">
+          <div className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
+            <h2 className="font-display text-2xl text-amber tracking-wide">
+              DRAFT RECAP
+            </h2>
+            <button
+              onClick={() => setShowRecap(false)}
+              className="text-muted hover:text-white font-mono text-sm"
+            >
+              CLOSE
+            </button>
+          </div>
+          <div className="p-4 flex flex-wrap gap-4 justify-center">
+            {/* Room summary first */}
+            <RoomRecap stats={recapData.room} entries={recapData.entries} roomCode={roomCode} />
+            {/* Per-user cards */}
+            {recapData.users.map((userStats) => (
+              <RecapCard
+                key={userStats.name}
+                stats={userStats}
+                persona={personas[userStats.name]}
+                roomCode={roomCode}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Main content — pick feed */}
@@ -257,7 +383,7 @@ export default function LiveDraftScreen() {
         </div>
 
         {/* Leaderboard */}
-        <Leaderboard scores={scores} roomCode={roomCode} />
+        <Leaderboard scores={scores} roomCode={roomCode} totalPicks={confirmedPicks.length} personas={confirmedPicks.length >= 32 ? personas : undefined} />
       </div>
 
       {/* Pick window popup */}
@@ -272,6 +398,8 @@ export default function LiveDraftScreen() {
           guessCount={guessCount}
           totalUsers={totalUsers}
           onClose={handleWindowClose}
+          isCommissioner={session.isCommissioner}
+          currentLiveScore={scores[session.name]?.liveScore || 0}
         />
       )}
 

@@ -106,6 +106,13 @@ export default function CommissionerPanel({
     });
   }
 
+  async function handleTrubisky() {
+    await updateLiveState(roomCode, { trubiskyActive: true });
+    setTimeout(() => {
+      updateLiveState(roomCode, { trubiskyActive: false });
+    }, 4000);
+  }
+
   if (!showPanel) {
     return (
       <button
@@ -241,6 +248,15 @@ export default function CommissionerPanel({
               {liveState.bearsDoubleActive ? "2x ON" : "BEARS 2x"}
             </button>
           </div>
+
+          {/* Trubisky button */}
+          <button
+            onClick={handleTrubisky}
+            disabled={liveState.windowOpen}
+            className="w-full bg-bears-navy border border-bears-orange text-bears-orange font-condensed font-bold uppercase py-2 rounded text-xs hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            TRUBISKY
+          </button>
         </div>
       </div>
 

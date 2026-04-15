@@ -38,6 +38,7 @@ export interface LiveState {
   teamOnClock: string; // team abbreviation
   tradeMode: boolean;
   bearsDoubleActive: boolean;
+  trubiskyActive?: boolean;
 }
 
 /** An official confirmed pick */
@@ -49,25 +50,25 @@ export interface ConfirmedPick {
   isBearsPick: boolean;
 }
 
-/** Reaction types */
-export type ReactionType = "love" | "like" | "meh" | "bad" | "hate";
+/** Reaction types — draft grades */
+export type ReactionType = "a-plus" | "a" | "b" | "c" | "f";
 
-/** Reaction emoji mapping */
-export const REACTION_EMOJI: Record<ReactionType, string> = {
-  love: "\u2764\uFE0F",
-  like: "\u{1F44D}",
-  meh: "\u{1F610}",
-  bad: "\u{1F44E}",
-  hate: "\u{1F480}",
+/** Display labels for each grade */
+export const REACTION_GRADES: Record<ReactionType, string> = {
+  "a-plus": "A+",
+  a: "A",
+  b: "B",
+  c: "C",
+  f: "F",
 };
 
-/** Reaction labels */
-export const REACTION_LABELS: Record<ReactionType, string> = {
-  love: "LOVE",
-  like: "LIKE",
-  meh: "MEH",
-  bad: "BAD",
-  hate: "HATE",
+/** Color classes for each grade */
+export const REACTION_COLORS: Record<ReactionType, string> = {
+  "a-plus": "text-green bg-green/10 border-green/30",
+  a: "text-green/70 bg-green/5 border-green/20",
+  b: "text-amber bg-amber/10 border-amber/30",
+  c: "text-muted bg-surface-elevated border-border",
+  f: "text-red bg-red/10 border-red/30",
 };
 
 /** A user's reaction to a pick */
@@ -80,6 +81,9 @@ export interface UserReaction {
 export interface UserScores {
   bracketScore: number;
   liveScore: number;
+  liveHits: number;
+  bracketExact: number;
+  bracketPartial: number;
 }
 
 /** Leaderboard entry */
@@ -88,6 +92,15 @@ export interface LeaderboardEntry {
   bracketScore: number;
   liveScore: number;
   totalScore: number;
+  liveHits: number;
+  bracketExact: number;
+  bracketPartial: number;
+}
+
+/** A wager on a live pick */
+export interface Wager {
+  amount: number;
+  playerName: string;
 }
 
 /** App-level user session (stored in localStorage) */

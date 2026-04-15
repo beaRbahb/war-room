@@ -1,0 +1,64 @@
+import { useEffect, useState } from "react";
+import { calcChaosScore, type ChaosLevel } from "../lib/chaos";
+
+interface ChaosFlashProps {
+  slot: number;
+  playerName: string;
+  onComplete: () => void;
+}
+
+const BG_COLORS: Record<ChaosLevel, string> = {
+  CHALK: "bg-muted/40",
+  MILD: "bg-amber/30",
+  SPICY: "bg-bears-orange/40",
+  CHAOS: "bg-red/50",
+};
+
+const TEXT_COLORS: Record<ChaosLevel, string> = {
+  CHALK: "text-muted",
+  MILD: "text-amber",
+  SPICY: "text-bears-orange",
+  CHAOS: "text-red",
+};
+
+const DURATIONS: Record<ChaosLevel, number> = {
+  CHALK: 1500,
+  MILD: 1500,
+  SPICY: 2500,
+  CHAOS: 2500,
+};
+
+/**
+ * Brief full-screen chaos score flash on pick confirmation.
+ * Pointer-events-none so it doesn't block interaction.
+ */
+export default function ChaosFlash({ slot, playerName, onComplete }: ChaosFlashProps) {
+  const [visible, setVisible] = useState(true);
+  const { score, level } = calcChaosScore(slot, playerName);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setVisible(false);
+      onComplete();
+    }, DURATIONS[level]);
+
+    return () => clearTimeout(timer);
+  }, [level, onComplete]);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className={`fixed inset-0 z-[60] flex items-center justify-center pointer-events-none ${BG_COLORS[level]}`}
+    >
+      <div className="animate-fade-in-up text-center">
+        <p className={`font-mono text-7xl sm:text-9xl font-bold ${TEXT_COLORS[level]}`}>
+          {score}
+        </p>
+        <p className={`font-display text-3xl sm:text-5xl tracking-wider ${TEXT_COLORS[level]}`}>
+          {level}
+        </p>
+      </div>
+    </div>
+  );
+}

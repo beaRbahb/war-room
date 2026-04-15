@@ -4,7 +4,7 @@ import {
   LIVE_CORRECT,
   LIVE_CORRECT_BEARS_DOUBLE,
 } from "../data/scoring";
-import type { ConfirmedPick, UserBracket } from "../types";
+import type { ConfirmedPick, UserBracket, Wager } from "../types";
 
 /**
  * Calculate bracket score for a user based on all confirmed picks.
@@ -13,10 +13,12 @@ import type { ConfirmedPick, UserBracket } from "../types";
 export function calcBracketScore(
   bracket: UserBracket | null,
   confirmedPicks: ConfirmedPick[]
-): number {
-  if (!bracket?.picks) return 0;
+): { score: number; exact: number; partial: number } {
+  if (!bracket?.picks) return { score: 0, exact: 0, partial: 0 };
 
   let score = 0;
+  let exact = 0;
+  let partial = 0;
   for (const confirmed of confirmedPicks) {
     // Check exact match (player in correct slot)
     const exactMatch = bracket.picks.find(
@@ -25,6 +27,7 @@ export function calcBracketScore(
     );
     if (exactMatch) {
       score += BRACKET_EXACT_MATCH;
+      exact++;
       continue;
     }
 
@@ -34,10 +37,11 @@ export function calcBracketScore(
     );
     if (playerMatch) {
       score += BRACKET_PLAYER_ONLY;
+      partial++;
     }
   }
 
-  return score;
+  return { score, exact, partial };
 }
 
 /**
@@ -75,26 +79,39 @@ export function getBracketHitsForPick(
 
 /**
  * Calculate live score for a user based on all confirmed picks and their guesses.
+ * Optionally includes wager bonuses/penalties.
  */
 export function calcLiveScore(
   userName: string,
   confirmedPicks: ConfirmedPick[],
   allGuesses: Record<string, Record<string, string>>,
-  bearsDoublePicks: Set<number>
-): number {
+  bearsDoublePicks: Set<number>,
+  allWagers?: Record<string, Record<string, Wager>>
+): { score: number; hits: number } {
   let score = 0;
+  let hits = 0;
 
   for (const pick of confirmedPicks) {
-    const pickGuesses = allGuesses[`pick${pick.pick}`];
+    const pickKey = `pick${pick.pick}`;
+    const pickGuesses = allGuesses[pickKey];
     if (!pickGuesses) continue;
 
     const guess = pickGuesses[userName];
-    if (guess === pick.playerName) {
+    const correct = guess === pick.playerName;
+
+    if (correct) {
+      hits++;
       score += bearsDoublePicks.has(pick.pick)
         ? LIVE_CORRECT_BEARS_DOUBLE
         : LIVE_CORRECT;
     }
+
+    // Wager bonus/penalty
+    const wager = allWagers?.[pickKey]?.[userName];
+    if (wager && wager.amount > 0) {
+      score += correct ? wager.amount : -wager.amount;
+    }
   }
 
-  return score;
+  return { score: Math.max(0, score), hits };
 }
