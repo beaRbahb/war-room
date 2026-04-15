@@ -6,7 +6,7 @@ import { BRACKET_LOCK_TIME } from "../data/scoring";
 import { TEAM_NEEDS } from "../data/teamNeeds";
 import { getPickProb } from "../data/prospectOdds";
 import { getTeamLogo } from "../data/teams";
-import { saveBracket, getBracket, onRoomConfig } from "../lib/storage";
+import { saveBracket, getBracket, onRoomConfig, updateRoomStatus } from "../lib/storage";
 import { getSession } from "../lib/session";
 import PlayerSelectionPanel from "../components/PlayerSelectionPanel";
 import type { BracketPick, UserBracket } from "../types";
@@ -24,6 +24,8 @@ export default function BracketScreen() {
   const [countdown, setCountdown] = useState("");
   const [showReference, setShowReference] = useState(false);
   const [, setRoomStatus] = useState<string>("bracket");
+
+  const [showStartConfirm, setShowStartConfirm] = useState(false);
 
   /** Which slot index (0-31) has the selection panel open, or null */
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
@@ -369,6 +371,45 @@ export default function BracketScreen() {
           onClear={() => handlePickClear(activeSlot)}
           onClose={() => setActiveSlot(null)}
         />
+      )}
+
+      {/* Commissioner: Start Draft */}
+      {session.isCommissioner && (
+        <button
+          onClick={() => setShowStartConfirm(true)}
+          className="fixed bottom-4 left-4 z-20 bg-green text-bg font-condensed font-bold uppercase px-6 py-3 rounded-full shadow-lg hover:brightness-110 transition-all"
+        >
+          START DRAFT
+        </button>
+      )}
+
+      {showStartConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-surface border border-green rounded-xl p-6 max-w-sm w-full">
+            <p className="font-display text-xl text-green mb-2">GO LIVE?</p>
+            <p className="font-condensed text-white mb-4">
+              This will lock all brackets and start the live draft. Everyone in the room will be moved to the draft screen.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  if (!roomCode) return;
+                  await updateRoomStatus(roomCode, "live");
+                  setShowStartConfirm(false);
+                }}
+                className="flex-1 bg-green text-bg font-condensed font-bold uppercase py-2.5 rounded"
+              >
+                GO LIVE
+              </button>
+              <button
+                onClick={() => setShowStartConfirm(false)}
+                className="flex-1 bg-surface-elevated border border-border text-white font-condensed font-bold uppercase py-2.5 rounded"
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
