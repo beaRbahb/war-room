@@ -167,16 +167,16 @@ export default function BracketScreen() {
         {/* Bracket Grid */}
         <div className="flex-1 p-4 overflow-auto">
           {/* Column headers */}
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 mb-1">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 mb-1 border-b border-border">
             <span className="w-8 shrink-0" />
             <span className="w-16 shrink-0" />
-            <span className="flex-1 font-condensed text-xs text-muted uppercase tracking-wide">Player</span>
+            <span className="flex-1 font-condensed text-sm text-white/70 uppercase tracking-wide font-bold">Player</span>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="font-condensed text-xs text-muted uppercase w-14 text-center hidden md:block">Pos</span>
-              <span className="font-condensed text-xs text-muted uppercase w-8 text-right">Rank</span>
-              <span className="font-condensed text-xs text-muted uppercase w-12 text-right">ESPN</span>
-              <span className="font-condensed text-xs text-muted uppercase w-16 text-center">Value</span>
-              <span className="font-condensed text-xs text-muted uppercase w-12 text-center">Need</span>
+              <span className="font-condensed text-sm text-white/70 uppercase w-14 text-center hidden md:block font-bold">Pos</span>
+              <span className="font-condensed text-sm text-white/70 uppercase w-8 text-right font-bold">Rank</span>
+              <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold">ESPN</span>
+              <span className="font-condensed text-sm text-white/70 uppercase w-16 text-center font-bold">Value</span>
+              <span className="font-condensed text-sm text-white/70 uppercase w-12 text-center font-bold">Need</span>
               <span className="w-5 shrink-0" />
             </div>
           </div>
@@ -266,17 +266,7 @@ export default function BracketScreen() {
                         {(() => {
                           const prob = getPickProb(slot.pick, prospect.name);
                           return (
-                            <span
-                              className={`font-mono text-xs w-12 text-right ${
-                                prob >= 20
-                                  ? "text-green"
-                                  : prob >= 10
-                                    ? "text-amber"
-                                    : prob > 0
-                                      ? "text-muted"
-                                      : "text-muted/50"
-                              }`}
-                            >
+                            <span className="font-mono text-xs w-12 text-right text-muted">
                               {prob > 0 ? `${prob}%` : "—"}
                             </span>
                           );
