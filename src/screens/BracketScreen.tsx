@@ -1,0 +1,375 @@
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { DRAFT_ORDER } from "../data/draftOrder";
+import { PROSPECTS } from "../data/prospects";
+import { BRACKET_LOCK_TIME } from "../data/scoring";
+import { TEAM_NEEDS } from "../data/teamNeeds";
+import { getPickProb } from "../data/prospectOdds";
+import { getTeamLogo } from "../data/teams";
+import { saveBracket, getBracket, onRoomConfig } from "../lib/storage";
+import { getSession } from "../lib/session";
+import PlayerSelectionPanel from "../components/PlayerSelectionPanel";
+import type { BracketPick, UserBracket } from "../types";
+
+export default function BracketScreen() {
+  const { roomCode } = useParams<{ roomCode: string }>();
+  const navigate = useNavigate();
+  const session = getSession();
+
+  const [picks, setPicks] = useState<(BracketPick | null)[]>(
+    Array(32).fill(null)
+  );
+  const [locked, setLocked] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [countdown, setCountdown] = useState("");
+  const [showReference, setShowReference] = useState(false);
+  const [, setRoomStatus] = useState<string>("bracket");
+
+  /** Which slot index (0-31) has the selection panel open, or null */
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+
+  // Redirect if no session
+  useEffect(() => {
+    if (!session || session.roomCode !== roomCode) {
+      navigate("/");
+    }
+  }, [session, roomCode, navigate]);
+
+  // Load existing bracket
+  useEffect(() => {
+    if (!roomCode || !session) return;
+    getBracket(roomCode, session.name).then((bracket) => {
+      if (bracket?.picks) {
+        const loaded: (BracketPick | null)[] = Array(32).fill(null);
+        bracket.picks.forEach((p) => {
+          if (p && p.slot >= 1 && p.slot <= 32) {
+            loaded[p.slot - 1] = p;
+          }
+        });
+        setPicks(loaded);
+        if (bracket.submittedAt) setSubmitted(true);
+      }
+    });
+  }, [roomCode, session?.name]);
+
+  // Watch room status for redirect to live
+  useEffect(() => {
+    if (!roomCode) return;
+    return onRoomConfig(roomCode, (config) => {
+      if (config?.status === "live") {
+        setRoomStatus("live");
+        navigate(`/room/${roomCode}/live`);
+      }
+    });
+  }, [roomCode, navigate]);
+
+  // Countdown timer
+  useEffect(() => {
+    function tick() {
+      const now = Date.now();
+      const lockMs = BRACKET_LOCK_TIME.getTime();
+      const diff = lockMs - now;
+
+      if (diff <= 0) {
+        setLocked(true);
+        setCountdown("LOCKED");
+        return;
+      }
+
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown(`${d}d ${h}h ${m}m ${s}s`);
+    }
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Which players are already selected
+  const selectedPlayers = useMemo(
+    () => new Set(picks.filter(Boolean).map((p) => p!.playerName)),
+    [picks]
+  );
+
+  function handlePickSelect(slotIndex: number, playerName: string) {
+    if (locked) return;
+    setPicks((prev) => {
+      const next = [...prev];
+      next[slotIndex] = {
+        slot: slotIndex + 1,
+        playerName,
+      };
+      return next;
+    });
+    setActiveSlot(null);
+  }
+
+  function handlePickClear(slotIndex: number) {
+    if (locked) return;
+    setPicks((prev) => {
+      const next = [...prev];
+      next[slotIndex] = null;
+      return next;
+    });
+    setActiveSlot(null);
+  }
+
+  async function handleSubmit() {
+    if (!roomCode || !session || locked) return;
+
+    const bracket: UserBracket = {
+      userName: session.name,
+      picks: picks.filter(Boolean) as BracketPick[],
+      submittedAt: new Date().toISOString(),
+    };
+
+    await saveBracket(roomCode, session.name, bracket);
+    setSubmitted(true);
+  }
+
+  /** Find the prospect object for a selected player name */
+  function getProspect(name: string) {
+    return PROSPECTS.find((p) => p.name === name);
+  }
+
+  if (!session) return null;
+
+  return (
+    <div className="min-h-dvh bg-bg flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl text-amber tracking-wide">
+            PRE-DRAFT BRACKET
+          </h1>
+          <p className="font-mono text-xs text-muted">
+            {session.name} — Room {roomCode}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-sm text-amber">
+            {locked ? "\u{1F512}" : "\u{1F513}"} {countdown}
+          </p>
+          {submitted && (
+            <p className="font-condensed text-xs text-green uppercase">
+              Submitted
+            </p>
+          )}
+        </div>
+      </header>
+
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Bracket Grid */}
+        <div className="flex-1 p-4 overflow-auto">
+          <div className="space-y-1">
+            {DRAFT_ORDER.map((slot, i) => {
+              const pick = picks[i];
+              const prospect = pick ? getProspect(pick.playerName) : null;
+              const needsMatch =
+                prospect &&
+                TEAM_NEEDS[slot.abbrev]?.includes(prospect.position);
+              const rankDiff = prospect
+                ? prospect.rank - slot.pick
+                : 0;
+
+              return (
+                <button
+                  key={slot.pick}
+                  onClick={() => !locked && setActiveSlot(i)}
+                  disabled={locked}
+                  className={`w-full flex items-center gap-2 bg-surface border rounded px-3 py-2 text-left transition-colors disabled:opacity-50 ${
+                    activeSlot === i
+                      ? "border-amber"
+                      : pick
+                        ? "border-border hover:border-border-bright"
+                        : "border-border hover:border-amber/50"
+                  }`}
+                >
+                  {/* Pick number */}
+                  <span className="font-mono text-sm text-muted w-8 text-right shrink-0">
+                    {slot.pick}
+                  </span>
+
+                  {/* Team logo + abbrev */}
+                  <div className="flex items-center gap-1.5 w-16 shrink-0">
+                    <img
+                      src={getTeamLogo(slot.abbrev)}
+                      alt={slot.abbrev}
+                      className="w-6 h-6 object-contain shrink-0"
+                    />
+                    <span className="font-condensed text-sm text-white uppercase">
+                      {slot.abbrev}
+                    </span>
+                    {slot.trade && (
+                      <span className="text-amber text-xs font-mono">T</span>
+                    )}
+                  </div>
+
+                  {/* Player display or placeholder */}
+                  {pick && prospect ? (
+                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                      <span className="font-condensed font-bold text-sm text-white truncate">
+                        {prospect.name}
+                      </span>
+                      <span className="font-mono text-xs text-muted shrink-0">
+                        {prospect.position}
+                      </span>
+                      {prospect.proComp && (
+                        <span className="font-body text-xs text-muted italic truncate hidden md:inline">
+                          — {prospect.proComp}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="flex-1 font-mono text-sm text-muted">
+                      — Select player —
+                    </span>
+                  )}
+
+                  {/* Inline stats (only when player selected) */}
+                  {pick && prospect && (
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                      {/* Consensus rank */}
+                      <span className="font-mono text-xs text-muted w-8 text-right">
+                        #{prospect.rank}
+                      </span>
+
+                      {/* ESPN pick probability */}
+                      {prospect && (() => {
+                        const prob = getPickProb(slot.pick, prospect.name);
+                        return (
+                          <span
+                            className={`font-mono text-xs w-12 text-right ${
+                              prob >= 20
+                                ? "text-green"
+                                : prob >= 10
+                                  ? "text-amber"
+                                  : prob > 0
+                                    ? "text-muted"
+                                    : "text-muted/50"
+                            }`}
+                          >
+                            {prob > 0 ? `${prob}%` : "—"}
+                          </span>
+                        );
+                      })()}
+
+                      {/* Reach/Value badge */}
+                      <span
+                        className={`font-condensed text-xs font-bold uppercase w-16 text-center ${
+                          rankDiff > 8
+                            ? "text-red"
+                            : rankDiff > 3
+                              ? "text-red/70"
+                              : rankDiff < -8
+                                ? "text-green"
+                                : rankDiff < -3
+                                  ? "text-green/70"
+                                  : "text-amber"
+                        }`}
+                      >
+                        {rankDiff > 8
+                          ? "REACH"
+                          : rankDiff > 3
+                            ? "REACH"
+                            : rankDiff < -8
+                              ? "STEAL"
+                              : rankDiff < -3
+                                ? "VALUE"
+                                : "BPA"}
+                      </span>
+
+                      {/* Need match */}
+                      {needsMatch && (
+                        <span className="font-condensed text-xs font-bold text-amber uppercase">
+                          NEED
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Status indicator */}
+                  {pick ? (
+                    <span className="text-green text-sm shrink-0">✓</span>
+                  ) : (
+                    <span className="text-muted text-sm shrink-0">›</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Submit */}
+          {!locked && (
+            <button
+              onClick={handleSubmit}
+              className="mt-4 w-full bg-amber text-bg font-condensed font-bold uppercase tracking-wide py-3 rounded hover:brightness-110 transition-all"
+            >
+              {submitted ? "UPDATE BRACKET" : "SUBMIT BRACKET"}
+            </button>
+          )}
+        </div>
+
+        {/* Reference Panel — desktop sidebar, mobile toggle */}
+        <button
+          onClick={() => setShowReference(!showReference)}
+          className="lg:hidden fixed bottom-4 right-4 z-20 bg-amber text-bg font-condensed font-bold px-4 py-2 rounded-full shadow-lg"
+        >
+          {showReference ? "CLOSE" : "BIG BOARD"}
+        </button>
+
+        <div
+          className={`${
+            showReference ? "fixed inset-0 z-30 bg-bg/95 pt-16" : "hidden"
+          } lg:block lg:static lg:w-72 lg:border-l lg:border-border overflow-auto`}
+        >
+          <div className="p-4">
+            <h2 className="font-display text-lg text-amber mb-3 tracking-wide">
+              CONSENSUS BOARD
+            </h2>
+            <div className="space-y-0.5">
+              {PROSPECTS.map((p) => (
+                <div
+                  key={p.rank}
+                  className={`flex items-baseline gap-2 text-xs font-mono py-0.5 ${
+                    selectedPlayers.has(p.name)
+                      ? "text-muted line-through"
+                      : "text-white"
+                  }`}
+                >
+                  <span className="text-muted w-6 text-right">{p.rank}</span>
+                  <span className="flex-1">{p.name}</span>
+                  <span className="text-muted">{p.position}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Mobile close */}
+          {showReference && (
+            <button
+              onClick={() => setShowReference(false)}
+              className="lg:hidden fixed top-4 right-4 z-40 text-amber font-mono text-xl"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Player Selection Panel */}
+      {activeSlot !== null && (
+        <PlayerSelectionPanel
+          slot={DRAFT_ORDER[activeSlot]}
+          selectedPlayers={selectedPlayers}
+          currentPick={picks[activeSlot]?.playerName ?? null}
+          onSelect={(name) => handlePickSelect(activeSlot, name)}
+          onClear={() => handlePickClear(activeSlot)}
+          onClose={() => setActiveSlot(null)}
+        />
+      )}
+    </div>
+  );
+}
