@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import bearDownSrc from "../assets/audio/bear-down.m4a";
 
 interface BearsModeProps {
   /** Called when the Bears mode animation completes */
@@ -8,11 +9,17 @@ interface BearsModeProps {
 /**
  * Full-screen Bears mode takeover.
  * Navy/orange flash → "DA BEARS" title → auto-dismiss.
+ * Bear Down Chicago Bears plays quietly in the background.
  */
 export default function BearsMode({ onComplete }: BearsModeProps) {
   const [phase, setPhase] = useState<"flash" | "title" | "done">("flash");
 
   useEffect(() => {
+    // Play Bear Down quietly in the background
+    const audio = new Audio(bearDownSrc);
+    audio.volume = 0.15;
+    audio.play().catch(() => {}); // ignore autoplay blocks
+
     // Flash phase: 1.8s (3 × 0.6s animation)
     const t1 = setTimeout(() => setPhase("title"), 1800);
     // Title phase: 1.5s
@@ -24,6 +31,7 @@ export default function BearsMode({ onComplete }: BearsModeProps) {
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      // Don't stop audio — let it keep playing in the background
     };
   }, [onComplete]);
 
