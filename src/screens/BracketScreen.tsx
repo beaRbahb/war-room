@@ -169,8 +169,7 @@ export default function BracketScreen() {
           {/* Column headers */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 mb-1 border-b border-border">
             <span className="w-8 shrink-0" />
-            <span className="w-16 shrink-0" />
-            <span className="font-condensed text-sm text-white/70 uppercase w-20 hidden md:block font-bold">Trade</span>
+            <span className="w-20 shrink-0" />
             <span className="flex-1 font-condensed text-sm text-white/70 uppercase tracking-wide font-bold">Player</span>
             <div className="flex items-center gap-2 shrink-0">
               <span className="font-condensed text-sm text-white/70 uppercase w-14 text-center hidden md:block font-bold">Pos</span>
@@ -204,7 +203,7 @@ export default function BracketScreen() {
                   key={slot.pick}
                   onClick={() => !locked && setActiveSlot(i)}
                   disabled={locked}
-                  className={`w-full flex items-center gap-2 ${rowBg} border rounded px-3 py-2 text-left transition-colors disabled:opacity-50 ${
+                  className={`w-full flex items-center gap-2 ${rowBg} border rounded px-3 py-3 text-left transition-colors disabled:opacity-50 ${
                     bears ? "border-l-2 border-l-bears-orange" : ""
                   } ${
                     activeSlot === i
@@ -222,21 +221,23 @@ export default function BracketScreen() {
                   </span>
 
                   {/* Team logo + abbrev */}
-                  <div className="flex items-center gap-1.5 w-16 shrink-0">
+                  <div className="flex items-center gap-1.5 w-20 shrink-0">
                     <img
                       src={getTeamLogo(slot.abbrev)}
                       alt={slot.abbrev}
                       className="w-6 h-6 object-contain shrink-0"
                     />
-                    <span className="font-condensed text-sm text-white uppercase">
-                      {slot.abbrev}
-                    </span>
+                    <div>
+                      <span className="font-condensed text-sm text-white uppercase block">
+                        {slot.abbrev}
+                      </span>
+                      {slot.fromTeam && (
+                        <span className="font-mono text-[10px] text-muted block leading-tight">
+                          via {getTeamAbbrev(slot.fromTeam)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-
-                  {/* Trade column */}
-                  <span className="font-mono text-xs text-muted w-20 shrink-0 hidden md:block">
-                    {slot.fromTeam ? `via ${getTeamAbbrev(slot.fromTeam)}` : ""}
-                  </span>
 
                   {/* Player display or placeholder */}
                   {pick && prospect ? (
