@@ -140,11 +140,15 @@ export default function DraftRow({
               <span className="font-mono text-sm text-white truncate block">
                 {confirmedPick.playerName}
               </span>
-              {userPick && !isCorrect && (
+              {userPick && !isCorrect ? (
                 <span className="font-mono text-[10px] sm:text-xs text-muted/50 line-through truncate block leading-tight">
                   {userPick}
                 </span>
-              )}
+              ) : !userPick ? (
+                <span className="font-mono text-[10px] sm:text-xs text-muted/50 block leading-tight">
+                  No pick
+                </span>
+              ) : null}
             </div>
           ) : rowState === "active" && displayName && prospect ? (
             <div className="flex items-center gap-2">
