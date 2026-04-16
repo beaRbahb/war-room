@@ -119,11 +119,8 @@ export default function TimerBar({
         {/* Status + Submit */}
         <div className="flex items-center gap-3">
           <div className="text-right">
-            {submitted ? (
-              <span className="font-condensed text-sm text-green font-bold uppercase">
-                LOCKED IN
-              </span>
-            ) : userGuess ? (
+            {submitted ? null
+            : userGuess ? (
               <span className="font-condensed text-sm text-amber font-bold uppercase">
                 {userGuess}
               </span>
