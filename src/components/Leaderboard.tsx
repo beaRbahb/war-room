@@ -152,13 +152,15 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
         </div>
       )}
 
-      {/* Export */}
-      <button
-        onClick={exportCsv}
-        className="w-full mt-3 bg-surface-elevated border border-border text-muted font-condensed text-xs uppercase py-2 rounded hover:text-white hover:border-amber transition-all"
-      >
-        EXPORT CSV
-      </button>
+      {/* Export — only after draft complete */}
+      {totalPicks >= 32 && (
+        <button
+          onClick={exportCsv}
+          className="w-full mt-3 bg-surface-elevated border border-border text-muted font-condensed text-xs uppercase py-2 rounded hover:text-white hover:border-amber transition-all"
+        >
+          EXPORT CSV
+        </button>
+      )}
     </div>
   );
 
@@ -173,10 +175,18 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
       </div>
 
       {/* Mobile bottom sheet */}
-      <div className="lg:hidden">
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 ${expanded ? "z-50" : "z-30"}`}>
+        {/* Expanded content — sits directly above collapsed bar */}
+        {expanded && (
+          <div className="bg-surface border-t border-border p-4 max-h-[60vh] overflow-auto">
+            {content}
+          </div>
+        )}
+
+        {/* Collapsed bar */}
         <div
           onClick={() => setExpanded(!expanded)}
-          className="fixed bottom-0 left-0 right-0 z-30 bg-surface border-t border-border px-4 py-2.5 cursor-pointer"
+          className="bg-surface border-t border-border px-4 py-2.5 cursor-pointer"
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-display text-sm text-amber tracking-wide">
@@ -207,12 +217,6 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
             })}
           </div>
         </div>
-
-        {expanded && (
-          <div className="fixed bottom-[88px] left-0 right-0 z-30 bg-surface border-t border-border p-4 max-h-[60vh] overflow-auto">
-            {content}
-          </div>
-        )}
       </div>
     </>
   );
