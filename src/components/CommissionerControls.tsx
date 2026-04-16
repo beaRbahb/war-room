@@ -137,16 +137,18 @@ export default function CommissionerControls({
           </button>
         )}
 
-        <button
-          onClick={() => setShowFinalize(!showFinalize)}
-          className={`font-condensed font-bold uppercase px-2.5 py-1 rounded text-xs transition-all ${
-            showFinalize
-              ? "bg-amber text-bg"
-              : "bg-amber/20 text-amber hover:bg-amber/30"
-          }`}
-        >
-          FINALIZE
-        </button>
+        {liveState.windowOpenedAt && !liveState.windowOpen && (
+          <button
+            onClick={() => setShowFinalize(!showFinalize)}
+            className={`font-condensed font-bold uppercase px-2.5 py-1 rounded text-xs transition-all ${
+              showFinalize
+                ? "bg-amber text-bg"
+                : "bg-amber/20 text-amber hover:bg-amber/30"
+            }`}
+          >
+            FINALIZE
+          </button>
+        )}
       </div>
 
       {/* Backdrop to dismiss finalize */}

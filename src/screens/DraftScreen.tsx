@@ -689,7 +689,7 @@ export default function DraftScreen() {
 
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         {/* Main grid */}
-        <div className="flex-1 min-h-0 px-2 py-4 sm:p-4 pb-16 lg:pb-4 overflow-auto">
+        <div className="flex-1 min-h-0 px-2 py-4 sm:p-4 pb-24 lg:pb-4 overflow-auto">
           {/* ── Commissioner Admin Tab ── */}
           {commissionerTab === "admin" && isLive && liveState ? (
             <div className="space-y-1">
@@ -1019,7 +1019,7 @@ export default function DraftScreen() {
             }, 4000);
           }}
           disabled={liveState.windowOpen}
-          className="fixed bottom-16 right-4 z-40 lg:bottom-4 bg-bears-navy border-2 border-bears-orange text-bears-orange font-condensed font-bold uppercase px-4 py-3 rounded-full shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+          className="fixed bottom-24 right-4 z-40 lg:bottom-4 bg-bears-navy border-2 border-bears-orange text-bears-orange font-condensed font-bold uppercase px-4 py-3 rounded-full shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm"
         >
           TRUBISKY
         </button>

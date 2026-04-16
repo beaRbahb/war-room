@@ -118,14 +118,14 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
                 className={`flex items-center justify-between bg-bg border rounded px-3 py-2 ${rankStyle}`}
               >
                 <div className="flex items-center gap-2">
-                  <span className={`font-mono text-xs w-5 text-right ${
+                  <span className={`font-mono text-sm w-5 text-right ${
                     i === 0 ? "text-amber font-bold" : i <= 2 ? "text-white" : "text-muted"
                   }`}>
                     {i === 0 ? "\u{1F451}" : `${i + 1}.`}
                   </span>
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-condensed text-sm text-white font-bold">
+                      <span className="font-mono text-sm text-white font-bold">
                         {entry.name}
                       </span>
                       {personas?.[entry.name] && (
@@ -174,33 +174,42 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
 
       {/* Mobile bottom sheet */}
       <div className="lg:hidden">
-        <button
+        <div
           onClick={() => setExpanded(!expanded)}
-          className="fixed bottom-0 left-0 right-0 z-30 bg-surface border-t border-border px-4 py-3 flex items-center justify-between"
+          className="fixed bottom-0 left-0 right-0 z-30 bg-surface border-t border-border px-4 py-2.5 cursor-pointer"
         >
-          <span className="font-display text-sm text-amber tracking-wide">
-            LEADERBOARD
-          </span>
-          <div className="flex items-center gap-3">
-            {entries.slice(0, 3).map((entry, i) => (
-              <span key={entry.name} className="font-mono text-xs text-muted">
-                <span className={i === 0 ? "text-amber" : "text-white"}>
-                  {entry.name.slice(0, 6)}
-                </span>
-                {" "}
-                <span className="text-amber font-bold">
-                  {tab === "live" ? entry.liveScore : entry.bracketScore}
-                </span>
-              </span>
-            ))}
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-display text-sm text-amber tracking-wide">
+              LEADERBOARD
+            </span>
             <span className="font-mono text-xs text-muted">
               {expanded ? "\u25BC" : "\u25B2"}
             </span>
           </div>
-        </button>
+          <div className="space-y-0.5">
+            {entries.slice(0, 3).map((entry, i) => {
+              const score = tab === "live" ? entry.liveScore : entry.bracketScore;
+              return (
+                <div key={entry.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-mono text-sm w-4 text-right ${i === 0 ? "text-amber font-bold" : "text-muted"}`}>
+                      {i + 1}.
+                    </span>
+                    <span className={`font-mono text-sm ${i === 0 ? "text-amber font-bold" : "text-white"}`}>
+                      {entry.name}
+                    </span>
+                  </div>
+                  <span className={`font-mono text-sm font-bold ${flippingScores.has(entry.name) ? "animate-score-flip" : ""} ${i === 0 ? "text-amber" : "text-amber/70"}`}>
+                    {score}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {expanded && (
-          <div className="fixed bottom-12 left-0 right-0 z-30 bg-surface border-t border-border p-4 max-h-[60vh] overflow-auto">
+          <div className="fixed bottom-[88px] left-0 right-0 z-30 bg-surface border-t border-border p-4 max-h-[60vh] overflow-auto">
             {content}
           </div>
         )}
