@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# War Room
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Real-time NFL Draft companion app for your group chat.**
 
-Currently, two official plugins are available:
+Create a room, share the code, and compete with friends as the picks roll in on draft night. Fill out your mock draft bracket before the clock starts, then predict each live pick in real time. Bloomberg Terminal meets Tecmo Bowl.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## How It Works
 
-## React Compiler
+**Pre-Draft: Fill Your Bracket**
+Lock in your Round 1 mock draft before the first pick. The player selection panel shows ESPN pick probabilities, reach/value analysis, team needs, pro comps, and scouting notes — everything you need to make your call.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Live Draft: Predict Each Pick**
+Once the draft goes live, brackets lock and you switch to pick-by-pick predictions with a 60-second guess window. Correct live picks score 10 points (20 for Bears picks, obviously).
 
-## Expanding the ESLint configuration
+**React & Compete**
+After each pick, rate the selection and see where you stack up on the live leaderboard. A chaos meter tracks how wild the draft is getting — from CHALK to full CHAOS. At the end, everyone gets a draft persona based on their prediction patterns.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Real-time sync across all players (Firebase RTDB — no polling, no refresh)
+- 71 consensus prospects with headshots, measurables, pro comps, and scouting notes
+- ESPN Draft Predictor probabilities for every player × slot
+- Vegas odds and team needs (sourced from NFL.com + ESPN)
+- Chaos meter that scores how surprising each pick was
+- Pick reactions and grading after every selection
+- Draft personas assigned based on your prediction style
+- Commissioner controls for advancing picks and managing the room
+- Bears mode (confetti, double points, special overlays)
+- Mobile-first, dark mode only
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Scoring
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Event | Points |
+|---|---|
+| Bracket: exact player + slot | 10 |
+| Bracket: right player, wrong slot | 4 |
+| Live pick: correct guess | 10 |
+| Live pick: correct Bears guess | 20 |
+
+## Tech Stack
+
+React 19 · TypeScript · Vite · Tailwind CSS v4 · Firebase Realtime DB · React Router v7
+
+## Setup
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## License
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+MIT
