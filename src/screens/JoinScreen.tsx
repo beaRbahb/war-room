@@ -31,7 +31,7 @@ export default function JoinScreen() {
         commissionerId: userId,
         commissionerName: name.trim(),
         lockTime: BRACKET_LOCK_TIME.toISOString(),
-        status: "bracket",
+        status: "lobby",
         createdAt: new Date().toISOString(),
       };
 

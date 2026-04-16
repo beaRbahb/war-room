@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DRAFT_ORDER, getEffectiveDraftOrder } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
-import { BRACKET_LOCK_TIME, GUESS_WINDOW_SECONDS } from "../data/scoring";
+import { BRACKET_LOCK_TIME, GUESS_WINDOW_SECONDS, DRAFT_COUNTDOWN_SECONDS } from "../data/scoring";
 import { getTeamLogo } from "../data/teams";
 import {
   saveBracket,
   getBracket,
   onRoomConfig,
   updateRoomStatus,
+  setDraftCountdown,
   onLiveState,
   onResults,
   onScores,
@@ -20,7 +21,6 @@ import {
   updateLiveState,
   onGuesses,
   submitGuess,
-  submitWager,
   getAllGuesses,
   getAllReactions,
   onAllReactions,
@@ -46,6 +46,9 @@ import PickReactionScreen from "../components/PickReactionScreen";
 import RunningChaosMeter from "../components/RunningChaosMeter";
 import RecapCard from "../components/RecapCard";
 import RoomRecap from "../components/RoomRecap";
+import BracketProgressStrip from "../components/BracketProgressStrip";
+import DraftCountdownBanner from "../components/DraftCountdownBanner";
+import DraftTakeover from "../components/DraftTakeover";
 
 import type {
   BracketPick,
@@ -75,6 +78,9 @@ export default function DraftScreen() {
   const [countdown, setCountdown] = useState("");
 
   const [showStartConfirm, setShowStartConfirm] = useState(false);
+  const [draftStartsAt, setDraftStartsAt] = useState<string | null>(null);
+  const [showTakeover, setShowTakeover] = useState(false);
+  const [autoSubmitToast, setAutoSubmitToast] = useState<string | null>(null);
 
   // ── Live phase state ──
   const [liveState, setLiveStateLocal] = useState<LiveState | null>(null);
@@ -89,7 +95,6 @@ export default function DraftScreen() {
   // ── Live guess state (per-pick) ──
   const [currentGuess, setCurrentGuess] = useState<string | null>(null);
   const [guessSubmitted, setGuessSubmitted] = useState(false);
-  const [wagerAmount, setWagerAmount] = useState(0);
 
   // ── UI state ──
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
@@ -167,6 +172,7 @@ export default function DraftScreen() {
         return;
       }
       setRoomStatus(config.status);
+      setDraftStartsAt(config.draftStartsAt ?? null);
     });
   }, [roomCode, navigate]);
 
@@ -259,7 +265,6 @@ export default function DraftScreen() {
     if (liveState.currentPick !== prevPickRef.current) {
       setCurrentGuess(null);
       setGuessSubmitted(false);
-      setWagerAmount(0);
       setActiveSlot(null);
       prevPickRef.current = liveState.currentPick;
     }
@@ -276,18 +281,12 @@ export default function DraftScreen() {
       if (elapsed >= GUESS_WINDOW_SECONDS && !guessSubmitted) {
         if (currentGuess) {
           submitGuess(roomCode, liveState.currentPick, session.name, currentGuess);
-          if (wagerAmount > 0) {
-            submitWager(roomCode, liveState.currentPick, session.name, {
-              amount: wagerAmount,
-              playerName: currentGuess,
-            });
-          }
         }
         setGuessSubmitted(true);
       }
     }, 200);
     return () => clearInterval(interval);
-  }, [roomCode, session, liveState?.windowOpen, liveState?.windowOpenedAt, liveState?.currentPick, currentGuess, guessSubmitted, wagerAmount]);
+  }, [roomCode, session, liveState?.windowOpen, liveState?.windowOpenedAt, liveState?.currentPick, currentGuess, guessSubmitted]);
 
   // ── Commissioner auto-close on timer expiry ──
   useEffect(() => {
@@ -485,6 +484,33 @@ export default function DraftScreen() {
     setBracketSubmitted(true);
   }
 
+  // ── Draft countdown expired ──
+  const handleCountdownExpired = useCallback(async () => {
+    if (!roomCode || !session) return;
+
+    // Auto-submit bracket if not already submitted
+    if (!bracketSubmitted) {
+      const filledCount = picks.filter(Boolean).length;
+      const bracket: UserBracket = {
+        userName: session.name,
+        picks: picks.filter(Boolean) as BracketPick[],
+        submittedAt: new Date().toISOString(),
+      };
+      await saveBracket(roomCode, session.name, bracket);
+      setBracketSubmitted(true);
+      setAutoSubmitToast(`Bracket auto-submitted (${filledCount}/32 filled)`);
+      setTimeout(() => setAutoSubmitToast(null), 4000);
+    }
+
+    // Commissioner transitions to live
+    if (session.isCommissioner) {
+      await updateRoomStatus(roomCode, "live");
+    }
+
+    // Show takeover
+    setShowTakeover(true);
+  }, [roomCode, session, bracketSubmitted, picks]);
+
   // ── Live handlers ──
   /** Select a player (doesn't submit yet — user must tap SUBMIT) */
   function handleLiveSelect(playerName: string) {
@@ -499,12 +525,6 @@ export default function DraftScreen() {
     if (!roomCode || !session || !liveState || !currentGuess) return;
     if (!liveState.windowOpen) return;
     await submitGuess(roomCode, liveState.currentPick, session.name, currentGuess);
-    if (wagerAmount > 0) {
-      await submitWager(roomCode, liveState.currentPick, session.name, {
-        amount: wagerAmount,
-        playerName: currentGuess,
-      });
-    }
     setGuessSubmitted(true);
   }
 
@@ -551,7 +571,6 @@ export default function DraftScreen() {
       await clearGuesses(roomCode, currentPick);
       setCurrentGuess(null);
       setGuessSubmitted(false);
-      setWagerAmount(0);
     }
 
     const currentSwaps = liveState.swaps ?? [];
@@ -780,7 +799,6 @@ export default function DraftScreen() {
                   // Clear per-pick local state
                   setCurrentGuess(null);
                   setGuessSubmitted(false);
-                  setWagerAmount(0);
                   setExpandedPick(null);
                   setChaosFlash(null);
                   setShowConfetti(false);
@@ -801,6 +819,19 @@ export default function DraftScreen() {
             </div>
           ) : (
             <>
+              {/* Bracket progress strip (bracket phase only) */}
+              {!isLive && (
+                <BracketProgressStrip filled={picks.filter(Boolean).length} total={32} />
+              )}
+
+              {/* Draft countdown banner */}
+              {!isLive && draftStartsAt && (
+                <DraftCountdownBanner
+                  draftStartsAt={draftStartsAt}
+                  onExpired={handleCountdownExpired}
+                />
+              )}
+
               {/* Column headers */}
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 mb-1 border-b border-border">
                 <span className="w-8 shrink-0" />
@@ -971,17 +1002,6 @@ export default function DraftScreen() {
           onClose={() => setActiveSlot(null)}
           mode={isLive ? "live" : "bracket"}
           liveSubmitted={isLive ? guessSubmitted : false}
-          wagerProps={
-            isLive
-              ? {
-                  roomCode,
-                  pickNumber: liveState?.currentPick || 1,
-                  currentLiveScore:
-                    scores[session.name]?.liveScore || 0,
-                  onWagerChange: setWagerAmount,
-                }
-              : undefined
-          }
         />
       )}
 
@@ -1001,14 +1021,25 @@ export default function DraftScreen() {
         </button>
       )}
 
-      {/* Commissioner: Start Draft button (bracket phase) */}
+      {/* Commissioner: Start Draft / Cancel Countdown button (bracket phase) */}
       {!isLive && isCommissioner && (
-        <button
-          onClick={() => setShowStartConfirm(true)}
-          className="fixed bottom-4 left-4 z-20 bg-green text-bg font-condensed font-bold uppercase px-6 py-3 rounded-full shadow-lg hover:brightness-110 transition-all"
-        >
-          START DRAFT
-        </button>
+        draftStartsAt ? (
+          <button
+            onClick={async () => {
+              await setDraftCountdown(roomCode, null);
+            }}
+            className="fixed bottom-4 left-4 z-20 bg-red/80 text-white font-condensed font-bold uppercase px-6 py-3 rounded-full shadow-lg hover:brightness-110 transition-all"
+          >
+            CANCEL COUNTDOWN
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowStartConfirm(true)}
+            className="fixed bottom-4 left-4 z-20 bg-green text-bg font-condensed font-bold uppercase px-6 py-3 rounded-full shadow-lg hover:brightness-110 transition-all"
+          >
+            START DRAFT
+          </button>
+        )
       )}
 
       {/* Trade confirm dialog */}
@@ -1063,20 +1094,25 @@ export default function DraftScreen() {
       {showStartConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="bg-surface border border-green rounded-xl p-6 max-w-sm w-full">
-            <p className="font-display text-xl text-green mb-2">GO LIVE?</p>
+            <p className="font-display text-xl text-green mb-2">
+              START 2-MINUTE COUNTDOWN?
+            </p>
             <p className="font-condensed text-white mb-4">
-              This will lock all brackets and start the live draft. Everyone in
-              the room will be moved to the draft screen.
+              All players will see a countdown. Brackets auto-submit when it
+              hits zero, then the draft goes live.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={async () => {
-                  await updateRoomStatus(roomCode, "live");
+                  const startsAt = new Date(
+                    Date.now() + DRAFT_COUNTDOWN_SECONDS * 1000
+                  ).toISOString();
+                  await setDraftCountdown(roomCode, startsAt);
                   setShowStartConfirm(false);
                 }}
                 className="flex-1 bg-green text-bg font-condensed font-bold uppercase py-2.5 rounded"
               >
-                GO LIVE
+                START COUNTDOWN
               </button>
               <button
                 onClick={() => setShowStartConfirm(false)}
@@ -1086,6 +1122,20 @@ export default function DraftScreen() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Draft takeover overlay */}
+      {showTakeover && (
+        <DraftTakeover onComplete={() => setShowTakeover(false)} />
+      )}
+
+      {/* Auto-submit toast */}
+      {autoSubmitToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-surface border border-amber rounded-lg px-4 py-2 shadow-lg">
+          <p className="font-condensed text-sm text-amber uppercase">
+            {autoSubmitToast}
+          </p>
         </div>
       )}
     </div>

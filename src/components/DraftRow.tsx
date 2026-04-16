@@ -155,16 +155,9 @@ export default function DraftRow({
               <span className="font-mono text-sm text-white truncate">
                 {prospect.name}
               </span>
-              {submitted ? (
+              {submitted && (
                 <span className="hidden sm:inline font-condensed text-xs text-green uppercase shrink-0">locked in</span>
-              ) : onSubmit ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onSubmit(); }}
-                  className="hidden sm:block bg-green text-bg font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all shrink-0 animate-pulse"
-                >
-                  SUBMIT
-                </button>
-              ) : null}
+              )}
             </div>
           ) : displayName && prospect ? (
             <span className="font-condensed font-bold text-sm text-white truncate block">

@@ -4,7 +4,6 @@ import { TEAM_NEEDS } from "../data/teamNeeds";
 import { getSlotOdds, getPickProb } from "../data/prospectOdds";
 import { getTeamLogo, getTeamColor } from "../data/teams";
 import { getHeadshot } from "../lib/headshots";
-import WagerInput from "./WagerInput";
 import type { DraftSlot } from "../data/draftOrder";
 
 interface Props {
@@ -16,13 +15,6 @@ interface Props {
   onClose: () => void;
   /** "bracket" = pre-draft, "live" = during draft */
   mode?: "bracket" | "live";
-  /** Wager props for live mode */
-  wagerProps?: {
-    roomCode: string;
-    pickNumber: number;
-    currentLiveScore: number;
-    onWagerChange: (amount: number) => void;
-  };
   /** Whether the user already submitted their guess (live mode) */
   liveSubmitted?: boolean;
 }
@@ -36,7 +28,6 @@ export default function PlayerSelectionPanel({
   onClear,
   onClose,
   mode = "bracket",
-  wagerProps,
   liveSubmitted = false,
 }: Props) {
   const teamNeeds = useMemo(
@@ -353,19 +344,6 @@ export default function PlayerSelectionPanel({
             </div>
           )}
         </div>
-
-        {/* ─── Wager (live mode only) ─── */}
-        {mode === "live" && wagerProps && !liveSubmitted && (
-          <div className="shrink-0 px-4 pb-2">
-            <WagerInput
-              roomCode={wagerProps.roomCode}
-              pickNumber={wagerProps.pickNumber}
-              currentLiveScore={wagerProps.currentLiveScore}
-              onWagerChange={wagerProps.onWagerChange}
-              submitted={liveSubmitted}
-            />
-          </div>
-        )}
 
         {/* ─── Footer: count ─── */}
         <div className="shrink-0 bg-surface border-t border-border px-4 py-2">

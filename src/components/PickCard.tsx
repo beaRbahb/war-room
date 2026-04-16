@@ -20,12 +20,11 @@ const POLES_IMAGES: Record<PolesReaction, string> = {
   meh: polesStoic,
   bad: polesHoodie,
 };
-import { onReactions, submitReaction, onGuesses, onWagers } from "../lib/storage";
+import { onReactions, submitReaction, onGuesses } from "../lib/storage";
 import { getCompsByTier } from "../data/bearsTiers";
 import { getTeamLogo } from "../data/teams";
 import { getHeadshot } from "../lib/headshots";
 import ChaosMeter from "./ChaosMeter";
-import type { Wager } from "../types";
 
 interface PickCardProps {
   pick: ConfirmedPick;
@@ -46,7 +45,6 @@ export default function PickCard({
 }: PickCardProps) {
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
   const [guesses, setGuesses] = useState<Record<string, string>>({});
-  const [wagers, setWagers] = useState<Record<string, Wager>>({});
   const [showBearsTier, setShowBearsTier] = useState(false);
 
   const slot = DRAFT_ORDER.find((s) => s.pick === pick.pick);
@@ -58,8 +56,7 @@ export default function PickCard({
   useEffect(() => {
     const unsub1 = onReactions(roomCode, pick.pick, setReactions);
     const unsub2 = onGuesses(roomCode, pick.pick, setGuesses);
-    const unsub3 = onWagers(roomCode, pick.pick, setWagers);
-    return () => { unsub1(); unsub2(); unsub3(); };
+    return () => { unsub1(); unsub2(); };
   }, [roomCode, pick.pick]);
 
   function handleReaction(type: ReactionType) {
@@ -161,25 +158,6 @@ export default function PickCard({
               {"\u{1F3AF}"} {name} NAILED IT
             </span>
           ))}
-        </div>
-      )}
-
-      {/* Wager results */}
-      {Object.keys(wagers).length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-1">
-          {Object.entries(wagers).map(([name, wager]) => {
-            const won = guesses[name] === pick.playerName;
-            return (
-              <span
-                key={name}
-                className={`font-mono text-xs px-2 py-0.5 rounded ${
-                  won ? "bg-green/10 text-green" : "bg-red/10 text-red"
-                }`}
-              >
-                {name} {won ? "+" : "-"}{wager.amount} WAGER
-              </span>
-            );
-          })}
         </div>
       )}
 

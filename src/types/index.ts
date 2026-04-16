@@ -6,6 +6,7 @@ export interface RoomConfig {
   lockTime: string; // ISO timestamp
   status: "lobby" | "bracket" | "live" | "done";
   createdAt: string;
+  draftStartsAt?: string | null;
 }
 
 /** A user in a room */

@@ -28,6 +28,12 @@ export const BRACKET_LOCK_TIME = new Date("2026-04-24T20:00:00-04:00");
 /** Maximum wager per pick (absolute cap regardless of score) */
 export const WAGER_MAX_CAP = 50;
 
+/** Draft countdown duration in seconds */
+export const DRAFT_COUNTDOWN_SECONDS = 120;
+
+/** Seconds remaining when countdown warning triggers */
+export const DRAFT_COUNTDOWN_WARNING_SECONDS = 30;
+
 /** Room code length */
 export const ROOM_CODE_LENGTH = 6;
 

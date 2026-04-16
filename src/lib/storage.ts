@@ -16,7 +16,6 @@ import type {
   ConfirmedPick,
   UserReaction,
   UserScores,
-  Wager,
 } from "../types";
 
 // ── Path helpers ──
@@ -53,6 +52,13 @@ export async function updateRoomStatus(
   status: RoomConfig["status"]
 ): Promise<void> {
   await update(ref(db, `${roomPath(code)}/config`), { status });
+}
+
+export async function setDraftCountdown(
+  code: string,
+  draftStartsAt: string | null
+): Promise<void> {
+  await update(ref(db, `${roomPath(code)}/config`), { draftStartsAt });
 }
 
 // ── Users ──

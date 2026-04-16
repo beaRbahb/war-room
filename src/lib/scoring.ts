@@ -4,7 +4,7 @@ import {
   LIVE_CORRECT,
   LIVE_CORRECT_BEARS_DOUBLE,
 } from "../data/scoring";
-import type { ConfirmedPick, UserBracket, Wager } from "../types";
+import type { ConfirmedPick, UserBracket } from "../types";
 
 /**
  * Calculate bracket score for a user based on all confirmed picks.
@@ -79,14 +79,12 @@ export function getBracketHitsForPick(
 
 /**
  * Calculate live score for a user based on all confirmed picks and their guesses.
- * Optionally includes wager bonuses/penalties.
  */
 export function calcLiveScore(
   userName: string,
   confirmedPicks: ConfirmedPick[],
   allGuesses: Record<string, Record<string, string>>,
   bearsDoublePicks: Set<number>,
-  allWagers?: Record<string, Record<string, Wager>>
 ): { score: number; hits: number } {
   let score = 0;
   let hits = 0;
@@ -104,12 +102,6 @@ export function calcLiveScore(
       score += bearsDoublePicks.has(pick.pick)
         ? LIVE_CORRECT_BEARS_DOUBLE
         : LIVE_CORRECT;
-    }
-
-    // Wager bonus/penalty
-    const wager = allWagers?.[pickKey]?.[userName];
-    if (wager && wager.amount > 0) {
-      score += correct ? wager.amount : -wager.amount;
     }
   }
 
