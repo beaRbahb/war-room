@@ -111,37 +111,39 @@ export default function PlayerSelectionPanel({
                 </p>
               )}
 
-              {/* Team needs */}
-              {teamNeeds.length > 0 && (
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <span className="font-condensed text-xs text-muted uppercase">
-                    Needs:
-                  </span>
-                  {teamNeeds.map((pos) => (
-                    <span
-                      key={pos}
-                      className="font-mono text-xs bg-surface-elevated border border-border rounded px-1.5 py-0.5 text-amber"
-                    >
-                      {pos}
+              {/* Needs / Chalk / Odds — aligned rows */}
+              <div className="mt-2 flex flex-col gap-1">
+                {teamNeeds.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-condensed text-xs text-muted uppercase w-12">
+                      Needs
                     </span>
-                  ))}
-                </div>
-              )}
+                    <div className="flex items-center gap-1.5">
+                      {teamNeeds.map((pos) => (
+                        <span
+                          key={pos}
+                          className="font-mono text-xs bg-surface-elevated border border-border rounded px-1.5 py-0.5 text-amber"
+                        >
+                          {pos}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-              {/* Chalk + odds */}
               {slotOdds && (
-                <div className="mt-1 flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-condensed text-xs text-muted uppercase">
-                      Chalk:
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="font-condensed text-xs text-muted uppercase w-12">
+                      Chalk
                     </span>
                     <span className="font-mono text-xs text-white">
                       {slotOdds.expectedPlayer}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-condensed text-xs text-muted uppercase">
-                      Odds:
+                  <div className="flex items-center gap-2">
+                    <span className="font-condensed text-xs text-muted uppercase w-12">
+                      Odds
                     </span>
                     <span
                       className={`font-mono text-xs ${
@@ -152,12 +154,14 @@ export default function PlayerSelectionPanel({
                     >
                       {slotOdds.odds}
                     </span>
+                    <span className="text-muted/40 text-xs">·</span>
                     <span className="font-mono text-xs text-muted">
-                      ({slotOdds.oddsType})
+                      {slotOdds.oddsType}
                     </span>
                   </div>
-                </div>
+                </>
               )}
+              </div>
             </div>
           </div>
 
@@ -189,7 +193,7 @@ export default function PlayerSelectionPanel({
         {/* ─── Prospect List ─── */}
         <div className="flex-1 overflow-auto">
           {/* Column headers */}
-          <div className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-1.5 flex items-center gap-3">
+          <div className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-1.5 hidden sm:flex items-center gap-3">
             <span className="w-12 shrink-0" />
             <div className="flex-1">
               <span className="font-condensed text-xs text-muted uppercase">Player</span>
