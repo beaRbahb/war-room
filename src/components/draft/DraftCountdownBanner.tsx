@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DRAFT_COUNTDOWN_WARNING_SECONDS } from "../../data/scoring";
 
 interface DraftCountdownBannerProps {
@@ -11,14 +11,17 @@ export default function DraftCountdownBanner({ draftStartsAt, onExpired }: Draft
     const target = new Date(draftStartsAt).getTime();
     return Math.max(0, Math.ceil((target - Date.now()) / 1000));
   });
+  const firedRef = useRef(false);
 
   useEffect(() => {
+    firedRef.current = false; // reset if draftStartsAt changes (countdown restarted)
     const target = new Date(draftStartsAt).getTime();
 
     function tick() {
       const remaining = Math.max(0, Math.ceil((target - Date.now()) / 1000));
       setSecondsLeft(remaining);
-      if (remaining <= 0) {
+      if (remaining <= 0 && !firedRef.current) {
+        firedRef.current = true;
         onExpired();
       }
     }

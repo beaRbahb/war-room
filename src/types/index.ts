@@ -1,14 +1,3 @@
-/** Room configuration stored in Firebase */
-export interface RoomConfig {
-  roomCode: string;
-  commissionerId: string;
-  commissionerName: string;
-  lockTime: string; // ISO timestamp
-  status: "bracket" | "live" | "done";
-  createdAt: string;
-  draftStartsAt?: string | null;
-}
-
 /** A user in a room */
 export interface RoomUser {
   name: string;
@@ -42,6 +31,21 @@ export interface LiveState {
   trubiskyActive?: boolean;
   /** Pick overrides — maps pick number to new team abbrev (e.g. { "25": "NYG" }) */
   overrides?: Record<string, string>;
+  /** Bumped on team reassignment to signal all clients to reset their guess state */
+  guessResetAt?: string | null;
+}
+
+/** Room configuration stored in Firebase */
+export interface RoomConfig {
+  roomCode: string;
+  commissionerId: string;
+  commissionerName: string;
+  lockTime: string; // ISO timestamp
+  status: "bracket" | "live" | "done";
+  createdAt: string;
+  draftStartsAt?: string | null;
+  /** User ID of backup commissioner (can open/close/finalize but not kick/reset) */
+  backupCommissionerId?: string | null;
 }
 
 /** An official confirmed pick */

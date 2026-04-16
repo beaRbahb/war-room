@@ -27,6 +27,7 @@ import {
   clearGuesses,
   resetDraft,
   removeUser,
+  setBackupCommissioner,
 } from "../lib/storage";
 import { getSession, clearSession } from "../lib/session";
 import { calcBracketScore, calcLiveScore } from "../lib/scoring";
@@ -74,6 +75,7 @@ export default function DraftScreen() {
 
   // ── Room status ──
   const [roomStatus, setRoomStatus] = useState<RoomStatus>("bracket");
+  const [backupCommissionerId, setBackupCommissionerId] = useState<string | null>(null);
 
   // ── Bracket phase state ──
   const [picks, setPicks] = useState<(BracketPick | null)[]>(Array(32).fill(null));
@@ -153,6 +155,12 @@ export default function DraftScreen() {
   const allGuessesRef = useRef(allGuesses);
   allGuessesRef.current = allGuesses;
 
+  // Refs for countdown callback — keeps identity stable so DraftCountdownBanner doesn't restart
+  const picksRef = useRef(picks);
+  picksRef.current = picks;
+  const bracketSubmittedRef = useRef(bracketSubmitted);
+  bracketSubmittedRef.current = bracketSubmitted;
+
   const isLive = roomStatus === "live" || roomStatus === "done";
 
   /** Draft order with live overrides applied (bracket phase uses static DRAFT_ORDER) */
@@ -178,6 +186,7 @@ export default function DraftScreen() {
       }
       setRoomStatus(config.status);
       setDraftStartsAt(config.draftStartsAt ?? null);
+      setBackupCommissionerId(config.backupCommissionerId ?? null);
     });
   }, [roomCode, navigate]);
 
@@ -293,6 +302,21 @@ export default function DraftScreen() {
     }
   }, [liveState?.currentPick]);
 
+  // ── Reset guess state when commissioner reassigns team (guessResetAt signal) ──
+  const prevGuessResetRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!liveState?.guessResetAt) return;
+    if (prevGuessResetRef.current !== liveState.guessResetAt) {
+      // Skip the initial mount — only react to changes
+      if (prevGuessResetRef.current !== null) {
+        setCurrentGuess(null);
+        setGuessSubmitted(false);
+        setGuessCount(0);
+      }
+      prevGuessResetRef.current = liveState.guessResetAt;
+    }
+  }, [liveState?.guessResetAt]);
+
   // ── Auto-submit on timer expiry ──
   useEffect(() => {
     if (!roomCode || !session || !liveState?.windowOpen || !liveState.windowOpenedAt) return;
@@ -304,16 +328,17 @@ export default function DraftScreen() {
       if (elapsed >= GUESS_WINDOW_SECONDS && !guessSubmitted) {
         if (currentGuess) {
           submitGuess(roomCode, liveState.currentPick, session.name, currentGuess);
+          setGuessSubmitted(true);
         }
-        setGuessSubmitted(true);
+        // If no guess selected, don't mark as submitted — just let the window close
       }
     }, 200);
     return () => clearInterval(interval);
   }, [roomCode, session, liveState?.windowOpen, liveState?.windowOpenedAt, liveState?.currentPick, currentGuess, guessSubmitted]);
 
-  // ── Commissioner auto-close on timer expiry ──
+  // ── Auto-close window on timer expiry (all clients, not just commissioner) ──
   useEffect(() => {
-    if (!roomCode || !session?.isCommissioner || !liveState?.windowOpen || !liveState.windowOpenedAt) return;
+    if (!roomCode || !liveState?.windowOpen || !liveState.windowOpenedAt) return;
 
     const openedMs = new Date(liveState.windowOpenedAt).getTime();
     const interval = setInterval(() => {
@@ -324,7 +349,7 @@ export default function DraftScreen() {
       }
     }, 200);
     return () => clearInterval(interval);
-  }, [roomCode, session?.isCommissioner, liveState?.windowOpen, liveState?.windowOpenedAt]);
+  }, [roomCode, liveState?.windowOpen, liveState?.windowOpenedAt]);
 
   // ── Confirmed picks ──
   const confirmedPicks = useMemo(
@@ -339,7 +364,16 @@ export default function DraftScreen() {
 
     const latest = confirmedPicks[confirmedPicks.length - 1];
     if (processedPicks.current.has(latest.pick)) return;
-    processedPicks.current.add(latest.pick);
+
+    // Late joiner: if this is our first processing pass and there are already multiple
+    // confirmed picks, pre-seed processedPicks to skip stale animations.
+    const isLateJoin = processedPicks.current.size === 0 && confirmedPicks.length > 1;
+    if (isLateJoin) {
+      confirmedPicks.forEach((p) => processedPicks.current.add(p.pick));
+      // Still run scoring for all picks (below) but skip animations
+    } else {
+      processedPicks.current.add(latest.pick);
+    }
 
     setTimeout(() => {
       setRevealedPicks((prev) => new Set([...prev, latest.pick]));
@@ -362,8 +396,11 @@ export default function DraftScreen() {
       bearsDoublePicks.current.add(latest.pick);
     }
 
-    if (latest.isBearsPick) {
-      setShowBearsMode(true);
+    // Skip animations for late joiners — only trigger for live picks
+    if (!isLateJoin) {
+      if (latest.isBearsPick) {
+        setShowBearsMode(true);
+      }
     }
 
     const pickGuessKey = `pick${latest.pick}`;
@@ -372,18 +409,21 @@ export default function DraftScreen() {
     const unsub = onGuesses(roomCode, latest.pick, (guesses) => {
       setAllGuesses((prev) => ({ ...prev, [pickGuessKey]: guesses }));
 
-      if (guesses[userName] === latest.playerName) {
-        confettiFired = true;
-        setShowConfetti(true);
-        setTimeout(() => {
-          setShowConfetti(false);
-          setChaosFlash(flashData);
-        }, 5500);
-      }
+      // Skip confetti/chaos for late joiners
+      if (!isLateJoin) {
+        if (guesses[userName] === latest.playerName) {
+          confettiFired = true;
+          setShowConfetti(true);
+          setTimeout(() => {
+            setShowConfetti(false);
+            setChaosFlash(flashData);
+          }, 5500);
+        }
 
-      // Show reaction screen immediately if no confetti
-      if (!confettiFired) {
-        setChaosFlash(flashData);
+        // Show reaction screen immediately if no confetti
+        if (!confettiFired) {
+          setChaosFlash(flashData);
+        }
       }
 
       // Scoring — use refs for latest state to avoid stale closures
@@ -513,12 +553,13 @@ export default function DraftScreen() {
   const handleCountdownExpired = useCallback(async () => {
     if (!roomCode || !session) return;
 
-    // Auto-submit bracket if not already submitted
-    if (!bracketSubmitted) {
-      const filledCount = picks.filter(Boolean).length;
+    // Auto-submit bracket if not already submitted (read from ref for stable callback identity)
+    if (!bracketSubmittedRef.current) {
+      const currentPicks = picksRef.current;
+      const filledCount = currentPicks.filter(Boolean).length;
       const bracket: UserBracket = {
         userName: session.name,
-        picks: picks.filter(Boolean) as BracketPick[],
+        picks: currentPicks.filter(Boolean) as BracketPick[],
         submittedAt: new Date().toISOString(),
       };
       await saveBracket(roomCode, session.name, bracket);
@@ -534,7 +575,7 @@ export default function DraftScreen() {
 
     // Show takeover
     setShowTakeover(true);
-  }, [roomCode, session, bracketSubmitted, picks]);
+  }, [roomCode, session]);
 
   // ── Live handlers ──
   /** Select a player (doesn't submit yet — user must tap SUBMIT) */
@@ -588,6 +629,8 @@ export default function DraftScreen() {
       ...(isCurrentPick && liveState.windowOpen
         ? { windowOpenedAt: new Date().toISOString() }
         : {}),
+      // Signal all clients to reset their guess state for this pick
+      ...(isCurrentPick ? { guessResetAt: new Date().toISOString() } : {}),
     });
 
     setReassignPick(null);
@@ -598,7 +641,8 @@ export default function DraftScreen() {
 
   if (!session || !roomCode) return null;
 
-  const isCommissioner = session.isCommissioner;
+  const isPrimaryCommissioner = session.isCommissioner;
+  const isCommissioner = isPrimaryCommissioner || session.id === backupCommissionerId;
   const showCommissionerTabs = isCommissioner && isLive;
 
   return (
@@ -823,34 +867,58 @@ export default function DraftScreen() {
                   USERS ({Object.keys(users).length})
                 </p>
                 <div className="space-y-1">
-                  {Object.values(users).map((u) => (
-                    <div
-                      key={u.id}
-                      className="flex items-center justify-between px-2 py-1.5 rounded bg-bg"
-                    >
-                      <span className="font-mono text-sm text-white">
-                        {u.name}
-                        {u.isCommissioner && (
-                          <span className="ml-1.5 text-amber text-xs font-condensed uppercase">
-                            COMM
-                          </span>
-                        )}
-                      </span>
-                      {!u.isCommissioner && (
-                        <button
-                          onClick={() => removeUser(roomCode, u.id)}
-                          className="font-condensed text-xs font-bold uppercase px-2 py-0.5 rounded bg-red/20 text-red border border-red/40 hover:bg-red/30 transition-colors"
-                        >
-                          KICK
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {Object.values(users).map((u) => {
+                    const isBackup = u.id === backupCommissionerId;
+                    return (
+                      <div
+                        key={u.id}
+                        className="flex items-center justify-between px-2 py-1.5 rounded bg-bg"
+                      >
+                        <span className="font-mono text-sm text-white">
+                          {u.name}
+                          {u.isCommissioner && (
+                            <span className="ml-1.5 text-amber text-xs font-condensed uppercase">
+                              COMM
+                            </span>
+                          )}
+                          {isBackup && (
+                            <span className="ml-1.5 text-green text-xs font-condensed uppercase">
+                              BACKUP
+                            </span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {/* Backup toggle — primary commissioner only, not self */}
+                          {isPrimaryCommissioner && !u.isCommissioner && (
+                            <button
+                              onClick={() => setBackupCommissioner(roomCode, isBackup ? null : u.id)}
+                              className={`font-condensed text-xs font-bold uppercase px-2 py-0.5 rounded border transition-colors ${
+                                isBackup
+                                  ? "bg-green/20 text-green border-green/40 hover:bg-green/30"
+                                  : "bg-surface-elevated text-muted border-border hover:text-white hover:border-amber"
+                              }`}
+                            >
+                              {isBackup ? "REMOVE BACKUP" : "BACKUP"}
+                            </button>
+                          )}
+                          {/* Kick — primary commissioner only, not self */}
+                          {isPrimaryCommissioner && !u.isCommissioner && (
+                            <button
+                              onClick={() => removeUser(roomCode, u.id)}
+                              className="font-condensed text-xs font-bold uppercase px-2 py-0.5 rounded bg-red/20 text-red border border-red/40 hover:bg-red/30 transition-colors"
+                            >
+                              KICK
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Reset draft — testing only */}
-              <button
+              {/* Reset draft — testing only, primary commissioner only */}
+              {isPrimaryCommissioner && <button
                 onClick={async () => {
                   if (!confirm("Reset draft? This clears all picks, guesses, scores, and returns to bracket phase.")) return;
                   await resetDraft(roomCode);
@@ -879,7 +947,7 @@ export default function DraftScreen() {
                 className="mt-4 w-full bg-red/20 border border-red text-red font-condensed font-bold uppercase py-2 rounded text-sm hover:bg-red/30 transition-all"
               >
                 RESET DRAFT (TESTING)
-              </button>
+              </button>}
             </div>
           ) : (
             <>

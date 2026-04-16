@@ -31,6 +31,7 @@ export default function CommissionerControls({
   const [pickSearch, setPickSearch] = useState("");
   const [selectedOfficialPick, setSelectedOfficialPick] = useState("");
   const [showFinalize, setShowFinalize] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   // Auto-open finalize when parent signals pending
   if (pendingFinalize && !showFinalize) {
@@ -71,29 +72,34 @@ export default function CommissionerControls({
   }
 
   async function handleConfirmPick() {
-    if (!selectedOfficialPick) return;
+    if (!selectedOfficialPick || confirming) return;
+    setConfirming(true);
 
-    const pick: ConfirmedPick = {
-      pick: liveState.currentPick,
-      playerName: selectedOfficialPick,
-      teamAbbrev: teamAbbrev,
-      confirmedAt: new Date().toISOString(),
-      isBearsPick: isBearsPick(teamAbbrev || ""),
-    };
+    try {
+      const pick: ConfirmedPick = {
+        pick: liveState.currentPick,
+        playerName: selectedOfficialPick,
+        teamAbbrev: teamAbbrev,
+        confirmedAt: new Date().toISOString(),
+        isBearsPick: isBearsPick(teamAbbrev || ""),
+      };
 
-    await confirmPick(roomCode, pick);
+      await confirmPick(roomCode, pick);
 
-    await updateLiveState(roomCode, {
-      currentPick: liveState.currentPick + 1,
-      windowOpen: false,
-      windowOpenedAt: null,
-      bearsDoubleActive: false,
-      tradeMode: false,
-    });
+      await updateLiveState(roomCode, {
+        currentPick: liveState.currentPick + 1,
+        windowOpen: false,
+        windowOpenedAt: null,
+        bearsDoubleActive: false,
+        tradeMode: false,
+      });
 
-    setSelectedOfficialPick("");
-    setPickSearch("");
-    setShowFinalize(false);
+      setSelectedOfficialPick("");
+      setPickSearch("");
+      setShowFinalize(false);
+    } finally {
+      setConfirming(false);
+    }
   }
 
   return (
@@ -168,9 +174,10 @@ export default function CommissionerControls({
             <div className="flex justify-end mt-1.5">
               <button
                 onClick={handleConfirmPick}
-                className="bg-green text-bg font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all"
+                disabled={confirming}
+                className="bg-green text-bg font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all disabled:opacity-50"
               >
-                CONFIRM: {selectedOfficialPick}
+                {confirming ? "CONFIRMING..." : `CONFIRM: ${selectedOfficialPick}`}
               </button>
             </div>
           )}

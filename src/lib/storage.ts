@@ -97,6 +97,14 @@ export async function setDraftCountdown(
   await update(ref(db, `${roomPath(code)}/config`), { draftStartsAt });
 }
 
+export async function setBackupCommissioner(
+  code: string,
+  backupCommissionerId: string | null
+): Promise<void> {
+  await waitForAuth();
+  await update(ref(db, `${roomPath(code)}/config`), { backupCommissionerId });
+}
+
 // ── Users ──
 
 export async function addUser(code: string, user: RoomUser): Promise<void> {
