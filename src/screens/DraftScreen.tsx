@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DRAFT_ORDER, getEffectiveDraftOrder } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
 import { BRACKET_LOCK_TIME, GUESS_WINDOW_SECONDS, DRAFT_COUNTDOWN_SECONDS } from "../data/scoring";
-import { getTeamLogo } from "../data/teams";
+import { getTeamLogo, TEAMS } from "../data/teams";
 import {
   saveBracket,
   getBracket,
@@ -117,10 +117,9 @@ export default function DraftScreen() {
     prevWindowOpenRef.current = liveState.windowOpen;
   }, [liveState?.windowOpen]);
 
-  // ── Swap mode (commissioner admin tab) ──
-  const [swapMode, setSwapMode] = useState(false);
-  const [swapFirst, setSwapFirst] = useState<number | null>(null);
-  const [swapConfirm, setSwapConfirm] = useState<{ pickA: number; pickB: number } | null>(null);
+  // ── Team reassignment (commissioner admin tab) ──
+  const [reassignPick, setReassignPick] = useState<number | null>(null);
+  const [reassignSearch, setReassignSearch] = useState("");
 
   // ── Overlays ──
   const [showBearsMode, setShowBearsMode] = useState(false);
@@ -155,10 +154,10 @@ export default function DraftScreen() {
 
   const isLive = roomStatus === "live" || roomStatus === "done";
 
-  /** Draft order with live swaps applied (bracket phase uses static DRAFT_ORDER) */
+  /** Draft order with live overrides applied (bracket phase uses static DRAFT_ORDER) */
   const effectiveOrder = useMemo(
-    () => isLive ? getEffectiveDraftOrder(liveState?.swaps ?? []) : DRAFT_ORDER,
-    [isLive, liveState?.swaps]
+    () => isLive ? getEffectiveDraftOrder(liveState?.overrides ?? {}) : DRAFT_ORDER,
+    [isLive, liveState?.overrides]
   );
 
   // ── Redirect if no session ──
@@ -547,53 +546,36 @@ export default function DraftScreen() {
     }
   }
 
-  async function handleToggleSwapMode() {
-    const entering = !swapMode;
-    if (entering && liveState?.windowOpen && roomCode) {
-      await updateLiveState(roomCode, { windowOpen: false });
-    }
-    setSwapMode(entering);
-    setSwapFirst(null);
-    setSwapConfirm(null);
-  }
+  async function handleReassignTeam(pickNum: number, newAbbrev: string) {
+    if (!roomCode || !liveState) return;
+    const originalAbbrev = DRAFT_ORDER[pickNum - 1]?.abbrev;
+    const currentOverrides = { ...(liveState.overrides ?? {}) };
 
-  function handleSwapRowClick(pickNum: number) {
-    if (!swapMode || !liveState) return;
-    // Only future picks can be swapped
-    if (pickNum < liveState.currentPick) return;
-    if (swapFirst === null) {
-      setSwapFirst(pickNum);
-    } else if (swapFirst === pickNum) {
-      setSwapFirst(null); // deselect
+    if (newAbbrev === originalAbbrev) {
+      // Revert to original — remove override
+      delete currentOverrides[String(pickNum)];
     } else {
-      setSwapConfirm({ pickA: swapFirst, pickB: pickNum });
+      currentOverrides[String(pickNum)] = newAbbrev;
     }
-  }
 
-  async function handleConfirmSwap() {
-    if (!swapConfirm || !roomCode || !liveState) return;
-    const currentPick = liveState.currentPick;
-    const involvesCurrentPick =
-      swapConfirm.pickA === currentPick || swapConfirm.pickB === currentPick;
+    const isCurrentPick = pickNum === liveState.currentPick;
 
-    // Clear guesses if the current pick's team is changing
-    if (involvesCurrentPick) {
-      await clearGuesses(roomCode, currentPick);
+    // Clear guesses and reset window if reassigning the current pick
+    if (isCurrentPick) {
+      await clearGuesses(roomCode, pickNum);
       setCurrentGuess(null);
       setGuessSubmitted(false);
     }
 
-    const currentSwaps = liveState.swaps ?? [];
     await updateLiveState(roomCode, {
-      swaps: [...currentSwaps, swapConfirm],
-      // Reset the window timer so users can re-guess for the new team
-      ...(involvesCurrentPick && liveState.windowOpen
+      overrides: currentOverrides,
+      ...(isCurrentPick && liveState.windowOpen
         ? { windowOpenedAt: new Date().toISOString() }
         : {}),
     });
-    setSwapMode(false);
-    setSwapFirst(null);
-    setSwapConfirm(null);
+
+    setReassignPick(null);
+    setReassignSearch("");
   }
 
   const handleBearsModeComplete = useCallback(() => setShowBearsMode(false), []);
@@ -755,57 +737,51 @@ export default function DraftScreen() {
           {/* ── Commissioner Admin Tab ── */}
           {commissionerTab === "admin" && isLive && liveState ? (
             <div className="space-y-1">
-              {swapMode && (
-                <div className="bg-white/5 border border-white/20 rounded px-3 py-1.5 flex items-center justify-between mb-2">
-                  <span className="font-condensed text-xs text-white uppercase">
-                    {swapFirst
-                      ? `Pick #${swapFirst} selected — tap another pick to trade`
-                      : "Tap a pick to start trade"}
-                  </span>
-                  <button
-                    onClick={() => { setSwapMode(false); setSwapFirst(null); }}
-                    className="font-condensed text-xs text-muted uppercase hover:text-white"
-                  >
-                    CANCEL
-                  </button>
-                </div>
-              )}
               {effectiveOrder.map((slot, i) => {
                 const pickNum = i + 1;
                 const confirmed = results[`pick${pickNum}`] ?? null;
                 const isCurrent = pickNum === liveState.currentPick;
                 const isPast = pickNum < liveState.currentPick;
-                const isFuture = pickNum > liveState.currentPick;
-                const isSwapTarget = swapMode && (isFuture || isCurrent);
-                const isSwapSelected = swapFirst === pickNum;
+                const canReassign = !isPast; // current or future picks
 
                 return (
                   <div key={slot.pick} className={isCurrent ? "relative" : ""}>
                     <div
-                      onClick={() => isSwapTarget && handleSwapRowClick(pickNum)}
                       className={`flex items-center gap-1.5 sm:gap-3 pl-1 pr-2 sm:px-3 h-14 sm:h-12 rounded border transition-colors ${
-                        isSwapSelected
-                          ? "bg-white/10 border-white border-dashed"
-                          : isSwapTarget
-                            ? "bg-surface border-border border-dashed cursor-pointer hover:border-white/50 opacity-100"
-                            : isCurrent
-                              ? "bg-amber/5 border-amber"
-                              : isPast
-                                ? "bg-surface border-border"
-                                : "bg-surface border-border opacity-40"
+                        isCurrent
+                          ? "bg-amber/5 border-amber"
+                          : isPast
+                            ? "bg-surface border-border"
+                            : "bg-surface border-border opacity-40"
                       }`}
                     >
                       <span className={`font-mono text-xs sm:text-sm w-4 sm:w-8 text-right shrink-0 ${isCurrent ? "text-amber font-bold" : "text-muted"}`}>
                         {pickNum}
                       </span>
-                      <img
-                        src={getTeamLogo(slot.abbrev)}
-                        alt={slot.abbrev}
-                        className="w-8 h-8 object-contain shrink-0"
-                      />
-                      <span className="font-condensed text-base text-white uppercase w-12 shrink-0">
-                        {slot.abbrev}
-                      </span>
+
+                      {/* Tappable team logo+abbrev for reassignment */}
+                      <button
+                        onClick={() => canReassign ? setReassignPick(pickNum) : undefined}
+                        disabled={!canReassign}
+                        className={`flex items-center gap-1.5 shrink-0 ${canReassign ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+                      >
+                        <img
+                          src={getTeamLogo(slot.abbrev)}
+                          alt={slot.abbrev}
+                          className="w-8 h-8 object-contain shrink-0"
+                        />
+                        <div>
+                          <span className="font-condensed text-base text-white uppercase block">
+                            {slot.abbrev}
+                          </span>
+                          {slot.fromTeam && (
+                            <span className="font-mono text-[10px] text-muted block leading-tight">
+                              via {DRAFT_ORDER[pickNum - 1]?.abbrev}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+
                       <span className="flex-1 font-mono text-sm text-white truncate">
                         {confirmed?.playerName ?? (isCurrent ? "" : "—")}
                       </span>
@@ -817,8 +793,6 @@ export default function DraftScreen() {
                           liveState={liveState}
                           pickedPlayers={pickedPlayers}
                           currentTeamAbbrev={slot.abbrev}
-                          swapMode={swapMode}
-                          onToggleSwap={handleToggleSwapMode}
                           pendingFinalize={pendingFinalize}
                           onFinalizeSeen={() => setPendingFinalize(false)}
                         />
@@ -847,10 +821,9 @@ export default function DraftScreen() {
                   setShowConfetti(false);
                   setShowRecap(false);
                   setRecapData(null);
-                  // Clear swap state
-                  setSwapMode(false);
-                  setSwapFirst(null);
-                  setSwapConfirm(null);
+                  // Clear reassign state
+                  setReassignPick(null);
+                  setReassignSearch("");
                   // Clear refs so chaos/confetti triggers work on replay
                   processedPicks.current = new Set();
                   bearsDoublePicks.current = new Set();
@@ -1063,49 +1036,55 @@ export default function DraftScreen() {
         </button>
       )}
 
-      {/* Trade confirm dialog */}
-      {swapConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-surface border border-white/30 rounded-xl p-6 max-w-sm w-full">
-            <p className="font-display text-xl text-white mb-3">
-              CONFIRM TRADE
-            </p>
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="text-center">
-                <img
-                  src={getTeamLogo(effectiveOrder[swapConfirm.pickA - 1]?.abbrev)}
-                  alt=""
-                  className="w-10 h-10 object-contain mx-auto mb-1"
-                />
-                <p className="font-condensed text-sm text-white">
-                  #{swapConfirm.pickA} {effectiveOrder[swapConfirm.pickA - 1]?.abbrev}
+      {/* Team reassignment picker modal */}
+      {reassignPick !== null && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80" onClick={() => { setReassignPick(null); setReassignSearch(""); }}>
+          <div className="bg-surface border border-white/30 rounded-t-xl sm:rounded-xl p-4 w-full sm:max-w-sm max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="font-display text-lg text-white">
+                  REASSIGN PICK #{reassignPick}
+                </p>
+                <p className="font-mono text-xs text-muted">
+                  Current: {effectiveOrder[reassignPick - 1]?.abbrev}
                 </p>
               </div>
-              <span className="font-mono text-xl text-amber">↔</span>
-              <div className="text-center">
-                <img
-                  src={getTeamLogo(effectiveOrder[swapConfirm.pickB - 1]?.abbrev)}
-                  alt=""
-                  className="w-10 h-10 object-contain mx-auto mb-1"
-                />
-                <p className="font-condensed text-sm text-white">
-                  #{swapConfirm.pickB} {effectiveOrder[swapConfirm.pickB - 1]?.abbrev}
-                </p>
-              </div>
+              <button
+                onClick={() => { setReassignPick(null); setReassignSearch(""); }}
+                className="text-muted hover:text-white text-xl leading-none px-2"
+              >
+                ✕
+              </button>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleConfirmSwap}
-                className="flex-1 bg-white text-bg font-condensed font-bold uppercase py-2.5 rounded"
-              >
-                TRADE
-              </button>
-              <button
-                onClick={() => { setSwapConfirm(null); setSwapFirst(null); }}
-                className="flex-1 bg-surface-elevated border border-border text-white font-condensed font-bold uppercase py-2.5 rounded"
-              >
-                CANCEL
-              </button>
+            <input
+              type="text"
+              value={reassignSearch}
+              onChange={(e) => setReassignSearch(e.target.value)}
+              placeholder="Search teams..."
+              autoFocus
+              className="w-full bg-bg border border-border rounded px-2 py-1.5 text-white font-mono text-xs focus:border-amber focus:outline-none mb-2"
+            />
+            <div className="flex-1 overflow-auto min-h-0">
+              {Object.entries(TEAMS)
+                .filter(([abbrev, info]) => {
+                  if (!reassignSearch.trim()) return true;
+                  const q = reassignSearch.toLowerCase();
+                  return abbrev.toLowerCase().includes(q) || info.name.toLowerCase().includes(q);
+                })
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([abbrev, info]) => (
+                  <button
+                    key={abbrev}
+                    onClick={() => handleReassignTeam(reassignPick, abbrev)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-elevated transition-colors ${
+                      effectiveOrder[reassignPick - 1]?.abbrev === abbrev ? "bg-amber/10 text-amber" : "text-white"
+                    }`}
+                  >
+                    <img src={info.logo} alt={abbrev} className="w-6 h-6 object-contain shrink-0" />
+                    <span className="font-condensed text-sm uppercase w-10 shrink-0">{abbrev}</span>
+                    <span className="font-mono text-xs text-muted truncate">{info.name}</span>
+                  </button>
+                ))}
             </div>
           </div>
         </div>

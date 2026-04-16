@@ -8,12 +8,8 @@ interface CommissionerControlsProps {
   roomCode: string;
   liveState: LiveState;
   pickedPlayers: string[];
-  /** Current team abbrev at this slot (after swaps applied) */
+  /** Current team abbrev at this slot (after overrides applied) */
   currentTeamAbbrev?: string;
-  /** Whether swap mode is active */
-  swapMode?: boolean;
-  /** Toggle swap mode on/off */
-  onToggleSwap?: () => void;
   /** Parent signals that finalize should auto-open */
   pendingFinalize?: boolean;
   /** Callback to clear the pending flag once consumed */
@@ -29,8 +25,6 @@ export default function CommissionerControls({
   liveState,
   pickedPlayers,
   currentTeamAbbrev,
-  swapMode = false,
-  onToggleSwap,
   pendingFinalize = false,
   onFinalizeSeen,
 }: CommissionerControlsProps) {
@@ -121,19 +115,6 @@ export default function CommissionerControls({
             className="bg-red text-white font-condensed font-bold uppercase px-2.5 py-1 rounded text-xs hover:brightness-110 transition-all"
           >
             CLOSE
-          </button>
-        )}
-
-        {onToggleSwap && (
-          <button
-            onClick={onToggleSwap}
-            className={`font-condensed font-bold uppercase px-2.5 py-1 rounded text-xs transition-all ${
-              swapMode
-                ? "bg-white text-bg"
-                : "bg-white/10 text-white hover:bg-white/20"
-            }`}
-          >
-            TRADE
           </button>
         )}
 

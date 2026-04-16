@@ -1,3 +1,5 @@
+import { TEAMS } from "./teams";
+
 export interface DraftSlot {
   pick: number;
   team: string;
@@ -80,26 +82,23 @@ export const DRAFT_ORDER: DraftSlot[] = [
 ];
 
 /**
- * Returns a new DraftSlot[] with teams swapped at the specified pick positions.
- * Pick numbers stay fixed (1-32); only the team assignment at each slot changes.
+ * Returns a new DraftSlot[] with team overrides applied.
+ * Each override maps a pick number to a new team abbreviation.
+ * The original team is stored in `fromTeam` for "via" display.
  */
 export function getEffectiveDraftOrder(
-  swaps: Array<{ pickA: number; pickB: number }>
+  overrides: Record<string, string>
 ): DraftSlot[] {
   const order = DRAFT_ORDER.map((slot) => ({ ...slot }));
-  for (const { pickA, pickB } of swaps) {
-    const a = order[pickA - 1];
-    const b = order[pickB - 1];
-    const swap = <K extends keyof DraftSlot>(key: K) => {
-      const tmp = a[key];
-      a[key] = b[key];
-      b[key] = tmp;
-    };
-    swap("team");
-    swap("abbrev");
-    swap("fromTeam");
-    swap("trade");
-    swap("tradeNote");
+  for (const [pickStr, newAbbrev] of Object.entries(overrides)) {
+    const idx = Number(pickStr) - 1;
+    if (idx < 0 || idx >= order.length) continue;
+    const slot = order[idx];
+    const teamInfo = TEAMS[newAbbrev];
+    if (!teamInfo) continue;
+    slot.fromTeam = slot.team; // original team for "via" display
+    slot.team = teamInfo.name;
+    slot.abbrev = newAbbrev;
   }
   return order;
 }
