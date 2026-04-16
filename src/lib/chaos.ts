@@ -73,7 +73,7 @@ export function calcChaosScore(
   const prob = getPickProb(slot, playerName);
   const espnRaw = prob === 0 ? 99 : Math.round(100 - prob);
 
-  if (prob === 0) tags.push("0% ESPN");
+  if (prob === 0) tags.push("0% ODDS");
   else if (prob >= 70) tags.push("CHALK PICK");
 
   // ── Rank drift signal (weight: 25%) ──

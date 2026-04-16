@@ -10,11 +10,11 @@ describe("calcChaosScore", () => {
     expect(result.tags.some((t) => t.includes("CHALK"))).toBe(true);
   });
 
-  // Unknown player at any slot → 0% ESPN → CHAOS
-  it("0% ESPN player → high chaos", () => {
+  // Unknown player at any slot → 0% odds → CHAOS
+  it("0% odds player → high chaos", () => {
     const result = calcChaosScore(1, "Nobody McFakeName");
     expect(result.score).toBeGreaterThanOrEqual(50);
-    expect(result.tags).toContain("0% ESPN");
+    expect(result.tags).toContain("0% ODDS");
   });
 
   // Reach: drift = slot - rank. Slot 15, rank 1 → drift = +14 (reach)

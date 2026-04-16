@@ -195,7 +195,7 @@ export default function PlayerSelectionPanel({
               <span className="font-condensed text-xs text-muted uppercase">Player</span>
             </div>
             <div className="shrink-0 flex items-center gap-2">
-              <span className="font-condensed text-xs text-muted uppercase w-12 text-right hidden sm:block">ESPN</span>
+              <span className="font-condensed text-xs text-muted uppercase w-12 text-right hidden sm:block">Odds</span>
               <span className="font-condensed text-xs text-muted uppercase w-16 text-center hidden sm:block">Value</span>
               <span className="font-condensed text-xs text-muted uppercase w-12 text-center hidden sm:block">Need</span>
             </div>

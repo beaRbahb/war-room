@@ -167,7 +167,7 @@ export default function PickReactionScreen({
       {/* Full breakdown */}
       <div className={`rounded border ${colors.border} ${colors.bg} px-4 py-3 mb-6 w-full max-w-sm`}>
         <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-          <span className="font-condensed text-muted uppercase text-xs">ESPN Prob</span>
+          <span className="font-condensed text-muted uppercase text-xs">Odds</span>
           <span className={`font-mono text-right ${espnProb === 0 ? "text-red" : espnProb >= 50 ? "text-green" : "text-white"}`}>
             {espnProb > 0 ? `${espnProb}%` : "0%"}
           </span>
