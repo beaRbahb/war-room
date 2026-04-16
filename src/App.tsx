@@ -8,6 +8,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<JoinScreen />} />
         <Route path="/room/:roomCode" element={<RoomRouter />} />
+        <Route path="/join/:roomCode" element={<JoinScreen />} />
       </Routes>
     </BrowserRouter>
   );

@@ -70,12 +70,13 @@ export default function TecmoCanvas() {
     }
 
     // -- FIELD --
-    function drawField(alpha: number) {
+    function drawField(alpha: number, centerY: number) {
       const w = window.innerWidth, h = window.innerHeight;
       ctx!.globalAlpha = alpha;
       ctx!.strokeStyle = "#fff";
-      const top = h * 0.13;
-      const bot = h * 0.87;
+      const halfH = h * 0.37;
+      const top = centerY - halfH;
+      const bot = centerY + halfH;
       const yardW = w / 12;
 
       ctx!.lineWidth = 1.5;
@@ -87,7 +88,7 @@ export default function TecmoCanvas() {
       ctx!.beginPath(); ctx!.moveTo(0, top); ctx!.lineTo(w, top); ctx!.stroke();
       ctx!.beginPath(); ctx!.moveTo(0, bot); ctx!.lineTo(w, bot); ctx!.stroke();
 
-      const h1 = h * 0.38, h2 = h * 0.62, hl = 6;
+      const h1 = centerY - halfH * 0.27, h2 = centerY + halfH * 0.27, hl = 6;
       ctx!.lineWidth = 1;
       for (let i = 0; i < 12; i++) {
         const bx = i * yardW;
@@ -101,10 +102,11 @@ export default function TecmoCanvas() {
       ctx!.fillStyle = "#fff";
       ctx!.textAlign = "center";
       ctx!.textBaseline = "middle";
+      const hashOff = halfH * 0.19;
       const nums = ["G","10","20","30","40","50","40","30","20","10","G"];
       for (let i = 1; i < 12; i++) {
-        ctx!.fillText(nums[(i - 1) % nums.length], i * yardW, top + h * 0.07);
-        ctx!.fillText(nums[(i - 1) % nums.length], i * yardW, bot - h * 0.07);
+        ctx!.fillText(nums[(i - 1) % nums.length], i * yardW, top + hashOff);
+        ctx!.fillText(nums[(i - 1) % nums.length], i * yardW, bot - hashOff);
       }
     }
 
@@ -241,12 +243,13 @@ export default function TecmoCanvas() {
       else if (loopT > LOOP - FADE) ma = (LOOP - loopT) / FADE;
       ma = smooth(ma);
 
-      drawField(0.06 * ma);
+      const cx = w > 768 ? w * 0.52 : w * 0.5;
+      const cy = w > 768 ? h * 0.48 : h * 0.28;
+
+      drawField(0.06 * ma, cy);
 
       const playT = loopT - SNAP;
       const scale = Math.min(w, h) / 620;
-      const cx = w > 768 ? w * 0.52 : w * 0.5;
-      const cy = h * 0.48;
       const spa = 0.35 * ma;
       const fi = Math.floor(elapsed * 5.5);
 

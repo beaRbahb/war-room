@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { MAX_ROOM_PLAYERS } from "../data/scoring";
 import { BRACKET_LOCK_TIME } from "../data/scoring";
 import { createRoom, addUser, getRoom, getUsers } from "../lib/storage";
@@ -9,8 +9,9 @@ import TecmoCanvas from "../components/TecmoCanvas";
 
 export default function JoinScreen() {
   const navigate = useNavigate();
+  const { roomCode: urlRoomCode } = useParams<{ roomCode?: string }>();
   const [name, setName] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const [roomCode, setRoomCode] = useState(urlRoomCode?.toUpperCase() ?? "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +44,7 @@ export default function JoinScreen() {
         commissionerId: userId,
         commissionerName: name.trim(),
         lockTime: BRACKET_LOCK_TIME.toISOString(),
-        status: "lobby",
+        status: "bracket",
         createdAt: new Date().toISOString(),
       };
 
@@ -65,7 +66,7 @@ export default function JoinScreen() {
         isCommissioner: true,
       });
 
-      navigate(`/room/${code}`);
+      navigate(`/room/${code}`, { state: { justCreated: true } });
     } catch (err) {
       setError("Failed to create room. Check your connection.");
       console.error(err);
@@ -151,20 +152,20 @@ export default function JoinScreen() {
   }
 
   return (
-    <div className="relative min-h-dvh flex flex-col items-center justify-center px-4 bg-bg scanlines">
+    <div className="relative min-h-dvh flex flex-col items-center justify-end pb-6 sm:justify-center sm:pb-0 px-4 bg-bg scanlines">
       {/* Tecmo Bowl background animation */}
       <TecmoCanvas />
 
       {/* Title */}
-      <h1 className="relative z-10 font-display text-6xl sm:text-8xl tracking-wider text-amber mb-2 war-room-title">
+      <h1 className="relative z-10 font-display text-5xl sm:text-8xl tracking-wider text-amber mb-1 sm:mb-2 war-room-title">
         WAR ROOM
       </h1>
-      <p className="relative z-10 font-condensed text-lg text-muted tracking-wide mb-10 uppercase">
+      <p className="relative z-10 font-condensed text-base sm:text-lg text-muted tracking-wide mb-4 sm:mb-10 uppercase">
         NFL Draft Companion
       </p>
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-sm bg-surface border border-border rounded-lg p-6 space-y-4">
+      <div className="relative z-10 w-full max-w-sm bg-surface border border-border rounded-lg p-5 sm:p-6 space-y-3 sm:space-y-4">
         {/* Name */}
         <div>
           <label className="block font-condensed text-sm text-muted uppercase tracking-wide mb-1">

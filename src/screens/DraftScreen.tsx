@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DRAFT_ORDER, getEffectiveDraftOrder } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
 import { BRACKET_LOCK_TIME, GUESS_WINDOW_SECONDS, DRAFT_COUNTDOWN_SECONDS } from "../data/scoring";
@@ -42,6 +42,7 @@ import Leaderboard from "../components/Leaderboard";
 import BearsMode from "../components/BearsMode";
 import Confetti from "../components/Confetti";
 import BearsBustOverlay from "../components/BearsBustOverlay";
+import BracketShareModal from "../components/BracketShareModal";
 import PickReactionScreen from "../components/PickReactionScreen";
 import RunningChaosMeter from "../components/RunningChaosMeter";
 import RecapCard from "../components/RecapCard";
@@ -61,12 +62,14 @@ import type {
   UserReaction,
 } from "../types";
 
-type RoomStatus = "lobby" | "bracket" | "live" | "done";
+type RoomStatus = "bracket" | "live" | "done";
 
 export default function DraftScreen() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const session = getSession();
+  const justCreated = (location.state as { justCreated?: boolean })?.justCreated ?? false;
 
   // ── Room status ──
   const [roomStatus, setRoomStatus] = useState<RoomStatus>("bracket");
@@ -77,6 +80,8 @@ export default function DraftScreen() {
   const [bracketSubmitted, setBracketSubmitted] = useState(false);
   const [countdown, setCountdown] = useState("");
 
+  const [showShareModal, setShowShareModal] = useState(justCreated);
+  const [shareIsCreation, setShareIsCreation] = useState(justCreated);
   const [showStartConfirm, setShowStartConfirm] = useState(false);
   const [draftStartsAt, setDraftStartsAt] = useState<string | null>(null);
   const [showTakeover, setShowTakeover] = useState(false);
@@ -179,6 +184,9 @@ export default function DraftScreen() {
   // ── Bracket phase: load existing bracket ──
   useEffect(() => {
     if (!roomCode || !session) return;
+    // Reset state before loading — prevents stale picks from a previous room
+    setPicks(Array(32).fill(null));
+    setBracketSubmitted(false);
     getBracket(roomCode, session.name).then((bracket) => {
       if (bracket?.picks) {
         const loaded: (BracketPick | null)[] = Array(32).fill(null);
@@ -482,6 +490,8 @@ export default function DraftScreen() {
     };
     await saveBracket(roomCode, session.name, bracket);
     setBracketSubmitted(true);
+    setShareIsCreation(false);
+    setShowShareModal(true);
   }
 
   // ── Draft countdown expired ──
@@ -613,7 +623,7 @@ export default function DraftScreen() {
       {showConfetti && <Confetti />}
 
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-2 sm:py-3 flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-amber tracking-wide">
             {isLive ? "WAR ROOM" : "PRE-DRAFT BRACKET"}
@@ -648,7 +658,7 @@ export default function DraftScreen() {
 
       {/* Commissioner: Start Draft banner (bracket phase) */}
       {!isLive && isCommissioner && (
-        <div className="shrink-0 bg-surface border-b border-border px-4 py-2.5 flex items-center justify-between">
+        <div className="shrink-0 bg-surface border-b border-border px-4 py-2 flex items-center justify-between gap-3">
           {draftStartsAt ? (
             <>
               <span className="font-condensed text-sm text-amber uppercase">
@@ -665,8 +675,8 @@ export default function DraftScreen() {
             </>
           ) : (
             <>
-              <span className="font-condensed text-sm text-muted uppercase">
-                Commissioner — start the draft when everyone is ready
+              <span className="font-condensed text-xs sm:text-sm text-muted uppercase">
+                Commissioner — start when ready
               </span>
               <button
                 onClick={() => setShowStartConfirm(true)}
@@ -1139,6 +1149,11 @@ export default function DraftScreen() {
       {/* Draft takeover overlay */}
       {showTakeover && (
         <DraftTakeover onComplete={() => setShowTakeover(false)} />
+      )}
+
+      {/* Bracket share modal */}
+      {showShareModal && roomCode && (
+        <BracketShareModal roomCode={roomCode} onClose={() => setShowShareModal(false)} isRoomCreation={shareIsCreation} />
       )}
 
       {/* Auto-submit toast */}

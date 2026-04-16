@@ -3,11 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { onRoomConfig } from "../lib/storage";
 import { getSession } from "../lib/session";
 import DraftScreen from "./DraftScreen";
-import LobbyScreen from "./LobbyScreen";
 
 /**
  * Routes to the correct screen based on room status.
- * /room/:roomCode lands here — LobbyScreen for lobby, DraftScreen for bracket/live/done.
+ * /room/:roomCode lands here — DraftScreen for bracket/live/done.
  */
 export default function RoomRouter() {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -39,10 +38,6 @@ export default function RoomRouter() {
         <p className="font-mono text-amber animate-pulse">LOADING...</p>
       </div>
     );
-  }
-
-  if (status === "lobby") {
-    return <LobbyScreen />;
   }
 
   return <DraftScreen />;

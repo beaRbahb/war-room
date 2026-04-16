@@ -4,7 +4,7 @@ export interface RoomConfig {
   commissionerId: string;
   commissionerName: string;
   lockTime: string; // ISO timestamp
-  status: "lobby" | "bracket" | "live" | "done";
+  status: "bracket" | "live" | "done";
   createdAt: string;
   draftStartsAt?: string | null;
 }
