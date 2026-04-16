@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { DRAFT_ORDER, isBearsPick } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
 import { updateLiveState, confirmPick } from "../lib/storage";
@@ -14,6 +14,10 @@ interface CommissionerControlsProps {
   swapMode?: boolean;
   /** Toggle swap mode on/off */
   onToggleSwap?: () => void;
+  /** Parent signals that finalize should auto-open */
+  pendingFinalize?: boolean;
+  /** Callback to clear the pending flag once consumed */
+  onFinalizeSeen?: () => void;
 }
 
 /**
@@ -27,10 +31,20 @@ export default function CommissionerControls({
   currentTeamAbbrev,
   swapMode = false,
   onToggleSwap,
+  pendingFinalize = false,
+  onFinalizeSeen,
 }: CommissionerControlsProps) {
   const [pickSearch, setPickSearch] = useState("");
   const [selectedOfficialPick, setSelectedOfficialPick] = useState("");
   const [showFinalize, setShowFinalize] = useState(false);
+
+  // Auto-open finalize when parent signals pending
+  useEffect(() => {
+    if (pendingFinalize) {
+      setShowFinalize(true);
+      onFinalizeSeen?.();
+    }
+  }, [pendingFinalize, onFinalizeSeen]);
 
   const teamAbbrev = currentTeamAbbrev ?? DRAFT_ORDER.find(
     (s) => s.pick === liveState.currentPick
@@ -97,14 +111,14 @@ export default function CommissionerControls({
         {!liveState.windowOpen ? (
           <button
             onClick={handleOpenWindow}
-            className="bg-green text-bg font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all"
+            className="bg-green text-bg font-condensed font-bold uppercase px-2.5 py-1 rounded text-xs hover:brightness-110 transition-all"
           >
             OPEN
           </button>
         ) : (
           <button
             onClick={handleCloseWindow}
-            className="bg-red text-white font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all"
+            className="bg-red text-white font-condensed font-bold uppercase px-2.5 py-1 rounded text-xs hover:brightness-110 transition-all"
           >
             CLOSE
           </button>
@@ -113,7 +127,7 @@ export default function CommissionerControls({
         {onToggleSwap && (
           <button
             onClick={onToggleSwap}
-            className={`font-condensed font-bold uppercase px-3 py-1 rounded text-sm transition-all ${
+            className={`font-condensed font-bold uppercase px-2.5 py-1 rounded text-xs transition-all ${
               swapMode
                 ? "bg-white text-bg"
                 : "bg-white/10 text-white hover:bg-white/20"
@@ -125,7 +139,7 @@ export default function CommissionerControls({
 
         <button
           onClick={() => setShowFinalize(!showFinalize)}
-          className={`font-condensed font-bold uppercase px-3 py-1 rounded text-sm transition-all ${
+          className={`font-condensed font-bold uppercase px-2.5 py-1 rounded text-xs transition-all ${
             showFinalize
               ? "bg-amber text-bg"
               : "bg-amber/20 text-amber hover:bg-amber/30"

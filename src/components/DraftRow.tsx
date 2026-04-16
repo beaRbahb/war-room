@@ -101,13 +101,13 @@ export default function DraftRow({
           if (isExpandable) onToggleExpand();
         }}
         disabled={rowState === "locked"}
-        className={`w-full flex items-center gap-2 ${rowBg} border rounded px-3 h-12 text-left transition-colors ${borderClass} ${
+        className={`w-full flex items-center gap-1.5 sm:gap-2 ${rowBg} border rounded pl-1 pr-2 sm:px-3 h-14 sm:h-12 text-left transition-colors ${borderClass} ${
           rowState === "locked" ? "opacity-40 cursor-not-allowed" : ""
         } ${bears ? "border-l-2 border-l-bears-orange" : ""}`}
       >
         {/* Pick number */}
         <span
-          className={`font-mono text-sm w-8 text-right shrink-0 ${
+          className={`font-mono text-xs sm:text-sm w-4 sm:w-8 text-right shrink-0 ${
             bears ? "text-bears-orange font-bold" : "text-muted"
           }`}
         >
@@ -136,12 +136,12 @@ export default function DraftRow({
         {/* Player display */}
         <div className="flex-1 min-w-0">
           {rowState === "completed" && confirmedPick ? (
-            <div className="flex items-baseline gap-2 min-w-0">
-              <span className="font-mono text-sm text-white truncate">
+            <div className="min-w-0">
+              <span className="font-mono text-sm text-white truncate block">
                 {confirmedPick.playerName}
               </span>
               {userPick && !isCorrect && (
-                <span className="font-mono text-sm text-muted/50 line-through truncate shrink-0">
+                <span className="font-mono text-[10px] sm:text-xs text-muted/50 line-through truncate block leading-tight">
                   {userPick}
                 </span>
               )}
@@ -152,11 +152,11 @@ export default function DraftRow({
                 {prospect.name}
               </span>
               {submitted ? (
-                <span className="font-condensed text-xs text-green uppercase shrink-0">locked in</span>
+                <span className="hidden sm:inline font-condensed text-xs text-green uppercase shrink-0">locked in</span>
               ) : onSubmit ? (
                 <button
                   onClick={(e) => { e.stopPropagation(); onSubmit(); }}
-                  className="bg-green text-bg font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all shrink-0 animate-pulse"
+                  className="hidden sm:block bg-green text-bg font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all shrink-0 animate-pulse"
                 >
                   SUBMIT
                 </button>
@@ -172,7 +172,8 @@ export default function DraftRow({
             </span>
           ) : rowState === "active" ? (
             <span className="font-mono text-sm text-muted">
-              — Waiting on commissioner —
+              <span className="sm:hidden">— Waiting —</span>
+              <span className="hidden sm:inline">— Waiting on commissioner —</span>
             </span>
           ) : rowState === "locked" ? (
             <span className="font-mono text-sm text-muted">—</span>
@@ -187,10 +188,10 @@ export default function DraftRow({
         <span className="hidden md:block font-mono text-xs text-muted w-12 text-right shrink-0">
           {prospect ? prospect.position : ""}
         </span>
-        <span className="hidden sm:block font-mono text-xs text-muted w-12 text-right shrink-0">
+        <span className="hidden md:block font-mono text-xs text-muted w-12 text-right shrink-0">
           {prospect ? `#${prospect.rank}` : ""}
         </span>
-        <span className={`hidden sm:block font-condensed text-sm font-bold uppercase w-12 text-right shrink-0 ${
+        <span className={`hidden md:block font-condensed text-sm font-bold uppercase w-12 text-right shrink-0 ${
           userGrade
             ? ((POLES_COLORS as Record<string, string>)[userGrade]
               ?? (GRADE_COLORS as Record<string, string>)[userGrade]
@@ -211,6 +212,16 @@ export default function DraftRow({
           )}
         </span>
       </button>
+
+      {/* Mobile full-width submit button */}
+      {rowState === "active" && onSubmit && !submitted && displayName && (
+        <button
+          onClick={onSubmit}
+          className="sm:hidden w-full h-10 bg-green text-bg font-condensed font-bold uppercase text-sm rounded mt-1 hover:brightness-110 transition-all animate-pulse"
+        >
+          SUBMIT
+        </button>
+      )}
 
       {/* Expanded reaction area */}
       {expanded && children && (

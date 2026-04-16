@@ -95,6 +95,17 @@ export default function DraftScreen() {
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [commissionerTab, setCommissionerTab] = useState<"picks" | "admin">("picks");
   const [expandedPick, setExpandedPick] = useState<number | null>(null);
+  const [pendingFinalize, setPendingFinalize] = useState(false);
+  const prevWindowOpenRef = useRef<boolean>(false);
+
+  // ── Auto-finalize: detect window close regardless of active tab ──
+  useEffect(() => {
+    if (!liveState) return;
+    if (prevWindowOpenRef.current && !liveState.windowOpen) {
+      setPendingFinalize(true);
+    }
+    prevWindowOpenRef.current = liveState.windowOpen;
+  }, [liveState?.windowOpen]);
 
   // ── Swap mode (commissioner admin tab) ──
   const [swapMode, setSwapMode] = useState(false);
@@ -273,14 +284,25 @@ export default function DraftScreen() {
           }
         }
         setGuessSubmitted(true);
-        // Commissioner auto-closes the window on expiry
-        if (session.isCommissioner) {
-          updateLiveState(roomCode, { windowOpen: false });
-        }
       }
     }, 200);
     return () => clearInterval(interval);
   }, [roomCode, session, liveState?.windowOpen, liveState?.windowOpenedAt, liveState?.currentPick, currentGuess, guessSubmitted, wagerAmount]);
+
+  // ── Commissioner auto-close on timer expiry ──
+  useEffect(() => {
+    if (!roomCode || !session?.isCommissioner || !liveState?.windowOpen || !liveState.windowOpenedAt) return;
+
+    const openedMs = new Date(liveState.windowOpenedAt).getTime();
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - openedMs) / 1000;
+      if (elapsed >= GUESS_WINDOW_SECONDS) {
+        updateLiveState(roomCode, { windowOpen: false });
+        clearInterval(interval);
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [roomCode, session?.isCommissioner, liveState?.windowOpen, liveState?.windowOpenedAt]);
 
   // ── Confirmed picks ──
   const confirmedPicks = useMemo(
@@ -467,6 +489,7 @@ export default function DraftScreen() {
   /** Select a player (doesn't submit yet — user must tap SUBMIT) */
   function handleLiveSelect(playerName: string) {
     if (!roomCode || !session || !liveState) return;
+    if (!liveState.windowOpen) return;
     setCurrentGuess(playerName);
     setActiveSlot(null); // close panel
   }
@@ -474,6 +497,7 @@ export default function DraftScreen() {
   /** Lock in the current guess to Firebase */
   async function handleLiveSubmit() {
     if (!roomCode || !session || !liveState || !currentGuess) return;
+    if (!liveState.windowOpen) return;
     await submitGuess(roomCode, liveState.currentPick, session.name, currentGuess);
     if (wagerAmount > 0) {
       await submitWager(roomCode, liveState.currentPick, session.name, {
@@ -493,8 +517,12 @@ export default function DraftScreen() {
     }
   }
 
-  function handleToggleSwapMode() {
-    setSwapMode(!swapMode);
+  async function handleToggleSwapMode() {
+    const entering = !swapMode;
+    if (entering && liveState?.windowOpen && roomCode) {
+      await updateLiveState(roomCode, { windowOpen: false });
+    }
+    setSwapMode(entering);
     setSwapFirst(null);
     setSwapConfirm(null);
   }
@@ -547,7 +575,7 @@ export default function DraftScreen() {
   const showCommissionerTabs = isCommissioner && isLive;
 
   return (
-    <div className="min-h-dvh bg-bg flex flex-col">
+    <div className="h-dvh bg-bg flex flex-col overflow-hidden">
       {/* Overlays */}
       {showBearsMode && <BearsMode onComplete={handleBearsModeComplete} />}
       {liveState?.trubiskyActive && <TrubiskyOverlay onComplete={() => {}} />}
@@ -659,9 +687,9 @@ export default function DraftScreen() {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         {/* Main grid */}
-        <div className="flex-1 p-4 overflow-auto">
+        <div className="flex-1 min-h-0 px-2 py-4 sm:p-4 pb-16 lg:pb-4 overflow-auto">
           {/* ── Commissioner Admin Tab ── */}
           {commissionerTab === "admin" && isLive && liveState ? (
             <div className="space-y-1">
@@ -693,7 +721,7 @@ export default function DraftScreen() {
                   <div key={slot.pick} className={isCurrent ? "relative" : ""}>
                     <div
                       onClick={() => isSwapTarget && handleSwapRowClick(pickNum)}
-                      className={`flex items-center gap-3 px-3 h-12 rounded border transition-colors ${
+                      className={`flex items-center gap-1.5 sm:gap-3 pl-1 pr-2 sm:px-3 h-14 sm:h-12 rounded border transition-colors ${
                         isSwapSelected
                           ? "bg-white/10 border-white border-dashed"
                           : isSwapTarget
@@ -705,7 +733,7 @@ export default function DraftScreen() {
                                 : "bg-surface border-border opacity-40"
                       }`}
                     >
-                      <span className={`font-mono text-sm w-8 text-right shrink-0 ${isCurrent ? "text-amber font-bold" : "text-muted"}`}>
+                      <span className={`font-mono text-xs sm:text-sm w-4 sm:w-8 text-right shrink-0 ${isCurrent ? "text-amber font-bold" : "text-muted"}`}>
                         {pickNum}
                       </span>
                       <img
@@ -729,6 +757,8 @@ export default function DraftScreen() {
                           currentTeamAbbrev={slot.abbrev}
                           swapMode={swapMode}
                           onToggleSwap={handleToggleSwapMode}
+                          pendingFinalize={pendingFinalize}
+                          onFinalizeSeen={() => setPendingFinalize(false)}
                         />
                       )}
                     </div>
@@ -777,13 +807,13 @@ export default function DraftScreen() {
                 <span className="w-24 shrink-0" />
                 <span className="flex-1 font-condensed text-sm text-white/70 uppercase tracking-wide font-bold">Player</span>
                 <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right hidden md:block font-bold">Pos</span>
-                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold">Rank</span>
-                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold">Grade</span>
+                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right hidden md:block font-bold">Rank</span>
+                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right hidden md:block font-bold">Grade</span>
                 <span className="w-5 shrink-0" />
               </div>
 
               {/* 32 rows */}
-              <div className="space-y-1">
+              <div className="space-y-2 sm:space-y-1">
                 {effectiveOrder.map((slot, i) => {
                   const rowState = getRowState(i);
                   const pickNum = i + 1;
@@ -989,7 +1019,7 @@ export default function DraftScreen() {
             }, 4000);
           }}
           disabled={liveState.windowOpen}
-          className="fixed bottom-4 right-4 z-20 bg-bears-navy border-2 border-bears-orange text-bears-orange font-condensed font-bold uppercase px-4 py-3 rounded-full shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+          className="fixed bottom-16 right-4 z-40 lg:bottom-4 bg-bears-navy border-2 border-bears-orange text-bears-orange font-condensed font-bold uppercase px-4 py-3 rounded-full shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm"
         >
           TRUBISKY
         </button>

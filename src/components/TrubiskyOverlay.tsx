@@ -28,7 +28,7 @@ export default function TrubiskyOverlay({ onComplete }: TrubiskyOverlayProps) {
   if (phase === "done") return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Background */}
       <div
         className={`absolute inset-0 bg-bears-navy ${

@@ -85,7 +85,7 @@ export default function TimerBar({
       <div
         className={`sticky top-[57px] z-[9] border-b px-4 py-2.5 flex items-center justify-between ${
           isFlashing
-            ? "bg-red/10 border-red animate-flash-red"
+            ? "bg-surface border-red animate-flash-red"
             : "bg-surface border-amber"
         }`}
       >
@@ -100,9 +100,6 @@ export default function TimerBar({
           <div>
             <span className="font-mono text-sm text-amber">
               PICK #{liveState.currentPick}
-            </span>
-            <span className="font-condensed text-xs text-muted ml-2">
-              {currentSlot?.abbrev} on the clock
             </span>
           </div>
         </div>
@@ -136,7 +133,7 @@ export default function TimerBar({
           {userGuess && !submitted && (
             <button
               onClick={onSubmit}
-              className="bg-green text-bg font-condensed font-bold uppercase text-sm px-4 py-2 rounded hover:brightness-110 transition-all animate-pulse"
+              className="hidden sm:block bg-green text-bg font-condensed font-bold uppercase text-sm px-4 py-2 rounded hover:brightness-110 transition-all animate-pulse"
             >
               SUBMIT
             </button>
@@ -161,13 +158,11 @@ export default function TimerBar({
           <span className="font-mono text-sm text-amber">
             PICK #{liveState.currentPick}
           </span>
-          <span className="font-condensed text-xs text-muted ml-2">
-            {currentSlot?.abbrev} on the clock
-          </span>
         </div>
       </div>
       <span className="font-condensed text-sm text-muted uppercase">
-        Waiting for commissioner...
+        <span className="sm:hidden">Waiting...</span>
+        <span className="hidden sm:inline">Waiting for commissioner...</span>
       </span>
     </div>
   );
