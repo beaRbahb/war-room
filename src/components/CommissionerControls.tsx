@@ -110,17 +110,6 @@ export default function CommissionerControls({
           </button>
         )}
 
-        <button
-          onClick={() => setShowFinalize(!showFinalize)}
-          className={`font-condensed font-bold uppercase px-3 py-1 rounded text-sm transition-all ${
-            showFinalize
-              ? "bg-amber text-bg"
-              : "bg-amber/20 text-amber hover:bg-amber/30"
-          }`}
-        >
-          FINALIZE
-        </button>
-
         {onToggleSwap && (
           <button
             onClick={onToggleSwap}
@@ -133,6 +122,17 @@ export default function CommissionerControls({
             TRADE
           </button>
         )}
+
+        <button
+          onClick={() => setShowFinalize(!showFinalize)}
+          className={`font-condensed font-bold uppercase px-3 py-1 rounded text-sm transition-all ${
+            showFinalize
+              ? "bg-amber text-bg"
+              : "bg-amber/20 text-amber hover:bg-amber/30"
+          }`}
+        >
+          FINALIZE
+        </button>
       </div>
 
       {/* Backdrop to dismiss finalize */}

@@ -1,11 +1,11 @@
 import { useRef, useEffect } from "react";
 import { isBearsPick } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
-import { TEAM_NEEDS } from "../data/teamNeeds";
 import { getPickProb } from "../data/prospectOdds";
 import { getTeamLogo, getTeamAbbrev } from "../data/teams";
 import type { DraftSlot } from "../data/draftOrder";
-import type { ConfirmedPick } from "../types";
+import type { ConfirmedPick, ReactionType } from "../types";
+import { POLES_LABELS, POLES_COLORS, GRADE_LABELS, GRADE_COLORS } from "../types";
 
 export type RowState = "editable" | "active" | "completed" | "locked";
 
@@ -31,6 +31,8 @@ interface DraftRowProps {
   submitted?: boolean;
   /** Live mode: whether the pick window is open */
   windowOpen?: boolean;
+  /** User's locked-in reaction for completed rows */
+  userGrade?: ReactionType | null;
   /** Children for expanded content (reactions) */
   children?: React.ReactNode;
 }
@@ -53,6 +55,7 @@ export default function DraftRow({
   onSubmit,
   submitted,
   windowOpen,
+  userGrade,
   children,
 }: DraftRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -68,22 +71,6 @@ export default function DraftRow({
   // Determine display player and stats
   const displayName = confirmedPick?.playerName ?? userPick;
   const prospect = displayName ? getProspect(displayName) : null;
-  const teamNeeds = TEAM_NEEDS[slot.abbrev] ?? [];
-  const needsMatch = prospect && teamNeeds.includes(prospect.position);
-
-  const rankDiff = prospect ? prospect.rank - slot.pick : 0;
-  const reachValue = prospect
-    ? rankDiff > 8
-      ? { label: "REACH", color: "text-red" }
-      : rankDiff > 3
-        ? { label: "REACH", color: "text-red/70" }
-        : rankDiff < -8
-          ? { label: "STEAL", color: "text-green" }
-          : rankDiff < -3
-            ? { label: "VALUE", color: "text-green/70" }
-            : { label: "BPA", color: "text-amber" }
-    : null;
-
   // Row background
   const rowBg =
     rowState === "active"
@@ -195,45 +182,36 @@ export default function DraftRow({
           )}
         </div>
 
-        {/* Stat columns — always rendered for alignment */}
-        <div className="hidden sm:flex items-center gap-2 shrink-0">
-          {prospect ? (
-            <>
-              <span className="font-mono text-xs text-muted w-14 text-center hidden md:block">
-                {prospect.position}
-              </span>
-              <span className="font-mono text-xs text-muted w-8 text-right">
-                #{prospect.rank}
-              </span>
-              <span className="font-mono text-xs w-12 text-right text-muted">
-                {(() => {
-                  const prob = getPickProb(slot.pick, prospect.name);
-                  return prob > 0 ? `${prob}%` : "—";
-                })()}
-              </span>
-              <span
-                className={`font-condensed text-xs font-bold uppercase w-16 text-center ${
-                  reachValue?.color ?? "text-muted"
-                }`}
-              >
-                {reachValue?.label ?? ""}
-              </span>
-              <span className="font-condensed text-xs font-bold uppercase w-12 text-center">
-                {needsMatch ? <span className="text-amber">NEED</span> : ""}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="w-14 shrink-0 hidden md:block" />
-              <span className="w-8 shrink-0" />
-              <span className="w-12 shrink-0" />
-              <span className="w-16 shrink-0" />
-              <span className="w-12 shrink-0" />
-            </>
-          )}
-        </div>
+        {/* Stat columns — uniform w-12, always all 4 rendered for alignment */}
+        <span className="hidden md:block font-mono text-xs text-muted w-12 text-right shrink-0">
+          {prospect ? prospect.position : ""}
+        </span>
+        <span className="hidden sm:block font-mono text-xs text-muted w-12 text-right shrink-0">
+          {prospect ? `#${prospect.rank}` : ""}
+        </span>
+        <span className="hidden sm:block font-mono text-xs text-muted w-12 text-right shrink-0">
+          {rowState !== "completed" && prospect
+            ? (() => {
+                const prob = getPickProb(slot.pick, prospect.name);
+                return prob > 0 ? `${prob}%` : "—";
+              })()
+            : ""}
+        </span>
+        <span className={`hidden sm:block font-condensed text-sm font-bold uppercase w-12 text-right shrink-0 ${
+          userGrade
+            ? ((POLES_COLORS as Record<string, string>)[userGrade]
+              ?? (GRADE_COLORS as Record<string, string>)[userGrade]
+              ?? "text-muted").replace(/bg-\S+/g, "").replace(/border-\S+/g, "").trim()
+            : "text-muted"
+        }`}>
+          {userGrade
+            ? ((POLES_LABELS as Record<string, string>)[userGrade]
+              ?? (GRADE_LABELS as Record<string, string>)[userGrade]
+              ?? userGrade)
+            : rowState === "completed" ? "—" : ""}
+        </span>
 
-        {/* Status indicator (non-completed rows only) */}
+        {/* Status indicator */}
         <span className="text-sm w-5 text-center shrink-0">
           {rowState === "completed" ? null
           : rowState === "editable" && userPick ? (

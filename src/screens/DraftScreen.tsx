@@ -23,12 +23,12 @@ import {
   submitWager,
   getAllGuesses,
   getAllReactions,
+  onAllReactions,
   clearGuesses,
   resetDraft,
 } from "../lib/storage";
 import { getSession } from "../lib/session";
 import { calcBracketScore, calcLiveScore } from "../lib/scoring";
-import { calcChaosScore } from "../lib/chaos";
 import { assignPersonas, type PersonaType } from "../lib/personas";
 import { calcUserRecap, calcRoomRecap, type UserRecapStats, type RoomRecapStats } from "../lib/recap";
 import { REVEAL_PAUSE_MS } from "../data/scoring";
@@ -42,9 +42,8 @@ import Leaderboard from "../components/Leaderboard";
 import BearsMode from "../components/BearsMode";
 import Confetti from "../components/Confetti";
 import TrubiskyOverlay from "../components/TrubiskyOverlay";
-import ChaosFlash from "../components/ChaosFlash";
+import PickReactionScreen from "../components/PickReactionScreen";
 import RunningChaosMeter from "../components/RunningChaosMeter";
-import PickReaction from "../components/PickReaction";
 import RecapCard from "../components/RecapCard";
 import RoomRecap from "../components/RoomRecap";
 
@@ -56,6 +55,7 @@ import type {
   UserScores,
   RoomUser,
   LeaderboardEntry,
+  UserReaction,
 } from "../types";
 
 type RoomStatus = "lobby" | "bracket" | "live" | "done";
@@ -83,6 +83,7 @@ export default function DraftScreen() {
   const [brackets, setBrackets] = useState<Record<string, UserBracket>>({});
   const [users, setUsers] = useState<Record<string, RoomUser>>({});
   const [allGuesses, setAllGuesses] = useState<Record<string, Record<string, string>>>({});
+  const [allReactions, setAllReactions] = useState<Record<string, Record<string, UserReaction>>>({});
   const [guessCount, setGuessCount] = useState(0);
 
   // ── Live guess state (per-pick) ──
@@ -108,6 +109,7 @@ export default function DraftScreen() {
     slot: number;
     playerName: string;
     teamAbbrev: string;
+    isBearsPick: boolean;
     priorPicks: { position: string }[];
   } | null>(null);
   const [, setRevealedPicks] = useState<Set<number>>(new Set());
@@ -197,6 +199,7 @@ export default function DraftScreen() {
       onScores(roomCode, setScores),
       onBrackets(roomCode, setBrackets),
       onUsers(roomCode, setUsers),
+      onAllReactions(roomCode, setAllReactions),
     ];
     return () => unsubs.forEach((u) => u());
   }, [roomCode, isLive]);
@@ -296,12 +299,13 @@ export default function DraftScreen() {
       .map((p) => ({
         position: PROSPECTS.find((pr) => pr.name === p.playerName)?.position ?? "",
       }));
-    setChaosFlash({
+    const flashData = {
       slot: latest.pick,
       playerName: latest.playerName,
       teamAbbrev: latest.teamAbbrev,
+      isBearsPick: latest.isBearsPick,
       priorPicks,
-    });
+    };
 
     if (liveState?.bearsDoubleActive) {
       bearsDoublePicks.current.add(latest.pick);
@@ -312,12 +316,22 @@ export default function DraftScreen() {
     }
 
     const pickGuessKey = `pick${latest.pick}`;
+    let confettiFired = false;
     const unsub = onGuesses(roomCode, latest.pick, (guesses) => {
       setAllGuesses((prev) => ({ ...prev, [pickGuessKey]: guesses }));
 
       if (guesses[session.name] === latest.playerName) {
+        confettiFired = true;
         setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 5500);
+        setTimeout(() => {
+          setShowConfetti(false);
+          setChaosFlash(flashData);
+        }, 5500);
+      }
+
+      // Show reaction screen immediately if no confetti
+      if (!confettiFired) {
+        setChaosFlash(flashData);
       }
 
       const allUsers = Object.values(users);
@@ -527,11 +541,14 @@ export default function DraftScreen() {
       {showBearsMode && <BearsMode onComplete={handleBearsModeComplete} />}
       {liveState?.trubiskyActive && <TrubiskyOverlay onComplete={() => {}} />}
       {chaosFlash && (
-        <ChaosFlash
+        <PickReactionScreen
           slot={chaosFlash.slot}
           playerName={chaosFlash.playerName}
           teamAbbrev={chaosFlash.teamAbbrev}
+          isBearsPick={chaosFlash.isBearsPick}
           priorPicks={chaosFlash.priorPicks}
+          roomCode={roomCode}
+          userName={session.name}
           onComplete={() => setChaosFlash(null)}
         />
       )}
@@ -665,7 +682,7 @@ export default function DraftScreen() {
                   <div key={slot.pick} className={isCurrent ? "relative" : ""}>
                     <div
                       onClick={() => isSwapTarget && handleSwapRowClick(pickNum)}
-                      className={`flex items-center gap-3 px-3 py-3 rounded border transition-colors ${
+                      className={`flex items-center gap-3 px-3 h-12 rounded border transition-colors ${
                         isSwapSelected
                           ? "bg-white/10 border-white border-dashed"
                           : isSwapTarget
@@ -683,12 +700,12 @@ export default function DraftScreen() {
                       <img
                         src={getTeamLogo(slot.abbrev)}
                         alt={slot.abbrev}
-                        className="w-6 h-6 object-contain shrink-0"
+                        className="w-8 h-8 object-contain shrink-0"
                       />
-                      <span className="font-condensed text-sm text-white uppercase w-12 shrink-0">
+                      <span className="font-condensed text-base text-white uppercase w-12 shrink-0">
                         {slot.abbrev}
                       </span>
-                      <span className="flex-1 font-condensed text-sm text-white truncate">
+                      <span className="flex-1 font-mono text-sm text-white truncate">
                         {confirmed?.playerName ?? (isCurrent ? "" : "—")}
                       </span>
 
@@ -703,10 +720,6 @@ export default function DraftScreen() {
                           onToggleSwap={handleToggleSwapMode}
                         />
                       )}
-
-                      {isPast && confirmed && (
-                        <span className="font-mono text-xs text-green shrink-0">✓</span>
-                      )}
                     </div>
                   </div>
                 );
@@ -716,12 +729,29 @@ export default function DraftScreen() {
                 onClick={async () => {
                   if (!confirm("Reset draft? This clears all picks, guesses, scores, and returns to bracket phase.")) return;
                   await resetDraft(roomCode);
+                  // Clear all synced state
+                  setResults({});
+                  setScores({});
+                  setAllGuesses({});
+                  setAllReactions({});
+                  setLiveStateLocal(null);
+                  setGuessCount(0);
+                  // Clear per-pick local state
                   setCurrentGuess(null);
                   setGuessSubmitted(false);
                   setWagerAmount(0);
+                  setExpandedPick(null);
+                  setChaosFlash(null);
+                  setShowConfetti(false);
+                  setShowRecap(false);
+                  setRecapData(null);
+                  // Clear swap state
                   setSwapMode(false);
                   setSwapFirst(null);
                   setSwapConfirm(null);
+                  // Clear refs so chaos/confetti triggers work on replay
+                  processedPicks.current = new Set();
+                  bearsDoublePicks.current = new Set();
                 }}
                 className="mt-4 w-full bg-red/20 border border-red text-red font-condensed font-bold uppercase py-2 rounded text-sm hover:bg-red/30 transition-all"
               >
@@ -733,28 +763,25 @@ export default function DraftScreen() {
               {/* Column headers */}
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 mb-1 border-b border-border">
                 <span className="w-8 shrink-0" />
-                <span className="w-20 shrink-0" />
+                <span className="w-24 shrink-0" />
                 <span className="flex-1 font-condensed text-sm text-white/70 uppercase tracking-wide font-bold">Player</span>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="font-condensed text-sm text-white/70 uppercase w-14 text-center hidden md:block font-bold">Pos</span>
-                  <span className="font-condensed text-sm text-white/70 uppercase w-8 text-right font-bold">Rank</span>
-                  <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold relative">
-                    <span className="cursor-help" onClick={() => setShowEspnInfo(!showEspnInfo)}>
-                      ESPN <span className="text-[10px] opacity-50">ⓘ</span>
-                    </span>
-                    {showEspnInfo && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowEspnInfo(false)} />
-                        <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 w-56 p-2.5 rounded bg-surface-elevated border border-border text-xs text-white normal-case tracking-normal font-normal font-sans z-50 shadow-lg leading-relaxed">
-                          ESPN pick probability — the % chance ESPN's draft predictor model gives for this player to be selected at this pick.
-                        </span>
-                      </>
-                    )}
+                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right hidden md:block font-bold">Pos</span>
+                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold">Rank</span>
+                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold relative">
+                  <span className="cursor-help" onClick={() => setShowEspnInfo(!showEspnInfo)}>
+                    ESPN <span className="text-[10px] opacity-50">ⓘ</span>
                   </span>
-                  <span className="font-condensed text-sm text-white/70 uppercase w-16 text-center font-bold">Value</span>
-                  <span className="font-condensed text-sm text-white/70 uppercase w-12 text-center font-bold">Need</span>
-                  <span className="w-5 shrink-0" />
-                </div>
+                  {showEspnInfo && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowEspnInfo(false)} />
+                      <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 w-56 p-2.5 rounded bg-surface-elevated border border-border text-xs text-white normal-case tracking-normal font-normal font-sans z-50 shadow-lg leading-relaxed">
+                        ESPN pick probability — the % chance ESPN's draft predictor model gives for this player to be selected at this pick.
+                      </span>
+                    </>
+                  )}
+                </span>
+                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold">Grade</span>
+                <span className="w-5 shrink-0" />
               </div>
 
               {/* 32 rows */}
@@ -791,6 +818,7 @@ export default function DraftScreen() {
                         userPick={userPick}
                         confirmedPick={confirmed}
                         isCorrect={isCorrect}
+                        userGrade={allReactions[`pick${pickNum}`]?.[session.name]?.reaction ?? null}
                         onClick={() => handleRowClick(i)}
                         expanded={expandedPick === pickNum}
                         onToggleExpand={() =>
@@ -800,52 +828,7 @@ export default function DraftScreen() {
                         onSubmit={rowState === "active" && isLive && currentGuess && !guessSubmitted ? handleLiveSubmit : undefined}
                         submitted={rowState === "active" && isLive ? guessSubmitted : undefined}
                         windowOpen={rowState === "active" && isLive ? liveState?.windowOpen : undefined}
-                      >
-                        {/* Expanded content: chaos tags + reaction buttons */}
-                        {rowState === "completed" && confirmed && (() => {
-                          const prior = confirmedPicks
-                            .filter((p) => p.pick < confirmed.pick)
-                            .map((p) => ({
-                              position: PROSPECTS.find((pr) => pr.name === p.playerName)?.position ?? "",
-                            }));
-                          const chaos = calcChaosScore(confirmed.pick, confirmed.playerName, confirmed.teamAbbrev, prior);
-                          return (
-                            <div className="space-y-2">
-                              {/* Chaos context tags */}
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`font-mono text-xs font-bold ${
-                                  chaos.level === "CHALK" ? "text-muted"
-                                    : chaos.level === "MILD" ? "text-amber"
-                                    : chaos.level === "SPICY" ? "text-bears-orange"
-                                    : "text-red"
-                                }`}>
-                                  {chaos.level} {chaos.score}
-                                </span>
-                                {chaos.tags.map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className={`font-mono text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                                      chaos.level === "CHALK" ? "bg-muted/15 text-muted"
-                                        : chaos.level === "MILD" ? "bg-amber/10 text-amber"
-                                        : chaos.level === "SPICY" ? "bg-bears-orange/15 text-bears-orange"
-                                        : "bg-red/15 text-red"
-                                    }`}
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                              {/* Reaction buttons */}
-                              <PickReaction
-                                roomCode={roomCode}
-                                pickNum={confirmed.pick}
-                                userName={session.name}
-                                isBearsPick={confirmed.isBearsPick}
-                              />
-                            </div>
-                          );
-                        })()}
-                      </DraftRow>
+                      />
                     </div>
                   );
                 })}
