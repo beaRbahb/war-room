@@ -646,6 +646,39 @@ export default function DraftScreen() {
         </div>
       </header>
 
+      {/* Commissioner: Start Draft banner (bracket phase) */}
+      {!isLive && isCommissioner && (
+        <div className="shrink-0 bg-surface border-b border-border px-4 py-2.5 flex items-center justify-between">
+          {draftStartsAt ? (
+            <>
+              <span className="font-condensed text-sm text-amber uppercase">
+                Draft countdown started
+              </span>
+              <button
+                onClick={async () => {
+                  await setDraftCountdown(roomCode, null);
+                }}
+                className="bg-red/80 text-white font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
+              >
+                CANCEL COUNTDOWN
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="font-condensed text-sm text-muted uppercase">
+                Commissioner — start the draft when everyone is ready
+              </span>
+              <button
+                onClick={() => setShowStartConfirm(true)}
+                className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
+              >
+                START DRAFT
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Commissioner tabs */}
       {showCommissionerTabs && (
         <div className="bg-surface border-b border-border px-4 flex gap-1">
@@ -1018,27 +1051,6 @@ export default function DraftScreen() {
         >
           🐻 BUST
         </button>
-      )}
-
-      {/* Commissioner: Start Draft / Cancel Countdown button (bracket phase) */}
-      {!isLive && isCommissioner && (
-        draftStartsAt ? (
-          <button
-            onClick={async () => {
-              await setDraftCountdown(roomCode, null);
-            }}
-            className="fixed bottom-4 left-4 z-20 bg-red/80 text-white font-condensed font-bold uppercase px-6 py-3 rounded-full shadow-lg hover:brightness-110 transition-all"
-          >
-            CANCEL COUNTDOWN
-          </button>
-        ) : (
-          <button
-            onClick={() => setShowStartConfirm(true)}
-            className="fixed bottom-4 left-4 z-20 bg-green text-bg font-condensed font-bold uppercase px-6 py-3 rounded-full shadow-lg hover:brightness-110 transition-all"
-          >
-            START DRAFT
-          </button>
-        )
       )}
 
       {/* Trade confirm dialog */}
