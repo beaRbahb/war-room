@@ -9,7 +9,9 @@ import TecmoCanvas from "../components/ui/TecmoCanvas";
 
 export default function JoinScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { roomCode: urlRoomCode } = useParams<{ roomCode?: string }>();
+  const kicked = (location.state as { kicked?: boolean })?.kicked === true;
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState(urlRoomCode?.toUpperCase() ?? "");
   const [error, setError] = useState("");
@@ -163,6 +165,13 @@ export default function JoinScreen() {
       <p className="relative z-10 font-condensed text-base sm:text-lg text-muted tracking-wide mb-4 sm:mb-10 uppercase">
         NFL Draft Companion
       </p>
+
+      {/* Kicked banner */}
+      {kicked && (
+        <p className="relative z-10 w-full max-w-sm bg-red/10 border border-red text-red font-condensed text-sm uppercase tracking-wide text-center py-2 rounded mb-2">
+          You were removed from the room
+        </p>
+      )}
 
       {/* Card */}
       <div className="relative z-10 w-full max-w-sm bg-surface border border-border rounded-lg p-5 sm:p-6 space-y-3 sm:space-y-4">
