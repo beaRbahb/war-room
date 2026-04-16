@@ -26,27 +26,19 @@ export default function TimerBar({
   guessCount,
   totalUsers,
 }: TimerBarProps) {
-  const [timeLeft, setTimeLeft] = useState(GUESS_WINDOW_SECONDS);
+  const [now, setNow] = useState(Date.now);
 
-  // Countdown timer
+  // Tick the clock while the guess window is open
   useEffect(() => {
-    if (!liveState.windowOpen || !liveState.windowOpenedAt) {
-      setTimeLeft(GUESS_WINDOW_SECONDS);
-      return;
-    }
-
-    const openedMs = new Date(liveState.windowOpenedAt).getTime();
-
-    function tick() {
-      const elapsed = (Date.now() - openedMs) / 1000;
-      const remaining = Math.max(0, GUESS_WINDOW_SECONDS - elapsed);
-      setTimeLeft(Math.ceil(remaining));
-    }
-
-    tick();
-    const interval = setInterval(tick, 200);
+    if (!liveState.windowOpen || !liveState.windowOpenedAt) return;
+    const interval = setInterval(() => setNow(Date.now()), 200);
     return () => clearInterval(interval);
   }, [liveState.windowOpen, liveState.windowOpenedAt]);
+
+  // Derive timeLeft from current time (no setState in effect body)
+  const timeLeft = (!liveState.windowOpen || !liveState.windowOpenedAt)
+    ? GUESS_WINDOW_SECONDS
+    : Math.ceil(Math.max(0, GUESS_WINDOW_SECONDS - (now - new Date(liveState.windowOpenedAt).getTime()) / 1000));
 
   const isFlashing =
     liveState.windowOpen && timeLeft <= FLASH_WARNING_SECONDS;

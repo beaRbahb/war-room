@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { MAX_ROOM_PLAYERS } from "../data/scoring";
 import { BRACKET_LOCK_TIME } from "../data/scoring";
 import { createRoom, addUser, getRoom, getUsers } from "../lib/storage";
+import { onAuthError } from "../lib/firebase";
 import { saveSession, generateUserId } from "../lib/session";
 import type { RoomConfig, RoomUser } from "../types";
 import TecmoCanvas from "../components/ui/TecmoCanvas";
@@ -16,6 +17,9 @@ export default function JoinScreen() {
   const [roomCode, setRoomCode] = useState(urlRoomCode?.toUpperCase() ?? "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  useEffect(() => onAuthError(setAuthError), []);
 
   async function handleCreate() {
     if (!name.trim()) {
@@ -165,6 +169,13 @@ export default function JoinScreen() {
       <p className="relative z-10 font-condensed text-base sm:text-lg text-muted tracking-wide mb-4 sm:mb-10 uppercase">
         NFL Draft Companion
       </p>
+
+      {/* Auth error banner */}
+      {authError && (
+        <p className="relative z-10 w-full max-w-sm bg-red/10 border border-red text-red font-condensed text-sm uppercase tracking-wide text-center py-2 rounded mb-2">
+          {authError}
+        </p>
+      )}
 
       {/* Kicked banner */}
       {kicked && (

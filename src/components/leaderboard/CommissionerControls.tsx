@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { DRAFT_ORDER, isBearsPick } from "../../data/draftOrder";
 import { PROSPECTS } from "../../data/prospects";
 import { updateLiveState, confirmPick } from "../../lib/storage";
@@ -33,12 +33,10 @@ export default function CommissionerControls({
   const [showFinalize, setShowFinalize] = useState(false);
 
   // Auto-open finalize when parent signals pending
-  useEffect(() => {
-    if (pendingFinalize) {
-      setShowFinalize(true);
-      onFinalizeSeen?.();
-    }
-  }, [pendingFinalize, onFinalizeSeen]);
+  if (pendingFinalize && !showFinalize) {
+    setShowFinalize(true);
+    onFinalizeSeen?.();
+  }
 
   const teamAbbrev = currentTeamAbbrev ?? DRAFT_ORDER.find(
     (s) => s.pick === liveState.currentPick

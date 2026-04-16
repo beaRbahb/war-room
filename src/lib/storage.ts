@@ -33,6 +33,29 @@ async function waitForAuth() {
   await authPromise;
 }
 
+/**
+ * Deferred onValue: waits for auth before attaching the Firebase listener.
+ * Returns a synchronous Unsubscribe that cancels even if auth hasn't resolved yet.
+ */
+function deferredOnValue(
+  dbRef: ReturnType<typeof ref>,
+  cb: (snap: import("firebase/database").DataSnapshot) => void,
+): Unsubscribe {
+  let innerUnsub: Unsubscribe | null = null;
+  let cancelled = false;
+
+  authPromise.then(() => {
+    if (!cancelled) {
+      innerUnsub = onValue(dbRef, cb);
+    }
+  });
+
+  return () => {
+    cancelled = true;
+    innerUnsub?.();
+  };
+}
+
 // ── Room Config ──
 
 export async function createRoom(
@@ -53,7 +76,7 @@ export function onRoomConfig(
   code: string,
   cb: (config: RoomConfig | null) => void
 ): Unsubscribe {
-  return onValue(ref(db, `${roomPath(code)}/config`), (snap) => {
+  return deferredOnValue(ref(db, `${roomPath(code)}/config`), (snap) => {
     cb(snap.exists() ? (snap.val() as RoomConfig) : null);
   });
 }
@@ -93,7 +116,7 @@ export function onUsers(
   code: string,
   cb: (users: Record<string, RoomUser>) => void
 ): Unsubscribe {
-  return onValue(ref(db, `${roomPath(code)}/users`), (snap) => {
+  return deferredOnValue(ref(db, `${roomPath(code)}/users`), (snap) => {
     cb(snap.exists() ? (snap.val() as Record<string, RoomUser>) : {});
   });
 }
@@ -130,7 +153,7 @@ export function onBrackets(
   code: string,
   cb: (brackets: Record<string, UserBracket>) => void
 ): Unsubscribe {
-  return onValue(ref(db, `${roomPath(code)}/brackets`), (snap) => {
+  return deferredOnValue(ref(db, `${roomPath(code)}/brackets`), (snap) => {
     cb(snap.exists() ? (snap.val() as Record<string, UserBracket>) : {});
   });
 }
@@ -171,7 +194,7 @@ export function onLiveState(
   code: string,
   cb: (state: LiveState | null) => void
 ): Unsubscribe {
-  return onValue(ref(db, `${roomPath(code)}/live`), (snap) => {
+  return deferredOnValue(ref(db, `${roomPath(code)}/live`), (snap) => {
     cb(snap.exists() ? (snap.val() as LiveState) : null);
   });
 }
@@ -196,7 +219,7 @@ export function onGuesses(
   pickNum: number,
   cb: (guesses: Record<string, string>) => void
 ): Unsubscribe {
-  return onValue(
+  return deferredOnValue(
     ref(db, `${roomPath(code)}/live_guesses/pick${pickNum}`),
     (snap) => {
       cb(snap.exists() ? (snap.val() as Record<string, string>) : {});
@@ -240,7 +263,7 @@ export function onResults(
   code: string,
   cb: (results: Record<string, ConfirmedPick>) => void
 ): Unsubscribe {
-  return onValue(ref(db, `${roomPath(code)}/results`), (snap) => {
+  return deferredOnValue(ref(db, `${roomPath(code)}/results`), (snap) => {
     cb(snap.exists() ? (snap.val() as Record<string, ConfirmedPick>) : {});
   });
 }
@@ -265,7 +288,7 @@ export function onReactions(
   pickNum: number,
   cb: (reactions: Record<string, UserReaction>) => void
 ): Unsubscribe {
-  return onValue(
+  return deferredOnValue(
     ref(db, `${roomPath(code)}/reactions/pick${pickNum}`),
     (snap) => {
       cb(snap.exists() ? (snap.val() as Record<string, UserReaction>) : {});
@@ -277,7 +300,7 @@ export function onAllReactions(
   code: string,
   cb: (reactions: Record<string, Record<string, UserReaction>>) => void
 ): Unsubscribe {
-  return onValue(ref(db, `${roomPath(code)}/reactions`), (snap) => {
+  return deferredOnValue(ref(db, `${roomPath(code)}/reactions`), (snap) => {
     cb(
       snap.exists()
         ? (snap.val() as Record<string, Record<string, UserReaction>>)
@@ -321,7 +344,7 @@ export function onScores(
   code: string,
   cb: (scores: Record<string, UserScores>) => void
 ): Unsubscribe {
-  return onValue(ref(db, `${roomPath(code)}/scores`), (snap) => {
+  return deferredOnValue(ref(db, `${roomPath(code)}/scores`), (snap) => {
     cb(snap.exists() ? (snap.val() as Record<string, UserScores>) : {});
   });
 }

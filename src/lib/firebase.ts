@@ -20,10 +20,30 @@ const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 export const auth = getAuth(app);
 
+/** Observable auth error — components can subscribe to show UI */
+type AuthErrorListener = (error: string | null) => void;
+const authErrorListeners = new Set<AuthErrorListener>();
+let currentAuthError: string | null = null;
+
+function setAuthError(error: string | null) {
+  currentAuthError = error;
+  authErrorListeners.forEach((cb) => cb(error));
+}
+
+/** Subscribe to auth error state. Returns unsubscribe function. */
+export function onAuthError(cb: AuthErrorListener): () => void {
+  cb(currentAuthError); // emit current state immediately
+  authErrorListeners.add(cb);
+  return () => authErrorListeners.delete(cb);
+}
+
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+
 /**
  * Ensure the user has an anonymous Firebase auth session.
- * Resolves immediately if already signed in; otherwise triggers signInAnonymously.
- * Called once on app init before any DB operations.
+ * Resolves immediately if already signed in; otherwise triggers signInAnonymously
+ * with exponential backoff retry (up to 3 attempts).
  */
 let authReady: Promise<void> | null = null;
 
@@ -34,12 +54,40 @@ export function ensureAuth(): Promise<void> {
     const unsub = onAuthStateChanged(auth, (user) => {
       unsub();
       if (user) {
+        setAuthError(null);
         resolve();
       } else {
-        signInAnonymously(auth).then(() => resolve()).catch(reject);
+        attemptSignIn(0, resolve, reject);
       }
     });
   });
 
   return authReady;
+}
+
+function attemptSignIn(
+  attempt: number,
+  resolve: () => void,
+  reject: (err: Error) => void,
+) {
+  signInAnonymously(auth)
+    .then(() => {
+      setAuthError(null);
+      resolve();
+    })
+    .catch((err) => {
+      if (attempt < MAX_RETRIES - 1) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        console.warn(
+          `[War Room] Auth attempt ${attempt + 1}/${MAX_RETRIES} failed, retrying in ${delay}ms`,
+          err,
+        );
+        setAuthError("Connecting to server...");
+        setTimeout(() => attemptSignIn(attempt + 1, resolve, reject), delay);
+      } else {
+        console.error("[War Room] Auth failed after all retries", err);
+        setAuthError("Unable to connect. Check your internet and refresh.");
+        reject(new Error("Firebase auth failed after retries"));
+      }
+    });
 }

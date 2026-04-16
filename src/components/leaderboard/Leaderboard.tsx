@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { UserScores, LeaderboardEntry } from "../../types";
 import PersonaBadge from "../reactions/PersonaBadge";
 import type { PersonaType } from "../../lib/personas";
@@ -38,22 +38,28 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
       return a.name.localeCompare(b.name);
     });
 
+  // Stable key for detecting score changes without putting entries in the dep array
+  const scoreKey = useMemo(
+    () => entries.map((e) => `${e.name}:${tab === "live" ? e.liveScore : e.bracketScore}`).join(","),
+    [entries, tab],
+  );
+
   // Detect score changes for flip animation
   useEffect(() => {
     const newFlipping = new Set<string>();
-    entries.forEach((entry) => {
+    for (const entry of entries) {
       const score = tab === "live" ? entry.liveScore : entry.bracketScore;
-      const prevScore = prevScoresRef.current[entry.name] ?? score;
-      if (score !== prevScore) {
-        newFlipping.add(entry.name);
-      }
+      const prev = prevScoresRef.current[entry.name] ?? score;
+      if (score !== prev) newFlipping.add(entry.name);
       prevScoresRef.current[entry.name] = score;
-    });
+    }
     if (newFlipping.size > 0) {
       setFlippingScores(newFlipping);
-      setTimeout(() => setFlippingScores(new Set()), 400);
+      const timer = setTimeout(() => setFlippingScores(new Set()), 400);
+      return () => clearTimeout(timer);
     }
-  }, [entries, tab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scoreKey tracks the values we care about
+  }, [scoreKey]);
 
   function exportCsv() {
     const headers = "Name,Bracket Score,Live Score,Total Score\n";

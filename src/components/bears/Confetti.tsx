@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 
 interface ConfettiProps {
   /** Duration in ms before auto-remove */
@@ -28,28 +28,27 @@ const COLORS = [
   "#FFD700",
 ];
 
+function generatePieces(): Piece[] {
+  return Array.from({ length: 1000 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 1.5,
+    width: 5 + Math.random() * 10,
+    height: 4 + Math.random() * 14,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    drift: -40 + Math.random() * 80,
+    speed: 2 + Math.random() * 2.5,
+    spin: 360 + Math.random() * 720,
+  }));
+}
+
 /**
- * New Year's Eve confetti — 200 pieces, lateral sway, varied shapes.
+ * New Year's Eve confetti — 1000 pieces, lateral sway, varied shapes.
  * Fires on correct live guess.
  */
 export default function Confetti({ duration = 5000 }: ConfettiProps) {
   const [visible, setVisible] = useState(true);
-
-  const pieces: Piece[] = useMemo(
-    () =>
-      Array.from({ length: 1000 }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        delay: Math.random() * 1.5,
-        width: 5 + Math.random() * 10,
-        height: 4 + Math.random() * 14,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        drift: -40 + Math.random() * 80, // px lateral drift
-        speed: 2 + Math.random() * 2.5, // seconds to fall
-        spin: 360 + Math.random() * 720,
-      })),
-    []
-  );
+  const [pieces] = useState<Piece[]>(generatePieces);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(false), duration);
