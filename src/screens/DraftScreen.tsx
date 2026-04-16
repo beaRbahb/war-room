@@ -918,36 +918,38 @@ export default function DraftScreen() {
               </div>
 
               {/* Reset draft — testing only, primary commissioner only */}
-              {isPrimaryCommissioner && <button
-                onClick={async () => {
-                  if (!confirm("Reset draft? This clears all picks, guesses, scores, and returns to bracket phase.")) return;
-                  await resetDraft(roomCode);
-                  // Clear all synced state
-                  setResults({});
-                  setScores({});
-                  setAllGuesses({});
-                  setAllReactions({});
-                  setLiveStateLocal(null);
-                  setGuessCount(0);
-                  // Clear per-pick local state
-                  setCurrentGuess(null);
-                  setGuessSubmitted(false);
-                  setExpandedPick(null);
-                  setChaosFlash(null);
-                  setShowConfetti(false);
-                  setShowRecap(false);
-                  setRecapData(null);
-                  // Clear reassign state
-                  setReassignPick(null);
-                  setReassignSearch("");
-                  // Clear refs so chaos/confetti triggers work on replay
-                  processedPicks.current = new Set();
-                  bearsDoublePicks.current = new Set();
-                }}
-                className="mt-4 w-full bg-red/20 border border-red text-red font-condensed font-bold uppercase py-2 rounded text-sm hover:bg-red/30 transition-all"
-              >
-                RESET DRAFT (TESTING)
-              </button>}
+              {isPrimaryCommissioner && (
+                <button
+                  onClick={async () => {
+                    if (!confirm("Reset draft? This clears all picks, guesses, scores, and returns to bracket phase.")) return;
+                    await resetDraft(roomCode);
+                    // Clear all synced state
+                    setResults({});
+                    setScores({});
+                    setAllGuesses({});
+                    setAllReactions({});
+                    setLiveStateLocal(null);
+                    setGuessCount(0);
+                    // Clear per-pick local state
+                    setCurrentGuess(null);
+                    setGuessSubmitted(false);
+                    setExpandedPick(null);
+                    setChaosFlash(null);
+                    setShowConfetti(false);
+                    setShowRecap(false);
+                    setRecapData(null);
+                    // Clear reassign state
+                    setReassignPick(null);
+                    setReassignSearch("");
+                    // Clear refs so chaos/confetti triggers work on replay
+                    processedPicks.current = new Set();
+                    bearsDoublePicks.current = new Set();
+                  }}
+                  className="mt-4 w-full bg-red/20 border border-red text-red font-condensed font-bold uppercase py-2 rounded text-sm hover:bg-red/30 transition-all"
+                >
+                  RESET DRAFT (TESTING)
+                </button>
+              )}
             </div>
           ) : (
             <>

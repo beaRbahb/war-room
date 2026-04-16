@@ -8,6 +8,9 @@ import { saveSession, generateUserId } from "../lib/session";
 import type { RoomConfig, RoomUser } from "../types";
 import TecmoCanvas from "../components/ui/TecmoCanvas";
 
+/** Only allow letters, numbers, hyphens, underscores in room codes (Firebase-safe) */
+const ROOM_CODE_REGEX = /^[A-Z0-9_-]+$/;
+
 export default function JoinScreen() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,11 +33,15 @@ export default function JoinScreen() {
       setError("Enter a room code");
       return;
     }
+    const code = roomCode.trim().toUpperCase();
+    if (!ROOM_CODE_REGEX.test(code)) {
+      setError("Room code can only contain letters, numbers, hyphens, and underscores");
+      return;
+    }
     setLoading(true);
     setError("");
 
     try {
-      const code = roomCode.trim().toUpperCase();
 
       // Check if room already exists
       const existing = await getRoom(code);
@@ -90,11 +97,15 @@ export default function JoinScreen() {
       setError("Enter a room code");
       return;
     }
+    const code = roomCode.trim().toUpperCase();
+    if (!ROOM_CODE_REGEX.test(code)) {
+      setError("Room code can only contain letters, numbers, hyphens, and underscores");
+      return;
+    }
     setLoading(true);
     setError("");
 
     try {
-      const code = roomCode.trim().toUpperCase();
       const room = await getRoom(code);
 
       if (!room) {
@@ -214,7 +225,7 @@ export default function JoinScreen() {
           <input
             type="text"
             value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+            onChange={(e) => setRoomCode(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").toUpperCase())}
             placeholder="e.g. BEARS"
             maxLength={20}
             autoComplete="off"
@@ -224,6 +235,7 @@ export default function JoinScreen() {
             data-form-type="other"
             className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-sm uppercase tracking-widest focus:border-amber focus:outline-none"
           />
+          <p className="font-mono text-xs text-muted mt-1">Letters and numbers only — no spaces or symbols</p>
         </div>
 
         {/* Error */}
