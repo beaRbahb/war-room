@@ -1010,7 +1010,7 @@ export default function DraftScreen() {
       )}
 
       {/* Commissioner: Trubisky floating button (live phase) */}
-      {isCommissioner && isLive && liveState && (
+      {isCommissioner && isLive && liveState && commissionerTab === "admin" && (
         <button
           onClick={async () => {
             await updateLiveState(roomCode, { trubiskyActive: true });

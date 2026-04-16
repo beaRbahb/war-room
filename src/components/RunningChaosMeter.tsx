@@ -30,13 +30,16 @@ function getDraftPhrase(score: number): string {
   return "OFF THE RAILS";
 }
 
-/** Running draft chaos meter — shows above pick #1 in the draft list. */
+/** Minimum picks before showing the vibe meter */
+const MIN_PICKS = 3;
+
+/** Running draft chaos meter — shows after 3+ confirmed picks. */
 export default function RunningChaosMeter({ confirmedPicks }: RunningChaosMeterProps) {
-  const { avgScore, avgLevel } = useMemo(() => {
-    if (confirmedPicks.length === 0) return { avgScore: 0, avgLevel: "CHALK" as ChaosLevel };
+  const { rmsScore, rmsLevel } = useMemo(() => {
+    if (confirmedPicks.length < MIN_PICKS) return { rmsScore: 0, rmsLevel: "CHALK" as ChaosLevel };
 
     const sorted = [...confirmedPicks].sort((a, b) => a.pick - b.pick);
-    let total = 0;
+    let sumSquares = 0;
 
     for (let i = 0; i < sorted.length; i++) {
       const pick = sorted[i];
@@ -44,20 +47,20 @@ export default function RunningChaosMeter({ confirmedPicks }: RunningChaosMeterP
         position: PROSPECTS.find((pr) => pr.name === p.playerName)?.position ?? "",
       }));
       const { score } = calcChaosScore(pick.pick, pick.playerName, pick.teamAbbrev, priorPicks);
-      total += score;
+      sumSquares += score * score;
     }
 
-    const avg = Math.round(total / sorted.length);
+    const rms = Math.round(Math.sqrt(sumSquares / sorted.length));
     const level: ChaosLevel =
-      avg <= 30 ? "CHALK" : avg <= 60 ? "MILD" : avg <= 80 ? "SPICY" : "CHAOS";
+      rms <= 30 ? "CHALK" : rms <= 60 ? "MILD" : rms <= 80 ? "SPICY" : "CHAOS";
 
-    return { avgScore: avg, avgLevel: level };
+    return { rmsScore: rms, rmsLevel: level };
   }, [confirmedPicks]);
 
-  if (confirmedPicks.length === 0) return null;
+  if (confirmedPicks.length < MIN_PICKS) return null;
 
-  const fillPct = Math.round((avgScore / 99) * 100);
-  const phrase = getDraftPhrase(avgScore);
+  const fillPct = Math.round((rmsScore / 99) * 100);
+  const phrase = getDraftPhrase(rmsScore);
 
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 border-b border-border bg-surface-elevated/50">
@@ -66,11 +69,11 @@ export default function RunningChaosMeter({ confirmedPicks }: RunningChaosMeterP
       </span>
       <div className="w-24 h-1.5 bg-bg rounded-full overflow-hidden shrink-0">
         <div
-          className={`h-full rounded-full transition-all duration-700 ${FILL_COLORS[avgLevel]}`}
+          className={`h-full rounded-full transition-all duration-700 ${FILL_COLORS[rmsLevel]}`}
           style={{ width: `${fillPct}%` }}
         />
       </div>
-      <span className={`font-condensed text-xs font-bold uppercase ${TEXT_COLORS[avgLevel]}`}>
+      <span className={`font-condensed text-xs font-bold uppercase ${TEXT_COLORS[rmsLevel]}`}>
         {phrase}
       </span>
       <span className="font-mono text-[10px] text-muted ml-auto shrink-0">
