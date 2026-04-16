@@ -687,17 +687,10 @@ export default function DraftScreen() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {!isLive && (
-            <div className="text-right">
-              <p className="font-mono text-sm text-amber">
-                {bracketLocked ? "\u{1F512}" : "\u{1F513}"} {countdown}
-              </p>
-              {bracketSubmitted && (
-                <p className="font-condensed text-xs text-green uppercase">
-                  Submitted
-                </p>
-              )}
-            </div>
+          {!isLive && bracketSubmitted && (
+            <p className="font-condensed text-xs text-green uppercase">
+              Submitted
+            </p>
           )}
           {isLive && confirmedPicks.length >= 32 && recapData && (
             <button
@@ -729,8 +722,8 @@ export default function DraftScreen() {
             </>
           ) : (
             <>
-              <span className="font-condensed text-xs sm:text-sm text-muted uppercase">
-                {draftSoon ? "Commissioner — start when ready" : "Draft starts on draft night"}
+              <span className="font-condensed text-sm sm:text-base uppercase">
+                {draftSoon ? <span className="text-white/70">Commissioner — start when ready</span> : bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="text-white/70">Brackets lock in </span><span className="text-amber font-bold">{countdown}</span></>}
               </span>
               <button
                 onClick={() => draftSoon && setShowStartConfirm(true)}
@@ -745,6 +738,15 @@ export default function DraftScreen() {
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* Non-commissioner: bracket lock countdown (bracket phase) */}
+      {!isLive && !isCommissioner && !draftStartsAt && (
+        <div className="shrink-0 bg-surface border-b border-border px-4 py-2 text-center">
+          <span className="font-condensed text-sm sm:text-base uppercase">
+            {bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="text-white/70">Brackets lock in </span><span className="text-amber font-bold">{countdown}</span></>}
+          </span>
         </div>
       )}
 
@@ -974,7 +976,7 @@ export default function DraftScreen() {
               {!isLive && (
                 <>
                   <BracketProgressStrip filled={picks.filter(Boolean).length} total={32} />
-                  <p className="px-3 font-condensed text-xs text-muted mb-2">
+                  <p className="px-3 font-condensed text-sm text-white/60 mb-2">
                     Predict all 32 Round 1 picks. Tap a row to select a player.
                   </p>
                 </>

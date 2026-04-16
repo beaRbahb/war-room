@@ -9,7 +9,7 @@ export default function BracketProgressStrip({ filled, total }: BracketProgressS
 
   return (
     <div className="flex items-center gap-3 px-3 py-2 mb-2">
-      <span className="font-condensed text-xs text-muted uppercase tracking-wide shrink-0">
+      <span className="font-condensed text-sm text-white/70 uppercase tracking-wide shrink-0">
         Bracket
       </span>
       <div className="flex-1 h-2 bg-surface-elevated rounded-full overflow-hidden border border-border">
