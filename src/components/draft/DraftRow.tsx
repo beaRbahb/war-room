@@ -30,6 +30,8 @@ interface DraftRowProps {
   submitted?: boolean;
   /** Live mode: whether the pick window is open */
   windowOpen?: boolean;
+  /** Pulse animation for first empty bracket slot */
+  isPulsing?: boolean;
   /** User's locked-in reaction for completed rows */
   userGrade?: ReactionType | null;
   /** Children for expanded content (reactions) */
@@ -51,6 +53,7 @@ export default function DraftRow({
   expanded,
   onToggleExpand,
   shouldScroll,
+  isPulsing,
   onSubmit,
   submitted,
   windowOpen,
@@ -84,11 +87,13 @@ export default function DraftRow({
   const borderClass =
     rowState === "active"
       ? "border-amber animate-pulse-border"
-      : rowState === "completed" && isCorrect
-        ? "border-green"
-        : rowState === "completed" && isCorrect === false
-          ? "border-red/50"
-          : "border-border hover:border-border-bright";
+      : isPulsing
+        ? "border-amber animate-pulse-border"
+        : rowState === "completed" && isCorrect
+          ? "border-green"
+          : rowState === "completed" && isCorrect === false
+            ? "border-red/50"
+            : "border-border hover:border-border-bright";
 
   const isClickable = rowState === "editable" || rowState === "active";
   const isExpandable = rowState === "completed" && confirmedPick;

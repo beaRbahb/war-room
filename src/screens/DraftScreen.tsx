@@ -45,6 +45,7 @@ import BearsMode from "../components/bears/BearsMode";
 import Confetti from "../components/bears/Confetti";
 import BearsBustOverlay from "../components/bears/BearsBustOverlay";
 import BracketShareModal from "../components/draft/BracketShareModal";
+import RoomWelcome from "../components/draft/RoomWelcome";
 import PickReactionScreen from "../components/reactions/PickReactionScreen";
 import RunningChaosMeter from "../components/chaos/RunningChaosMeter";
 import RecapCard from "../components/leaderboard/RecapCard";
@@ -83,8 +84,13 @@ export default function DraftScreen() {
   const [bracketSubmitted, setBracketSubmitted] = useState(false);
   const [countdown, setCountdown] = useState("");
 
-  const [showShareModal, setShowShareModal] = useState(justCreated);
-  const [shareIsCreation, setShareIsCreation] = useState(justCreated);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const welcomeKey = roomCode ? `warroom-welcomed-${roomCode}` : "";
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (justCreated) return true;
+    if (!welcomeKey) return false;
+    return !localStorage.getItem(welcomeKey);
+  });
   const [showStartConfirm, setShowStartConfirm] = useState(false);
   const [draftStartsAt, setDraftStartsAt] = useState<string | null>(null);
   const [showTakeover, setShowTakeover] = useState(false);
@@ -493,6 +499,12 @@ export default function DraftScreen() {
     [picks]
   );
 
+  /** Index of the first unfilled bracket slot (for pulsing hint) */
+  const firstEmptyIndex = useMemo(
+    () => (!isLive && !bracketLocked ? picks.findIndex((p) => !p) : -1),
+    [picks, isLive, bracketLocked]
+  );
+
   const totalUsers = Object.keys(users).length;
   const currentSlot = effectiveOrder.find(
     (s) => s.pick === (liveState?.currentPick || 1)
@@ -545,7 +557,6 @@ export default function DraftScreen() {
     };
     await saveBracket(roomCode, session.name, bracket);
     setBracketSubmitted(true);
-    setShareIsCreation(false);
     setShowShareModal(true);
   }
 
@@ -642,6 +653,7 @@ export default function DraftScreen() {
   if (!session || !roomCode) return null;
 
   const isPrimaryCommissioner = session.isCommissioner;
+  const draftSoon = BRACKET_LOCK_TIME.getTime() - Date.now() <= 30 * 60 * 1000;
   const isCommissioner = isPrimaryCommissioner || session.id === backupCommissionerId;
   const showCommissionerTabs = isCommissioner && isLive;
 
@@ -718,11 +730,16 @@ export default function DraftScreen() {
           ) : (
             <>
               <span className="font-condensed text-xs sm:text-sm text-muted uppercase">
-                Commissioner — start when ready
+                {draftSoon ? "Commissioner — start when ready" : "Draft starts on draft night"}
               </span>
               <button
-                onClick={() => setShowStartConfirm(true)}
-                className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
+                onClick={() => draftSoon && setShowStartConfirm(true)}
+                disabled={!draftSoon}
+                className={`font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded transition-all ${
+                  draftSoon
+                    ? "bg-green text-bg hover:brightness-110"
+                    : "bg-surface-elevated border border-border text-muted opacity-50 cursor-not-allowed"
+                }`}
               >
                 START DRAFT
               </button>
@@ -953,9 +970,14 @@ export default function DraftScreen() {
             </div>
           ) : (
             <>
-              {/* Bracket progress strip (bracket phase only) */}
+              {/* Bracket progress strip + explainer (bracket phase only) */}
               {!isLive && (
-                <BracketProgressStrip filled={picks.filter(Boolean).length} total={32} />
+                <>
+                  <BracketProgressStrip filled={picks.filter(Boolean).length} total={32} />
+                  <p className="px-3 font-condensed text-xs text-muted mb-2">
+                    Predict all 32 Round 1 picks. Tap a row to select a player.
+                  </p>
+                </>
               )}
 
               {/* Draft countdown banner */}
@@ -1017,6 +1039,7 @@ export default function DraftScreen() {
                         onToggleExpand={() =>
                           setExpandedPick(expandedPick === pickNum ? null : pickNum)
                         }
+                        isPulsing={i === firstEmptyIndex && !userPick}
                         shouldScroll={shouldScroll}
                         onSubmit={rowState === "active" && isLive && currentGuess && !guessSubmitted ? handleLiveSubmit : undefined}
                         submitted={rowState === "active" && isLive ? guessSubmitted : undefined}
@@ -1029,20 +1052,30 @@ export default function DraftScreen() {
             </>
           )}
 
-          {/* Bracket submit button */}
+          {/* Bracket submit button + share invite */}
           {!isLive && !bracketLocked && (
-            <button
-              onClick={handleBracketSubmit}
-              className={`mt-4 w-full font-condensed font-bold uppercase tracking-wide py-3 rounded transition-all ${
-                bracketSubmitted
-                  ? "bg-green/20 border border-green text-green hover:bg-green/30"
-                  : "bg-amber text-bg hover:brightness-110"
-              }`}
-            >
-              {bracketSubmitted
-                ? "\u2713 BRACKET SUBMITTED — TAP TO UPDATE"
-                : "SUBMIT BRACKET"}
-            </button>
+            <div className="mt-4 space-y-2">
+              <button
+                onClick={handleBracketSubmit}
+                className={`w-full font-condensed font-bold uppercase tracking-wide py-3 rounded transition-all ${
+                  bracketSubmitted
+                    ? "bg-green/20 border border-green text-green hover:bg-green/30"
+                    : "bg-amber text-bg hover:brightness-110"
+                }`}
+              >
+                {bracketSubmitted
+                  ? "\u2713 BRACKET SUBMITTED — TAP TO UPDATE"
+                  : "SUBMIT BRACKET"}
+              </button>
+              {bracketSubmitted && (
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="w-full bg-surface-elevated border border-border text-white font-condensed font-bold uppercase tracking-wide py-2.5 rounded hover:border-amber transition-all text-sm"
+                >
+                  SHARE INVITE
+                </button>
+              )}
+            </div>
           )}
         </div>
 
@@ -1225,9 +1258,21 @@ export default function DraftScreen() {
         <DraftTakeover onComplete={() => setShowTakeover(false)} />
       )}
 
-      {/* Bracket share modal */}
+      {/* Room welcome onboarding (first visit) */}
+      {showWelcome && roomCode && session && (
+        <RoomWelcome
+          roomCode={roomCode}
+          isCommissioner={session.isCommissioner}
+          onDismiss={() => {
+            if (welcomeKey) localStorage.setItem(welcomeKey, "1");
+            setShowWelcome(false);
+          }}
+        />
+      )}
+
+      {/* Bracket share modal (post-submit) */}
       {showShareModal && roomCode && (
-        <BracketShareModal roomCode={roomCode} onClose={() => setShowShareModal(false)} isRoomCreation={shareIsCreation} />
+        <BracketShareModal roomCode={roomCode} onClose={() => setShowShareModal(false)} />
       )}
 
       {/* Auto-submit toast */}

@@ -4,8 +4,6 @@ import { BRACKET_LOCK_TIME } from "../../data/scoring";
 interface BracketShareModalProps {
   roomCode: string;
   onClose: () => void;
-  /** Show room-created messaging instead of bracket-submitted */
-  isRoomCreation?: boolean;
 }
 
 /** Formats a countdown string from now until the target date */
@@ -20,7 +18,7 @@ function formatCountdown(target: Date): string {
   return `${hours}h ${mins}m ${secs}s`;
 }
 
-export default function BracketShareModal({ roomCode, onClose, isRoomCreation }: BracketShareModalProps) {
+export default function BracketShareModal({ roomCode, onClose }: BracketShareModalProps) {
   const [countdown, setCountdown] = useState(() => formatCountdown(BRACKET_LOCK_TIME));
   const [copied, setCopied] = useState(false);
 
@@ -65,14 +63,12 @@ export default function BracketShareModal({ roomCode, onClose, isRoomCreation }:
 
         {/* Heading */}
         <h2 className="font-display text-3xl text-amber tracking-wide">
-          {isRoomCreation ? "ROOM CREATED" : "BRACKET LOCKED IN"}
+          BRACKET LOCKED IN
         </h2>
 
         {/* Subtitle */}
         <p className="font-condensed text-sm text-muted leading-relaxed">
-          {isRoomCreation
-            ? "Invite your group before draft night. Share the link — they just enter their name."
-            : "Get your group in before draft night. Share the link — they just enter their name."}
+          Get your group in before draft night. Share the link — they just enter their name.
         </p>
 
         {/* Countdown */}
