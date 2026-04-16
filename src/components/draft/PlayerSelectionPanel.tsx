@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import { PROSPECTS } from "../data/prospects";
-import { TEAM_NEEDS } from "../data/teamNeeds";
-import { getSlotOdds, getPickProb } from "../data/prospectOdds";
-import { getTeamLogo, getTeamColor } from "../data/teams";
-import { getHeadshot } from "../lib/headshots";
-import type { DraftSlot } from "../data/draftOrder";
+import { PROSPECTS } from "../../data/prospects";
+import { TEAM_NEEDS } from "../../data/teamNeeds";
+import { getSlotOdds, getPickProb } from "../../data/prospectOdds";
+import { getTeamLogo, getTeamColor } from "../../data/teams";
+import { getHeadshot } from "../../lib/headshots";
+import type { DraftSlot } from "../../data/draftOrder";
 
 interface Props {
   slot: DraftSlot;

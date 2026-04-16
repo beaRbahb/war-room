@@ -26,30 +26,31 @@ import {
   onAllReactions,
   clearGuesses,
   resetDraft,
+  removeUser,
 } from "../lib/storage";
-import { getSession } from "../lib/session";
+import { getSession, clearSession } from "../lib/session";
 import { calcBracketScore, calcLiveScore } from "../lib/scoring";
 import { assignPersonas, type PersonaType } from "../lib/personas";
 import { calcUserRecap, calcRoomRecap, type UserRecapStats, type RoomRecapStats } from "../lib/recap";
 import { REVEAL_PAUSE_MS } from "../data/scoring";
 
-import DraftRow from "../components/DraftRow";
-import type { RowState } from "../components/DraftRow";
-import TimerBar from "../components/TimerBar";
-import CommissionerControls from "../components/CommissionerControls";
-import PlayerSelectionPanel from "../components/PlayerSelectionPanel";
-import Leaderboard from "../components/Leaderboard";
-import BearsMode from "../components/BearsMode";
-import Confetti from "../components/Confetti";
-import BearsBustOverlay from "../components/BearsBustOverlay";
-import BracketShareModal from "../components/BracketShareModal";
-import PickReactionScreen from "../components/PickReactionScreen";
-import RunningChaosMeter from "../components/RunningChaosMeter";
-import RecapCard from "../components/RecapCard";
-import RoomRecap from "../components/RoomRecap";
-import BracketProgressStrip from "../components/BracketProgressStrip";
-import DraftCountdownBanner from "../components/DraftCountdownBanner";
-import DraftTakeover from "../components/DraftTakeover";
+import DraftRow from "../components/draft/DraftRow";
+import type { RowState } from "../components/draft/DraftRow";
+import TimerBar from "../components/ui/TimerBar";
+import CommissionerControls from "../components/leaderboard/CommissionerControls";
+import PlayerSelectionPanel from "../components/draft/PlayerSelectionPanel";
+import Leaderboard from "../components/leaderboard/Leaderboard";
+import BearsMode from "../components/bears/BearsMode";
+import Confetti from "../components/bears/Confetti";
+import BearsBustOverlay from "../components/bears/BearsBustOverlay";
+import BracketShareModal from "../components/draft/BracketShareModal";
+import PickReactionScreen from "../components/reactions/PickReactionScreen";
+import RunningChaosMeter from "../components/chaos/RunningChaosMeter";
+import RecapCard from "../components/leaderboard/RecapCard";
+import RoomRecap from "../components/leaderboard/RoomRecap";
+import BracketProgressStrip from "../components/draft/BracketProgressStrip";
+import DraftCountdownBanner from "../components/draft/DraftCountdownBanner";
+import DraftTakeover from "../components/draft/DraftTakeover";
 
 import type {
   BracketPick,
@@ -221,6 +222,22 @@ export default function DraftScreen() {
     return () => clearInterval(interval);
   }, [isLive]);
 
+  // ── Subscribe to users in all phases (for kick detection) ──
+  useEffect(() => {
+    if (!roomCode) return;
+    return onUsers(roomCode, setUsers);
+  }, [roomCode]);
+
+  // ── Kick detection: redirect if current user removed ──
+  useEffect(() => {
+    if (!session) return;
+    const userIds = Object.keys(users);
+    if (userIds.length > 0 && !users[session.id]) {
+      clearSession();
+      navigate("/", { state: { kicked: true } });
+    }
+  }, [users, session, navigate]);
+
   // ── Live phase: Firebase subscriptions ──
   useEffect(() => {
     if (!roomCode || !isLive) return;
@@ -229,7 +246,6 @@ export default function DraftScreen() {
       onResults(roomCode, setResults),
       onScores(roomCode, setScores),
       onBrackets(roomCode, setBrackets),
-      onUsers(roomCode, setUsers),
       onAllReactions(roomCode, setAllReactions),
     ];
     return () => unsubs.forEach((u) => u());
@@ -801,6 +817,38 @@ export default function DraftScreen() {
                   </div>
                 );
               })}
+              {/* ── User list with kick ── */}
+              <div className="mt-6 border border-border rounded p-3">
+                <p className="font-condensed text-sm text-muted uppercase tracking-wide mb-2">
+                  USERS ({Object.keys(users).length})
+                </p>
+                <div className="space-y-1">
+                  {Object.values(users).map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between px-2 py-1.5 rounded bg-bg"
+                    >
+                      <span className="font-mono text-sm text-white">
+                        {u.name}
+                        {u.isCommissioner && (
+                          <span className="ml-1.5 text-amber text-xs font-condensed uppercase">
+                            COMM
+                          </span>
+                        )}
+                      </span>
+                      {!u.isCommissioner && (
+                        <button
+                          onClick={() => removeUser(roomCode, u.id)}
+                          className="font-condensed text-xs font-bold uppercase px-2 py-0.5 rounded bg-red/20 text-red border border-red/40 hover:bg-red/30 transition-colors"
+                        >
+                          KICK
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Reset draft — testing only */}
               <button
                 onClick={async () => {

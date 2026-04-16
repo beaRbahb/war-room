@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { getRandomBust } from "../data/bearsBusts";
+import { getRandomBust } from "../../data/bearsBusts";
 
 interface BearsBustOverlayProps {
   onComplete: () => void;

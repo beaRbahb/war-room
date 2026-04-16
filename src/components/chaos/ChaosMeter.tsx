@@ -1,4 +1,4 @@
-import { calcChaosScore } from "../lib/chaos";
+import { calcChaosScore } from "../../lib/chaos";
 
 interface ChaosMeterProps {
   slot: number;

@@ -1,4 +1,4 @@
-import { PERSONA_META, PERSONA_COLORS, type PersonaType } from "../lib/personas";
+import { PERSONA_META, PERSONA_COLORS, type PersonaType } from "../../lib/personas";
 
 interface PersonaBadgeProps {
   persona: PersonaType;

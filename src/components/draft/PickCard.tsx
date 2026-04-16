@@ -1,30 +1,30 @@
 import { useEffect, useState } from "react";
-import { DRAFT_ORDER } from "../data/draftOrder";
+import { DRAFT_ORDER } from "../../data/draftOrder";
 import {
   POLES_LABELS, POLES_COLORS,
   GRADE_LABELS, GRADE_COLORS,
-} from "../types";
+} from "../../types";
 import type {
   ConfirmedPick,
   UserReaction,
   ReactionType,
   PolesReaction,
   GradeType,
-} from "../types";
-import polesKing from "../assets/images/poles/poles-king.webp";
-import polesStoic from "../assets/images/poles/poles-stoic.jpg";
-import polesHoodie from "../assets/images/poles/poles-hoodie.jpeg";
+} from "../../types";
+import polesKing from "../../assets/images/poles/poles-king.webp";
+import polesStoic from "../../assets/images/poles/poles-stoic.jpg";
+import polesHoodie from "../../assets/images/poles/poles-hoodie.jpeg";
 
 const POLES_IMAGES: Record<PolesReaction, string> = {
   king: polesKing,
   meh: polesStoic,
   bad: polesHoodie,
 };
-import { onReactions, submitReaction, onGuesses } from "../lib/storage";
-import { getCompsByTier } from "../data/bearsTiers";
-import { getTeamLogo } from "../data/teams";
-import { getHeadshot } from "../lib/headshots";
-import ChaosMeter from "./ChaosMeter";
+import { onReactions, submitReaction, onGuesses } from "../../lib/storage";
+import { getCompsByTier } from "../../data/bearsTiers";
+import { getTeamLogo } from "../../data/teams";
+import { getHeadshot } from "../../lib/headshots";
+import ChaosMeter from "../chaos/ChaosMeter";
 
 interface PickCardProps {
   pick: ConfirmedPick;

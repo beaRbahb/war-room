@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import bearDownSrc from "../assets/audio/bear-down.m4a";
+import bearDownSrc from "../../assets/audio/bear-down.m4a";
 
 interface BearsModeProps {
   /** Called when the Bears mode animation completes */

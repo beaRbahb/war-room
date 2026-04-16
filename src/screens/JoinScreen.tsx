@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { MAX_ROOM_PLAYERS } from "../data/scoring";
 import { BRACKET_LOCK_TIME } from "../data/scoring";
 import { createRoom, addUser, getRoom, getUsers } from "../lib/storage";
 import { saveSession, generateUserId } from "../lib/session";
 import type { RoomConfig, RoomUser } from "../types";
-import TecmoCanvas from "../components/TecmoCanvas";
+import TecmoCanvas from "../components/ui/TecmoCanvas";
 
 export default function JoinScreen() {
   const navigate = useNavigate();

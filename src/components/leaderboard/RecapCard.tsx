@@ -1,7 +1,7 @@
-import type { UserRecapStats } from "../lib/recap";
-import type { PersonaType } from "../lib/personas";
-import PersonaBadge from "./PersonaBadge";
-import ChaosMeter from "./ChaosMeter";
+import type { UserRecapStats } from "../../lib/recap";
+import type { PersonaType } from "../../lib/personas";
+import PersonaBadge from "../reactions/PersonaBadge";
+import ChaosMeter from "../chaos/ChaosMeter";
 
 interface RecapCardProps {
   stats: UserRecapStats;

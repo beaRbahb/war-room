@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { calcChaosScore, type ChaosLevel } from "../lib/chaos";
-import { PROSPECTS } from "../data/prospects";
-import { TEAM_NEEDS } from "../data/teamNeeds";
-import { getPickProb, PICK_PROBS } from "../data/prospectOdds";
-import { getTeamLogo } from "../data/teams";
-import { getHeadshot } from "../lib/headshots";
-import { submitReaction, onReactions } from "../lib/storage";
-import type { UserReaction, ReactionType } from "../types";
+import { calcChaosScore, type ChaosLevel } from "../../lib/chaos";
+import { PROSPECTS } from "../../data/prospects";
+import { TEAM_NEEDS } from "../../data/teamNeeds";
+import { getPickProb, PICK_PROBS } from "../../data/prospectOdds";
+import { getTeamLogo } from "../../data/teams";
+import { getHeadshot } from "../../lib/headshots";
+import { submitReaction, onReactions } from "../../lib/storage";
+import type { UserReaction, ReactionType } from "../../types";
 import {
   POLES_LABELS,
   POLES_COLORS,
@@ -14,7 +14,7 @@ import {
   GRADE_COLORS,
   type PolesReaction,
   type GradeType,
-} from "../types";
+} from "../../types";
 
 interface PickReactionScreenProps {
   slot: number;

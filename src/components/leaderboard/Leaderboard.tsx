@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import type { UserScores, LeaderboardEntry } from "../types";
-import PersonaBadge from "./PersonaBadge";
-import type { PersonaType } from "../lib/personas";
+import type { UserScores, LeaderboardEntry } from "../../types";
+import PersonaBadge from "../reactions/PersonaBadge";
+import type { PersonaType } from "../../lib/personas";
 
 interface LeaderboardProps {
   scores: Record<string, UserScores>;

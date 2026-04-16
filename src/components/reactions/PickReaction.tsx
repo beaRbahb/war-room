@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { submitReaction, onReactions } from "../lib/storage";
-import type { UserReaction, ReactionType } from "../types";
+import { submitReaction, onReactions } from "../../lib/storage";
+import type { UserReaction, ReactionType } from "../../types";
 import {
   POLES_LABELS,
   POLES_COLORS,
@@ -8,7 +8,7 @@ import {
   GRADE_COLORS,
   type PolesReaction,
   type GradeType,
-} from "../types";
+} from "../../types";
 
 interface PickReactionProps {
   roomCode: string;

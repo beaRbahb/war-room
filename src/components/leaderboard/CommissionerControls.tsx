@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { DRAFT_ORDER, isBearsPick } from "../data/draftOrder";
-import { PROSPECTS } from "../data/prospects";
-import { updateLiveState, confirmPick } from "../lib/storage";
-import type { LiveState, ConfirmedPick } from "../types";
+import { DRAFT_ORDER, isBearsPick } from "../../data/draftOrder";
+import { PROSPECTS } from "../../data/prospects";
+import { updateLiveState, confirmPick } from "../../lib/storage";
+import type { LiveState, ConfirmedPick } from "../../types";
 
 interface CommissionerControlsProps {
   roomCode: string;

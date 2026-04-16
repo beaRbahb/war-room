@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BRACKET_LOCK_TIME } from "../data/scoring";
+import { BRACKET_LOCK_TIME } from "../../data/scoring";
 
 interface BracketShareModalProps {
   roomCode: string;

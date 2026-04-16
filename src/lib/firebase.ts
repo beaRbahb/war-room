@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
 /**
  * Firebase config — uses environment variables.
@@ -17,3 +18,28 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
+export const auth = getAuth(app);
+
+/**
+ * Ensure the user has an anonymous Firebase auth session.
+ * Resolves immediately if already signed in; otherwise triggers signInAnonymously.
+ * Called once on app init before any DB operations.
+ */
+let authReady: Promise<void> | null = null;
+
+export function ensureAuth(): Promise<void> {
+  if (authReady) return authReady;
+
+  authReady = new Promise((resolve, reject) => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      unsub();
+      if (user) {
+        resolve();
+      } else {
+        signInAnonymously(auth).then(() => resolve()).catch(reject);
+      }
+    });
+  });
+
+  return authReady;
+}

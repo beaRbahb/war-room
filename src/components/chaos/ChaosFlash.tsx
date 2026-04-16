@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { calcChaosScore, type ChaosLevel } from "../lib/chaos";
+import { calcChaosScore, type ChaosLevel } from "../../lib/chaos";
 
 interface ChaosFlashProps {
   slot: number;

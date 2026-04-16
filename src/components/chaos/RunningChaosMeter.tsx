@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { calcChaosScore, type ChaosLevel } from "../lib/chaos";
-import { PROSPECTS } from "../data/prospects";
-import type { ConfirmedPick } from "../types";
+import { calcChaosScore, type ChaosLevel } from "../../lib/chaos";
+import { PROSPECTS } from "../../data/prospects";
+import type { ConfirmedPick } from "../../types";
 
 interface RunningChaosMeterProps {
   confirmedPicks: ConfirmedPick[];

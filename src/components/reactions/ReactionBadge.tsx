@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { onReactions } from "../lib/storage";
-import type { UserReaction } from "../types";
+import { onReactions } from "../../lib/storage";
+import type { UserReaction } from "../../types";
 import {
   POLES_LABELS,
   POLES_COLORS,
   GRADE_LABELS,
   GRADE_COLORS,
-} from "../types";
+} from "../../types";
 
 interface ReactionBadgeProps {
   roomCode: string;

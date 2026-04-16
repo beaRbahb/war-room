@@ -1,6 +1,6 @@
-import type { RoomRecapStats } from "../lib/recap";
-import type { LeaderboardEntry } from "../types";
-import ChaosMeter from "./ChaosMeter";
+import type { RoomRecapStats } from "../../lib/recap";
+import type { LeaderboardEntry } from "../../types";
+import ChaosMeter from "../chaos/ChaosMeter";
 
 interface RoomRecapProps {
   stats: RoomRecapStats;

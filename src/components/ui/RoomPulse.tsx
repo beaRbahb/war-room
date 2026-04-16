@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { onGuesses } from "../lib/storage";
-import { PROSPECTS } from "../data/prospects";
+import { onGuesses } from "../../lib/storage";
+import { PROSPECTS } from "../../data/prospects";
 
 interface RoomPulseProps {
   roomCode: string;

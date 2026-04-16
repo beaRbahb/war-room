@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { GUESS_WINDOW_SECONDS, FLASH_WARNING_SECONDS } from "../data/scoring";
-import { getTeamLogo } from "../data/teams";
-import type { DraftSlot } from "../data/draftOrder";
-import type { LiveState } from "../types";
+import { GUESS_WINDOW_SECONDS, FLASH_WARNING_SECONDS } from "../../data/scoring";
+import { getTeamLogo } from "../../data/teams";
+import type { DraftSlot } from "../../data/draftOrder";
+import type { LiveState } from "../../types";
 
 interface TimerBarProps {
   liveState: LiveState;

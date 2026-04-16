@@ -1,10 +1,10 @@
 import { useRef, useEffect } from "react";
-import { isBearsPick } from "../data/draftOrder";
-import { PROSPECTS } from "../data/prospects";
-import { getTeamLogo, getTeamAbbrev } from "../data/teams";
-import type { DraftSlot } from "../data/draftOrder";
-import type { ConfirmedPick, ReactionType } from "../types";
-import { POLES_LABELS, POLES_COLORS, GRADE_LABELS, GRADE_COLORS } from "../types";
+import { isBearsPick } from "../../data/draftOrder";
+import { PROSPECTS } from "../../data/prospects";
+import { getTeamLogo, getTeamAbbrev } from "../../data/teams";
+import type { DraftSlot } from "../../data/draftOrder";
+import type { ConfirmedPick, ReactionType } from "../../types";
+import { POLES_LABELS, POLES_COLORS, GRADE_LABELS, GRADE_COLORS } from "../../types";
 
 export type RowState = "editable" | "active" | "completed" | "locked";
 

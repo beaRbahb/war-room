@@ -1,4 +1,4 @@
-import { db } from "./firebase";
+import { db, ensureAuth } from "./firebase";
 import {
   ref,
   set,
@@ -18,10 +18,19 @@ import type {
   UserScores,
 } from "../types";
 
+// Sign in anonymously on first import — all DB operations below
+// will wait for auth if called before it resolves.
+const authPromise = ensureAuth();
+
 // ── Path helpers ──
 
 function roomPath(code: string) {
   return `rooms/${code}`;
+}
+
+/** Wait for anonymous auth before any DB call */
+async function waitForAuth() {
+  await authPromise;
 }
 
 // ── Room Config ──
@@ -30,10 +39,12 @@ export async function createRoom(
   code: string,
   config: RoomConfig
 ): Promise<void> {
+  await waitForAuth();
   await set(ref(db, `${roomPath(code)}/config`), config);
 }
 
 export async function getRoom(code: string): Promise<RoomConfig | null> {
+  await waitForAuth();
   const snap = await get(ref(db, `${roomPath(code)}/config`));
   return snap.exists() ? (snap.val() as RoomConfig) : null;
 }
@@ -51,6 +62,7 @@ export async function updateRoomStatus(
   code: string,
   status: RoomConfig["status"]
 ): Promise<void> {
+  await waitForAuth();
   await update(ref(db, `${roomPath(code)}/config`), { status });
 }
 
@@ -58,18 +70,21 @@ export async function setDraftCountdown(
   code: string,
   draftStartsAt: string | null
 ): Promise<void> {
+  await waitForAuth();
   await update(ref(db, `${roomPath(code)}/config`), { draftStartsAt });
 }
 
 // ── Users ──
 
 export async function addUser(code: string, user: RoomUser): Promise<void> {
+  await waitForAuth();
   await set(ref(db, `${roomPath(code)}/users/${user.id}`), user);
 }
 
 export async function getUsers(
   code: string
 ): Promise<Record<string, RoomUser>> {
+  await waitForAuth();
   const snap = await get(ref(db, `${roomPath(code)}/users`));
   return snap.exists() ? (snap.val() as Record<string, RoomUser>) : {};
 }
@@ -83,6 +98,14 @@ export function onUsers(
   });
 }
 
+export async function removeUser(
+  code: string,
+  userId: string
+): Promise<void> {
+  await waitForAuth();
+  await remove(ref(db, `${roomPath(code)}/users/${userId}`));
+}
+
 // ── Brackets ──
 
 export async function saveBracket(
@@ -90,6 +113,7 @@ export async function saveBracket(
   userName: string,
   bracket: UserBracket
 ): Promise<void> {
+  await waitForAuth();
   await set(ref(db, `${roomPath(code)}/brackets/${userName}`), bracket);
 }
 
@@ -97,6 +121,7 @@ export async function getBracket(
   code: string,
   userName: string
 ): Promise<UserBracket | null> {
+  await waitForAuth();
   const snap = await get(ref(db, `${roomPath(code)}/brackets/${userName}`));
   return snap.exists() ? (snap.val() as UserBracket) : null;
 }
@@ -113,6 +138,7 @@ export function onBrackets(
 // ── Reset Draft (testing only) ──
 
 export async function resetDraft(code: string): Promise<void> {
+  await waitForAuth();
   await Promise.all([
     remove(ref(db, `${roomPath(code)}/live`)),
     remove(ref(db, `${roomPath(code)}/live_guesses`)),
@@ -129,6 +155,7 @@ export async function setLiveState(
   code: string,
   state: LiveState
 ): Promise<void> {
+  await waitForAuth();
   await set(ref(db, `${roomPath(code)}/live`), state);
 }
 
@@ -136,6 +163,7 @@ export async function updateLiveState(
   code: string,
   partial: Partial<LiveState>
 ): Promise<void> {
+  await waitForAuth();
   await update(ref(db, `${roomPath(code)}/live`), partial);
 }
 
@@ -156,6 +184,7 @@ export async function submitGuess(
   userName: string,
   playerName: string
 ): Promise<void> {
+  await waitForAuth();
   await set(
     ref(db, `${roomPath(code)}/live_guesses/pick${pickNum}/${userName}`),
     playerName
@@ -179,6 +208,7 @@ export async function clearGuesses(
   code: string,
   pickNum: number
 ): Promise<void> {
+  await waitForAuth();
   await remove(ref(db, `${roomPath(code)}/live_guesses/pick${pickNum}`));
 }
 
@@ -186,6 +216,7 @@ export async function getGuessCount(
   code: string,
   pickNum: number
 ): Promise<number> {
+  await waitForAuth();
   const snap = await get(
     ref(db, `${roomPath(code)}/live_guesses/pick${pickNum}`)
   );
@@ -198,6 +229,7 @@ export async function confirmPick(
   code: string,
   pick: ConfirmedPick
 ): Promise<void> {
+  await waitForAuth();
   await set(
     ref(db, `${roomPath(code)}/results/pick${pick.pick}`),
     pick
@@ -221,6 +253,7 @@ export async function submitReaction(
   userName: string,
   reaction: UserReaction
 ): Promise<void> {
+  await waitForAuth();
   await set(
     ref(db, `${roomPath(code)}/reactions/pick${pickNum}/${userName}`),
     reaction
@@ -256,6 +289,7 @@ export function onAllReactions(
 export async function getAllGuesses(
   code: string
 ): Promise<Record<string, Record<string, string>>> {
+  await waitForAuth();
   const snap = await get(ref(db, `${roomPath(code)}/live_guesses`));
   return snap.exists()
     ? (snap.val() as Record<string, Record<string, string>>)
@@ -265,6 +299,7 @@ export async function getAllGuesses(
 export async function getAllReactions(
   code: string
 ): Promise<Record<string, Record<string, UserReaction>>> {
+  await waitForAuth();
   const snap = await get(ref(db, `${roomPath(code)}/reactions`));
   return snap.exists()
     ? (snap.val() as Record<string, Record<string, UserReaction>>)
@@ -278,6 +313,7 @@ export async function updateScores(
   userName: string,
   scores: UserScores
 ): Promise<void> {
+  await waitForAuth();
   await set(ref(db, `${roomPath(code)}/scores/${userName}`), scores);
 }
 

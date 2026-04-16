@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DRAFT_COUNTDOWN_WARNING_SECONDS } from "../data/scoring";
+import { DRAFT_COUNTDOWN_WARNING_SECONDS } from "../../data/scoring";
 
 interface DraftCountdownBannerProps {
   draftStartsAt: string;

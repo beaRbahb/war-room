@@ -2,8 +2,8 @@
   "rules": {
     "rooms": {
       "$roomCode": {
-        ".read": true,
-        ".write": true,
+        ".read": "auth != null",
+        ".write": "auth != null",
         "config": {
           ".validate": "newData.hasChildren(['roomCode', 'commissionerId', 'commissionerName', 'status', 'createdAt'])"
         },
@@ -36,13 +36,6 @@
           "$pickKey": {
             "$userName": {
               ".validate": "newData.hasChildren(['reaction'])"
-            }
-          }
-        },
-        "wagers": {
-          "$pickKey": {
-            "$userName": {
-              ".validate": "newData.hasChildren(['amount', 'playerName'])"
             }
           }
         },
