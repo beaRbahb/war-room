@@ -1,3 +1,6 @@
+import crosbyImg from "../assets/images/blockbuster-crosby.jpg";
+import lawrenceImg from "../assets/images/blockbuster-lawrence.webp";
+
 export interface BlockbusterTradePlayer {
   /** Display name (used as playerName in ConfirmedPick) */
   name: string;
@@ -23,7 +26,7 @@ export const BLOCKBUSTER_TRADES: BlockbusterTradePlayer[] = [
     position: "EDGE",
     currentTeam: "Las Vegas Raiders",
     currentTeamAbbrev: "LV",
-    image: null,
+    image: crosbyImg,
     tradePackage: [
       "#25 overall (1st round)",
       "2027 1st round pick",
@@ -37,7 +40,7 @@ export const BLOCKBUSTER_TRADES: BlockbusterTradePlayer[] = [
     position: "DL",
     currentTeam: "New York Giants",
     currentTeamAbbrev: "NYG",
-    image: null,
+    image: lawrenceImg,
     tradePackage: [
       "#25 overall (1st round)",
       "2027 1st round pick",
