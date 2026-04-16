@@ -85,6 +85,19 @@ body {
 .animate-pulse-border { animation: pulse-border 1.5s ease-in-out infinite; }
 .animate-flash-red { animation: flash-red 0.5s ease-in-out infinite; }
 .animate-bears-flash { animation: bears-flash 0.6s ease-in-out 3; }
+
+@keyframes blockbuster-flash {
+  0%   { background-color: var(--color-bears-navy); }
+  15%  { background-color: #ff2233; }
+  30%  { background-color: var(--color-bears-orange); }
+  45%  { background-color: var(--color-bears-navy); }
+  60%  { background-color: #ff2233; }
+  75%  { background-color: #ffffff; }
+  85%  { background-color: var(--color-bears-navy); }
+  100% { background-color: #0a0a0a; }
+}
+.animate-blockbuster-flash { animation: blockbuster-flash 1.5s ease-in-out; }
+
 .animate-score-flip { animation: score-flip 0.4s ease-in-out; }
 .animate-fade-in-up { animation: fade-in-up 0.3s ease-out; }
 

@@ -14,7 +14,7 @@ export interface DraftSlot {
 
 /** 2026 NFL Draft Round 1 order */
 export const DRAFT_ORDER: DraftSlot[] = [
-  { pick: 1, team: "Las Vegas Raiders", abbrev: "LV" },
+  { pick: 1, team: "Chicago Bears", abbrev: "CHI" }, // TESTING — was LV
   { pick: 2, team: "New York Jets", abbrev: "NYJ" },
   { pick: 3, team: "Arizona Cardinals", abbrev: "ARI" },
   { pick: 4, team: "Tennessee Titans", abbrev: "TEN" },

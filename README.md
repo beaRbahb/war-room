@@ -1,30 +1,21 @@
 # War Room
 
-**Real-time NFL Draft companion app for your group chat.**
+**Turn draft night into a competition.**
 
-Create a room, share the code, and compete with friends as the picks roll in on draft night. Fill out your mock draft bracket before the clock starts, then predict each live pick in real time. Hold them to their draft night takes. 
+<!-- Replace with a screenshot or GIF of the draft screen -->
+<!-- ![War Room Draft Screen](docs/screenshot.png) -->
 
-## How It Works
+Create a room, share the code, and see who actually knows what they're talking about on draft night.
 
-**Pre-Draft: Fill Your Bracket**
-Lock in your Round 1 mock draft before the first pick. The player selection panel shows pick probabilities, reach/value analysis, team needs, pro comps, and scouting notes — everything you need to make your call.
+<!-- [Try it live →](https://your-netlify-url.netlify.app) -->
 
-**Live Draft: Predict Each Pick**
-Once the draft goes live, brackets lock and you switch to pick-by-pick predictions with a 60-second guess window. Correct live picks score 10 points. 
+## What It Does
 
-**React & Compete**
-After each pick, rate the selection and see where you stack up on the live leaderboard. A chaos meter tracks how wild the draft is getting — from CHALK to full CHAOS. At the end, everyone gets a draft persona based on their prediction patterns.
-
-## Features
-
-- Real-time sync across all players - no polling, no refresh
-- 71 consensus prospects with headshots, measurables, pro comps, and scouting notes
-- Predictor probabilities for every player × slot
-- Vegas odds and team needs (sourced from NFL.com + ESPN)
-- Chaos meter that scores how surprising each pick was
-- Pick reactions and grading after every selection
-- Draft personas assigned based on your prediction style
-- Commissioner controls for advancing picks and managing the room
+- **Pre-draft brackets** — Lock in your Round 1 mock before pick one. 71 prospects with headshots, measurables, pro comps, and scouting notes to back up your takes.
+- **Live pick predictions** — 60-second window to call each pick as it happens. No changing your mind after the fact.
+- **Chaos meter** — Tracks how wild the draft is getting, from CHALK to full CHAOS.
+- **Reactions & leaderboard** — Rate every pick, see where you rank, and get a draft persona based on your prediction style.
+- **Real-time sync** — No refresh, no polling. Everyone sees picks the instant they happen.
 
 ## Scoring
 
@@ -32,12 +23,12 @@ After each pick, rate the selection and see where you stack up on the live leade
 |---|---|
 | Bracket: exact player + slot | 10 |
 | Bracket: right player, wrong slot | 4 |
-| Live pick: correct guess | 10 |
-| Live pick: correct Bears guess | 20 |
+| Correct live pick | 10 |
+| Correct Bears pick | 20 |
 
-## Tech Stack
+## Stack
 
-React 19 · TypeScript · Vite · Tailwind CSS v4 · Firebase Realtime DB · React Router v7
+React 19 · TypeScript · Vite · Tailwind v4 · Firebase Realtime DB
 
 ## License
 

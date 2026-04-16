@@ -43,7 +43,6 @@ export interface RoomConfig {
   lockTime: string; // ISO timestamp
   status: "bracket" | "live" | "done";
   createdAt: string;
-  draftStartsAt?: string | null;
   /** User ID of backup commissioner (can open/close/finalize but not kick/reset) */
   backupCommissionerId?: string | null;
 }

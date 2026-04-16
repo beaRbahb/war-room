@@ -4,6 +4,8 @@ import { PROSPECTS } from "../../data/prospects";
 import { TEAM_NEEDS } from "../../data/teamNeeds";
 import { getPickProb, PICK_PROBS } from "../../data/prospectOdds";
 import { getTeamLogo } from "../../data/teams";
+import { isBlockbusterTrade } from "../../data/blockbusterTrades";
+import { stopBlockbusterAudio } from "../bears/BlockbusterTradeOverlay";
 import { getHeadshot } from "../../lib/headshots";
 import { submitReaction, onReactions } from "../../lib/storage";
 import type { UserReaction, ReactionType } from "../../types";
@@ -83,7 +85,9 @@ export default function PickReactionScreen({
   const colors = LEVEL_COLORS[level];
 
   const rankDrift = prospect ? slot - prospect.rank : 0;
-  const needDesc = getNeedDescription(prospect?.position, teamAbbrev);
+  const bt = isBlockbusterTrade(playerName);
+  const playerPosition = prospect?.position ?? bt?.position;
+  const needDesc = getNeedDescription(playerPosition, teamAbbrev);
 
   // Listen for reactions (to show counts)
   useEffect(() => {
@@ -96,6 +100,7 @@ export default function PickReactionScreen({
   }
 
   async function handleReact(reaction: ReactionType) {
+    stopBlockbusterAudio();
     await submitReaction(roomCode, slot, userName, {
       reaction,
       bearsTierCompId: null,
@@ -134,11 +139,15 @@ export default function PickReactionScreen({
         <p className="font-display text-3xl sm:text-4xl text-white tracking-wide">
           {playerName}
         </p>
-        {prospect && (
+        {prospect ? (
           <p className="font-condensed text-sm text-muted uppercase mt-1">
             {prospect.position} · {prospect.college}
           </p>
-        )}
+        ) : bt ? (
+          <p className="font-condensed text-sm text-bears-orange uppercase mt-1">
+            {bt.position} · TRADE from {bt.currentTeamAbbrev}
+          </p>
+        ) : null}
       </div>
 
       {/* Chaos description — skip if this was the top expected pick */}
@@ -174,7 +183,7 @@ export default function PickReactionScreen({
 
           <span className="font-condensed text-muted uppercase text-xs">Consensus</span>
           <span className="font-mono text-right text-white">
-            #{prospect?.rank ?? "?"}
+            {prospect ? `#${prospect.rank}` : "—"}
             {prospect && (
               <span className={`ml-1 ${
                 rankDrift > 3 ? "text-red" : rankDrift < -3 ? "text-green" : "text-muted"

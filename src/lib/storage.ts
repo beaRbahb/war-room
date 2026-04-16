@@ -89,13 +89,6 @@ export async function updateRoomStatus(
   await update(ref(db, `${roomPath(code)}/config`), { status });
 }
 
-export async function setDraftCountdown(
-  code: string,
-  draftStartsAt: string | null
-): Promise<void> {
-  await waitForAuth();
-  await update(ref(db, `${roomPath(code)}/config`), { draftStartsAt });
-}
 
 export async function setBackupCommissioner(
   code: string,

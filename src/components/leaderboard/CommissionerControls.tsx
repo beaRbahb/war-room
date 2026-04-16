@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { DRAFT_ORDER, isBearsPick } from "../../data/draftOrder";
 import { PROSPECTS } from "../../data/prospects";
+import { BLOCKBUSTER_TRADES } from "../../data/blockbusterTrades";
 import { updateLiveState, confirmPick } from "../../lib/storage";
 import type { LiveState, ConfirmedPick } from "../../types";
 
@@ -57,6 +58,20 @@ export default function CommissionerControls({
         p.position.toLowerCase().includes(q)
     );
   }, [available, pickSearch]);
+
+  const isBears = isBearsPick(teamAbbrev);
+  const filteredBlockbusters = useMemo(() => {
+    if (!isBears) return [];
+    if (!pickSearch.trim()) return BLOCKBUSTER_TRADES;
+    const q = pickSearch.toLowerCase();
+    return BLOCKBUSTER_TRADES.filter((bt) =>
+      bt.name.toLowerCase().includes(q) ||
+      bt.position.toLowerCase().includes(q)
+    );
+  }, [isBears, pickSearch]);
+  const isBlockbusterSelected = BLOCKBUSTER_TRADES.some(
+    (bt) => bt.name === selectedOfficialPick
+  );
 
   async function handleOpenWindow() {
     await updateLiveState(roomCode, {
@@ -169,15 +184,53 @@ export default function CommissionerControls({
                 <span className="text-muted">{p.position}</span>
               </button>
             ))}
+
+            {/* Blockbuster trades — Bears picks only */}
+            {filteredBlockbusters.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 px-2 py-1.5 mt-1">
+                  <div className="flex-1 h-px bg-bears-orange/30" />
+                  <span className="font-condensed text-[10px] text-bears-orange uppercase tracking-widest">
+                    Blockbuster Trades
+                  </span>
+                  <div className="flex-1 h-px bg-bears-orange/30" />
+                </div>
+                {filteredBlockbusters.map((bt) => (
+                  <button
+                    key={bt.name}
+                    onClick={() => {
+                      setSelectedOfficialPick(bt.name);
+                      setPickSearch(bt.name);
+                    }}
+                    className={`w-full text-right px-2 py-1.5 font-mono text-xs hover:bg-bears-navy/30 transition-colors rounded ${
+                      selectedOfficialPick === bt.name
+                        ? "bg-bears-orange/15 text-bears-orange"
+                        : "text-bears-orange/70"
+                    }`}
+                  >
+                    <span className="text-bears-orange font-bold">{bt.name}</span>{" "}
+                    <span className="text-muted">{bt.position} · {bt.currentTeamAbbrev}</span>
+                  </button>
+                ))}
+              </>
+            )}
           </div>
           {selectedOfficialPick && (
             <div className="flex justify-end mt-1.5">
               <button
                 onClick={handleConfirmPick}
                 disabled={confirming}
-                className="bg-green text-bg font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all disabled:opacity-50"
+                className={`${
+                  isBlockbusterSelected
+                    ? "bg-bears-orange text-white"
+                    : "bg-green text-bg"
+                } font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all disabled:opacity-50`}
               >
-                {confirming ? "CONFIRMING..." : `CONFIRM: ${selectedOfficialPick}`}
+                {confirming
+                  ? "CONFIRMING..."
+                  : isBlockbusterSelected
+                    ? `TRADE: ${selectedOfficialPick}`
+                    : `CONFIRM: ${selectedOfficialPick}`}
               </button>
             </div>
           )}

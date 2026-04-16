@@ -2,14 +2,13 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DRAFT_ORDER, getEffectiveDraftOrder } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
-import { BRACKET_LOCK_TIME, GUESS_WINDOW_SECONDS, DRAFT_COUNTDOWN_SECONDS } from "../data/scoring";
+import { BRACKET_LOCK_TIME, GUESS_WINDOW_SECONDS } from "../data/scoring";
 import { getTeamLogo, TEAMS } from "../data/teams";
 import {
   saveBracket,
   getBracket,
   onRoomConfig,
   updateRoomStatus,
-  setDraftCountdown,
   onLiveState,
   onResults,
   onScores,
@@ -44,6 +43,8 @@ import Leaderboard from "../components/leaderboard/Leaderboard";
 import BearsMode from "../components/bears/BearsMode";
 import Confetti from "../components/bears/Confetti";
 import BearsBustOverlay from "../components/bears/BearsBustOverlay";
+import BlockbusterTradeOverlay from "../components/bears/BlockbusterTradeOverlay";
+import { isBlockbusterTrade, type BlockbusterTradePlayer } from "../data/blockbusterTrades";
 import BracketShareModal from "../components/draft/BracketShareModal";
 import RoomWelcome from "../components/draft/RoomWelcome";
 import PickReactionScreen from "../components/reactions/PickReactionScreen";
@@ -51,7 +52,6 @@ import RunningChaosMeter from "../components/chaos/RunningChaosMeter";
 import RecapCard from "../components/leaderboard/RecapCard";
 import RoomRecap from "../components/leaderboard/RoomRecap";
 import BracketProgressStrip from "../components/draft/BracketProgressStrip";
-import DraftCountdownBanner from "../components/draft/DraftCountdownBanner";
 import DraftTakeover from "../components/draft/DraftTakeover";
 
 import type {
@@ -91,8 +91,6 @@ export default function DraftScreen() {
     if (!welcomeKey) return false;
     return !localStorage.getItem(welcomeKey);
   });
-  const [showStartConfirm, setShowStartConfirm] = useState(false);
-  const [draftStartsAt, setDraftStartsAt] = useState<string | null>(null);
   const [showTakeover, setShowTakeover] = useState(false);
   const [autoSubmitToast, setAutoSubmitToast] = useState<string | null>(null);
 
@@ -133,6 +131,8 @@ export default function DraftScreen() {
   // ── Overlays ──
   const [showBearsMode, setShowBearsMode] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [blockbusterTrade, setBlockbusterTrade] = useState<BlockbusterTradePlayer | null>(null);
+  const [blockbusterConfetti, setBlockbusterConfetti] = useState(false);
   const [chaosFlash, setChaosFlash] = useState<{
     slot: number;
     playerName: string;
@@ -161,7 +161,7 @@ export default function DraftScreen() {
   const allGuessesRef = useRef(allGuesses);
   allGuessesRef.current = allGuesses;
 
-  // Refs for countdown callback — keeps identity stable so DraftCountdownBanner doesn't restart
+  // Refs for draft start callback — keeps identity stable
   const picksRef = useRef(picks);
   picksRef.current = picks;
   const bracketSubmittedRef = useRef(bracketSubmitted);
@@ -191,7 +191,6 @@ export default function DraftScreen() {
         return;
       }
       setRoomStatus(config.status);
-      setDraftStartsAt(config.draftStartsAt ?? null);
       setBackupCommissionerId(config.backupCommissionerId ?? null);
     });
   }, [roomCode, navigate]);
@@ -403,12 +402,19 @@ export default function DraftScreen() {
     }
 
     // Skip animations for late joiners — only trigger for live picks
+    const bt = isBlockbusterTrade(latest.playerName);
     if (!isLateJoin) {
-      if (latest.isBearsPick) {
+      if (latest.isBearsPick && bt) {
+        // Blockbuster trade — special overlay replaces normal BearsMode
+        setBlockbusterTrade(bt);
+        setBlockbusterConfetti(true);
+        setTimeout(() => setBlockbusterConfetti(false), 10000);
+      } else if (latest.isBearsPick) {
         setShowBearsMode(true);
       }
     }
 
+    const isBlockbuster = !!bt;
     const pickGuessKey = `pick${latest.pick}`;
     let confettiFired = false;
     const userName = session.name;
@@ -417,7 +423,8 @@ export default function DraftScreen() {
 
       // Skip confetti/chaos for late joiners
       if (!isLateJoin) {
-        if (guesses[userName] === latest.playerName) {
+        // Blockbuster trades get their own heavy confetti — skip normal confetti
+        if (!isBlockbuster && guesses[userName] === latest.playerName) {
           confettiFired = true;
           setShowConfetti(true);
           setTimeout(() => {
@@ -426,9 +433,14 @@ export default function DraftScreen() {
           }, 5500);
         }
 
-        // Show reaction screen immediately if no confetti
-        if (!confettiFired) {
+        // Show reaction screen immediately if no confetti (and not blockbuster — that has its own timing)
+        if (!confettiFired && !isBlockbuster) {
           setChaosFlash(flashData);
+        }
+
+        // For blockbuster trades, show reaction screen after the overlay completes (8s)
+        if (isBlockbuster) {
+          setTimeout(() => setChaosFlash(flashData), 8000);
         }
       }
 
@@ -561,7 +573,7 @@ export default function DraftScreen() {
   }
 
   // ── Draft countdown expired ──
-  const handleCountdownExpired = useCallback(async () => {
+  const handleStartDraft = useCallback(async () => {
     if (!roomCode || !session) return;
 
     // Auto-submit bracket if not already submitted (read from ref for stable callback identity)
@@ -653,7 +665,6 @@ export default function DraftScreen() {
   if (!session || !roomCode) return null;
 
   const isPrimaryCommissioner = session.isCommissioner;
-  const draftSoon = BRACKET_LOCK_TIME.getTime() - Date.now() <= 30 * 60 * 1000;
   const isCommissioner = isPrimaryCommissioner || session.id === backupCommissionerId;
   const showCommissionerTabs = isCommissioner && isLive;
 
@@ -675,6 +686,13 @@ export default function DraftScreen() {
         />
       )}
       {showConfetti && <Confetti />}
+      {blockbusterConfetti && <Confetti heavy />}
+      {blockbusterTrade && (
+        <BlockbusterTradeOverlay
+          trade={blockbusterTrade}
+          onComplete={() => setBlockbusterTrade(null)}
+        />
+      )}
 
       {/* Header */}
       <header className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-2 sm:py-3 flex items-center justify-between">
@@ -692,6 +710,34 @@ export default function DraftScreen() {
               Submitted
             </p>
           )}
+          {isLive && isCommissioner && (
+            <button
+              onClick={async () => {
+                if (!confirm("Reset draft? Clears all picks, guesses, scores.")) return;
+                await resetDraft(roomCode);
+                setResults({});
+                setScores({});
+                setAllGuesses({});
+                setAllReactions({});
+                setLiveStateLocal(null);
+                setGuessCount(0);
+                setCurrentGuess(null);
+                setGuessSubmitted(false);
+                setExpandedPick(null);
+                setChaosFlash(null);
+                setShowConfetti(false);
+                setShowRecap(false);
+                setRecapData(null);
+                setReassignPick(null);
+                setReassignSearch("");
+                processedPicks.current = new Set();
+                bearsDoublePicks.current = new Set();
+              }}
+              className="bg-red/20 border border-red text-red font-condensed font-bold uppercase text-xs px-3 py-1.5 rounded hover:bg-red/30 transition-all"
+            >
+              RESET
+            </button>
+          )}
           {isLive && confirmedPicks.length >= 32 && recapData && (
             <button
               onClick={() => setShowRecap(true)}
@@ -706,43 +752,37 @@ export default function DraftScreen() {
       {/* Commissioner: Start Draft banner (bracket phase) */}
       {!isLive && isCommissioner && (
         <div className="shrink-0 bg-surface border-b border-border px-4 py-2 flex items-center justify-between gap-3">
-          {draftStartsAt ? (
-            <>
-              <span className="font-condensed text-sm text-amber uppercase">
-                Draft countdown started
-              </span>
-              <button
-                onClick={async () => {
-                  await setDraftCountdown(roomCode, null);
-                }}
-                className="bg-red/80 text-white font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
-              >
-                CANCEL COUNTDOWN
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="font-condensed text-sm sm:text-base uppercase">
-                {draftSoon ? <span className="text-white/70">Commissioner — start when ready</span> : bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{countdown}</span></>}
-              </span>
-              <button
-                onClick={() => draftSoon && setShowStartConfirm(true)}
-                disabled={!draftSoon}
-                className={`font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded transition-all ${
-                  draftSoon
-                    ? "bg-green text-bg hover:brightness-110"
-                    : "bg-surface-elevated border border-border text-muted opacity-50 cursor-not-allowed"
-                }`}
-              >
-                START DRAFT
-              </button>
-            </>
-          )}
+          <span className="font-condensed text-sm sm:text-base uppercase">
+            {bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{countdown}</span></>}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                await handleStartDraft();
+              }}
+              className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
+            >
+              START DRAFT
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm("Reset draft? Clears all picks, guesses, scores.")) return;
+                await resetDraft(roomCode);
+                setResults({});
+                setScores({});
+                setAllGuesses({});
+                bearsDoublePicks.current = new Set();
+              }}
+              className="bg-red/20 border border-red text-red font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:bg-red/30 transition-all"
+            >
+              RESET
+            </button>
+          </div>
         </div>
       )}
 
       {/* Non-commissioner: bracket lock countdown (bracket phase) */}
-      {!isLive && !isCommissioner && !draftStartsAt && (
+      {!isLive && !isCommissioner && (
         <div className="shrink-0 bg-surface border-b border-border px-4 py-2 text-center">
           <span className="font-condensed text-sm sm:text-base uppercase">
             {bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{countdown}</span></>}
@@ -982,13 +1022,7 @@ export default function DraftScreen() {
                 </>
               )}
 
-              {/* Draft countdown banner */}
-              {!isLive && draftStartsAt && (
-                <DraftCountdownBanner
-                  draftStartsAt={draftStartsAt}
-                  onExpired={handleCountdownExpired}
-                />
-              )}
+
 
               {/* Column headers */}
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 mb-1 border-b border-border">
@@ -1220,40 +1254,6 @@ export default function DraftScreen() {
         </div>
       )}
 
-      {/* Start Draft confirm dialog */}
-      {showStartConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-surface border border-green rounded-xl p-6 max-w-sm w-full">
-            <p className="font-display text-xl text-green mb-2">
-              START 2-MINUTE COUNTDOWN?
-            </p>
-            <p className="font-condensed text-white mb-4">
-              All players will see a countdown. Brackets auto-submit when it
-              hits zero, then the draft goes live.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={async () => {
-                  const startsAt = new Date(
-                    Date.now() + DRAFT_COUNTDOWN_SECONDS * 1000
-                  ).toISOString();
-                  await setDraftCountdown(roomCode, startsAt);
-                  setShowStartConfirm(false);
-                }}
-                className="flex-1 bg-green text-bg font-condensed font-bold uppercase py-2.5 rounded"
-              >
-                START COUNTDOWN
-              </button>
-              <button
-                onClick={() => setShowStartConfirm(false)}
-                className="flex-1 bg-surface-elevated border border-border text-white font-condensed font-bold uppercase py-2.5 rounded"
-              >
-                CANCEL
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Draft takeover overlay */}
       {showTakeover && (

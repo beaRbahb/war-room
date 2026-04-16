@@ -1,6 +1,7 @@
 import { getPickProb } from "../data/prospectOdds";
 import { PROSPECTS } from "../data/prospects";
 import { TEAM_NEEDS } from "../data/teamNeeds";
+import { isBlockbusterTrade } from "../data/blockbusterTrades";
 
 export type ChaosLevel = "CHALK" | "MILD" | "SPICY" | "CHAOS";
 
@@ -67,6 +68,8 @@ export function calcChaosScore(
   priorPicks?: { position: string }[],
 ): ChaosResult {
   const prospect = PROSPECTS.find((p) => p.name === playerName);
+  const bt = isBlockbusterTrade(playerName);
+  const playerPosition = prospect?.position ?? bt?.position;
   const tags: string[] = [];
 
   // ── ESPN probability signal (weight: 55%) ──
@@ -96,7 +99,7 @@ export function calcChaosScore(
   let needRaw = 50; // neutral when no team context
   if (teamAbbrev) {
     const needs = TEAM_NEEDS[teamAbbrev] ?? [];
-    const needIdx = findNeedIndex(prospect?.position, needs);
+    const needIdx = findNeedIndex(playerPosition, needs);
     if (needIdx === -1) {
       needRaw = 100;
       tags.push("OFF NEED");
@@ -110,15 +113,15 @@ export function calcChaosScore(
 
   // ── Position run signal (weight: 5%, dampener) ──
   let posRunRaw = 50; // neutral when no context
-  if (priorPicks && prospect) {
+  if (priorPicks && playerPosition) {
     const recent = priorPicks.slice(-3);
     const sameCount = recent.filter((p) =>
-      samePositionGroup(p.position, prospect.position),
+      samePositionGroup(p.position, playerPosition),
     ).length;
     // More same-position picks recently → less individually surprising
     posRunRaw = sameCount === 0 ? 50 : sameCount === 1 ? 35 : 15;
     if (sameCount >= 2) {
-      tags.push(`${prospect.position} RUN`);
+      tags.push(`${playerPosition} RUN`);
     }
   }
 

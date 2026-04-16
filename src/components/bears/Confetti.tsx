@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 interface ConfettiProps {
   /** Duration in ms before auto-remove */
   duration?: number;
+  /** Extra-heavy Bears confetti for blockbuster moments */
+  heavy?: boolean;
 }
 
 interface Piece {
@@ -28,14 +30,23 @@ const COLORS = [
   "#FFD700",
 ];
 
-function generatePieces(): Piece[] {
-  return Array.from({ length: 1000 }, (_, i) => ({
+const HEAVY_COLORS = [
+  "#0b1f4a", "#0b1f4a", "#0b1f4a",
+  "#e87722", "#e87722", "#e87722",
+  "#FFD700",
+  "#FFFFFF",
+];
+
+function generatePieces(heavy: boolean): Piece[] {
+  const count = heavy ? 2000 : 1000;
+  const colors = heavy ? HEAVY_COLORS : COLORS;
+  return Array.from({ length: count }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
-    delay: Math.random() * 1.5,
-    width: 5 + Math.random() * 10,
-    height: 4 + Math.random() * 14,
-    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    delay: Math.random() * (heavy ? 2.5 : 1.5),
+    width: (heavy ? 7 : 5) + Math.random() * (heavy ? 14 : 10),
+    height: (heavy ? 6 : 4) + Math.random() * (heavy ? 18 : 14),
+    color: colors[Math.floor(Math.random() * colors.length)],
     drift: -40 + Math.random() * 80,
     speed: 2 + Math.random() * 2.5,
     spin: 360 + Math.random() * 720,
@@ -46,19 +57,20 @@ function generatePieces(): Piece[] {
  * New Year's Eve confetti — 1000 pieces, lateral sway, varied shapes.
  * Fires on correct live guess.
  */
-export default function Confetti({ duration = 5000 }: ConfettiProps) {
+export default function Confetti({ duration, heavy = false }: ConfettiProps) {
+  const effectiveDuration = duration ?? (heavy ? 8000 : 5000);
   const [visible, setVisible] = useState(true);
-  const [pieces] = useState<Piece[]>(generatePieces);
+  const [pieces] = useState<Piece[]>(() => generatePieces(heavy));
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(false), duration);
+    const t = setTimeout(() => setVisible(false), effectiveDuration);
     return () => clearTimeout(t);
   }, [duration]);
 
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] pointer-events-none overflow-hidden">
+    <div className="fixed inset-0 z-[110] pointer-events-none overflow-hidden">
       {pieces.map((p) => (
         <div
           key={p.id}
