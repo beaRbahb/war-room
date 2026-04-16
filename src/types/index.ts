@@ -122,12 +122,6 @@ export interface LeaderboardEntry {
   bracketPartial: number;
 }
 
-/** A wager on a live pick */
-export interface Wager {
-  amount: number;
-  playerName: string;
-}
-
 /** App-level user session (stored in localStorage) */
 export interface UserSession {
   name: string;

@@ -1000,7 +1000,6 @@ export default function DraftScreen() {
             if (!isLive) handleBracketClear(activeSlot);
           }}
           onClose={() => setActiveSlot(null)}
-          mode={isLive ? "live" : "bracket"}
           liveSubmitted={isLive ? guessSubmitted : false}
         />
       )}

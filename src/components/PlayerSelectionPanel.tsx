@@ -13,8 +13,6 @@ interface Props {
   onSelect: (playerName: string) => void;
   onClear: () => void;
   onClose: () => void;
-  /** "bracket" = pre-draft, "live" = during draft */
-  mode?: "bracket" | "live";
   /** Whether the user already submitted their guess (live mode) */
   liveSubmitted?: boolean;
 }
@@ -27,7 +25,6 @@ export default function PlayerSelectionPanel({
   onSelect,
   onClear,
   onClose,
-  mode = "bracket",
   liveSubmitted = false,
 }: Props) {
   const teamNeeds = useMemo(

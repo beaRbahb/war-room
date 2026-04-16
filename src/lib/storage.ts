@@ -119,7 +119,6 @@ export async function resetDraft(code: string): Promise<void> {
     remove(ref(db, `${roomPath(code)}/results`)),
     remove(ref(db, `${roomPath(code)}/scores`)),
     remove(ref(db, `${roomPath(code)}/reactions`)),
-    remove(ref(db, `${roomPath(code)}/wagers`)),
   ]);
   await update(ref(db, `${roomPath(code)}/config`), { status: "bracket" });
 }
@@ -252,42 +251,6 @@ export function onAllReactions(
         : {}
     );
   });
-}
-
-// ── Wagers ──
-
-export async function submitWager(
-  code: string,
-  pickNum: number,
-  userName: string,
-  wager: Wager
-): Promise<void> {
-  await set(
-    ref(db, `${roomPath(code)}/wagers/pick${pickNum}/${userName}`),
-    wager
-  );
-}
-
-export function onWagers(
-  code: string,
-  pickNum: number,
-  cb: (wagers: Record<string, Wager>) => void
-): Unsubscribe {
-  return onValue(
-    ref(db, `${roomPath(code)}/wagers/pick${pickNum}`),
-    (snap) => {
-      cb(snap.exists() ? (snap.val() as Record<string, Wager>) : {});
-    }
-  );
-}
-
-export async function getAllWagers(
-  code: string
-): Promise<Record<string, Record<string, Wager>>> {
-  const snap = await get(ref(db, `${roomPath(code)}/wagers`));
-  return snap.exists()
-    ? (snap.val() as Record<string, Record<string, Wager>>)
-    : {};
 }
 
 export async function getAllGuesses(
