@@ -41,7 +41,7 @@ import PlayerSelectionPanel from "../components/PlayerSelectionPanel";
 import Leaderboard from "../components/Leaderboard";
 import BearsMode from "../components/BearsMode";
 import Confetti from "../components/Confetti";
-import TrubiskyOverlay from "../components/TrubiskyOverlay";
+import BearsBustOverlay from "../components/BearsBustOverlay";
 import PickReactionScreen from "../components/PickReactionScreen";
 import RunningChaosMeter from "../components/RunningChaosMeter";
 import RecapCard from "../components/RecapCard";
@@ -73,7 +73,7 @@ export default function DraftScreen() {
   const [bracketLocked, setBracketLocked] = useState(false);
   const [bracketSubmitted, setBracketSubmitted] = useState(false);
   const [countdown, setCountdown] = useState("");
-  const [showReference, setShowReference] = useState(false);
+
   const [showStartConfirm, setShowStartConfirm] = useState(false);
 
   // ── Live phase state ──
@@ -578,7 +578,7 @@ export default function DraftScreen() {
     <div className="h-dvh bg-bg flex flex-col overflow-hidden">
       {/* Overlays */}
       {showBearsMode && <BearsMode onComplete={handleBearsModeComplete} />}
-      {liveState?.trubiskyActive && <TrubiskyOverlay onComplete={() => {}} />}
+      {liveState?.trubiskyActive && <BearsBustOverlay onComplete={() => {}} />}
       {chaosFlash && (
         <PickReactionScreen
           slot={chaosFlash.slot}
@@ -891,22 +891,7 @@ export default function DraftScreen() {
             personas={confirmedPicks.length >= 32 ? personas : undefined}
           />
         ) : (
-          <>
-            {/* Consensus Board toggle (mobile) */}
-            <button
-              onClick={() => setShowReference(!showReference)}
-              className="lg:hidden fixed bottom-4 right-4 z-20 bg-amber text-bg font-condensed font-bold px-4 py-2 rounded-full shadow-lg"
-            >
-              {showReference ? "CLOSE" : "BIG BOARD"}
-            </button>
-
-            <div
-              className={`${
-                showReference
-                  ? "fixed inset-0 z-30 bg-bg/95 pt-16"
-                  : "hidden"
-              } lg:block lg:static lg:w-72 lg:border-l lg:border-border overflow-auto`}
-            >
+          <div className="hidden lg:block lg:static lg:w-72 lg:border-l lg:border-border overflow-auto">
               <div className="p-4">
                 <h2 className="font-display text-lg text-amber mb-3 tracking-wide">
                   CONSENSUS BOARD
@@ -959,16 +944,7 @@ export default function DraftScreen() {
                   })}
                 </div>
               </div>
-              {showReference && (
-                <button
-                  onClick={() => setShowReference(false)}
-                  className="lg:hidden fixed top-4 right-4 z-40 text-amber font-mono text-xl"
-                >
-                  ✕
-                </button>
-              )}
             </div>
-          </>
         )}
       </div>
 
@@ -1009,7 +985,7 @@ export default function DraftScreen() {
         />
       )}
 
-      {/* Commissioner: Trubisky floating button (live phase) */}
+      {/* Commissioner: Bears Bust floating button (live phase) */}
       {isCommissioner && isLive && liveState && commissionerTab === "admin" && (
         <button
           onClick={async () => {
@@ -1021,7 +997,7 @@ export default function DraftScreen() {
           disabled={liveState.windowOpen}
           className="fixed bottom-24 right-4 z-40 lg:bottom-4 bg-bears-navy border-2 border-bears-orange text-bears-orange font-condensed font-bold uppercase px-4 py-3 rounded-full shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm"
         >
-          TRUBISKY
+          🐻 BUST
         </button>
       )}
 
