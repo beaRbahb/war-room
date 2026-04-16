@@ -73,12 +73,12 @@ export default function PlayerSelectionPanel({
       <div className="fixed inset-y-0 right-0 z-50 w-full lg:w-[720px] xl:w-[840px] bg-bg border-l border-border flex flex-col animate-fade-in-up">
         {/* ─── Team Context Header ─── */}
         <div className="shrink-0 border-t-[5px]" style={{ borderColor: teamColor }}>
-          <div className="flex items-center gap-5 px-5 py-4">
-            {/* Team logo — large */}
+          <div className="flex items-center gap-4 sm:gap-5 px-4 sm:px-5 py-4">
+            {/* Team logo */}
             <img
               src={getTeamLogo(slot.abbrev)}
               alt={slot.abbrev}
-              className="w-24 h-24 object-contain shrink-0"
+              className="w-16 h-16 sm:w-24 sm:h-24 object-contain shrink-0"
             />
 
             {/* All team info beside logo */}
@@ -112,10 +112,10 @@ export default function PlayerSelectionPanel({
               )}
 
               {/* Needs / Chalk / Odds — aligned rows */}
-              <div className="mt-2 flex flex-col gap-1">
+              <div className="mt-3 flex flex-col gap-1.5">
                 {teamNeeds.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <span className="font-condensed text-xs text-muted uppercase w-12">
+                    <span className="font-condensed text-xs text-muted uppercase w-11">
                       Needs
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -134,7 +134,7 @@ export default function PlayerSelectionPanel({
               {slotOdds && (
                 <>
                   <div className="flex items-center gap-2">
-                    <span className="font-condensed text-xs text-muted uppercase w-12">
+                    <span className="font-condensed text-xs text-muted uppercase w-11">
                       Chalk
                     </span>
                     <span className="font-mono text-xs text-white">
@@ -142,7 +142,7 @@ export default function PlayerSelectionPanel({
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-condensed text-xs text-muted uppercase w-12">
+                    <span className="font-condensed text-xs text-muted uppercase w-11">
                       Odds
                     </span>
                     <span
@@ -233,28 +233,30 @@ export default function PlayerSelectionPanel({
                           : "border-l-2 border-l-transparent"
                     }`}
                   >
-                    {/* Headshot */}
-                    <div className="w-12 h-12 rounded-full bg-surface border border-border shrink-0 overflow-hidden mt-0.5">
-                      {headshot ? (
-                        <img
-                          src={headshot}
-                          alt={prospect.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center font-condensed text-xs text-muted">
-                          {prospect.position}
-                        </div>
-                      )}
+                    {/* Headshot + rank */}
+                    <div className="shrink-0 flex flex-col items-center gap-0.5 mt-0.5">
+                      <div className="w-12 h-12 rounded-full bg-surface border border-border overflow-hidden">
+                        {headshot ? (
+                          <img
+                            src={headshot}
+                            alt={prospect.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-condensed text-xs text-muted">
+                            {prospect.position}
+                          </div>
+                        )}
+                      </div>
+                      <span className="font-mono text-xs text-amber font-bold">
+                        #{prospect.rank}
+                      </span>
                     </div>
 
                     {/* Player info */}
                     <div className="flex-1 min-w-0">
-                      {/* Row 1: rank + name + pro comp */}
+                      {/* Row 1: name + chalk badge */}
                       <div className="flex items-baseline gap-2">
-                        <span className="font-mono text-xs text-muted">
-                          #{prospect.rank}
-                        </span>
                         <span className="font-condensed font-bold text-white text-sm truncate">
                           {prospect.name}
                         </span>

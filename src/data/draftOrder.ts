@@ -28,23 +28,23 @@ export const DRAFT_ORDER: DraftSlot[] = [
   {
     pick: 12, team: "New York Jets", abbrev: "NYJ",
     fromTeam: "Dallas Cowboys", trade: true,
-    tradeNote: "Jets trade picks #16 + #103 to Cowboys for #12",
+    tradeNote: "NYJ trade #16 + #103 to DAL for #12",
   },
   {
     pick: 13, team: "Tampa Bay Buccaneers", abbrev: "TB",
     fromTeam: "Los Angeles Rams", trade: true,
-    tradeNote: "Buccaneers trade picks #15 + #155 to Rams for #13",
+    tradeNote: "TB trade #15 + #155 to LAR for #13",
   },
   { pick: 14, team: "Baltimore Ravens", abbrev: "BAL" },
   {
     pick: 15, team: "Los Angeles Rams", abbrev: "LAR",
     fromTeam: "Tampa Bay Buccaneers", trade: true,
-    tradeNote: "Rams trade #13 to Buccaneers for #15 + #155",
+    tradeNote: "LAR trade #13 to TB for #15 + #155",
   },
   {
     pick: 16, team: "Dallas Cowboys", abbrev: "DAL",
     fromTeam: "New York Jets", trade: true,
-    tradeNote: "Cowboys trade #12 to Jets for #16 + #103",
+    tradeNote: "DAL trade #12 to NYJ for #16 + #103",
   },
   { pick: 17, team: "Detroit Lions", abbrev: "DET" },
   { pick: 18, team: "Minnesota Vikings", abbrev: "MIN" },
@@ -52,7 +52,7 @@ export const DRAFT_ORDER: DraftSlot[] = [
   {
     pick: 20, team: "Buffalo Bills", abbrev: "BUF",
     fromTeam: "Dallas Cowboys", trade: true,
-    tradeNote: "Bills trade picks #26 + #126 to Cowboys for #20",
+    tradeNote: "BUF trade #26 + #126 to DAL for #20",
   },
   { pick: 21, team: "Pittsburgh Steelers", abbrev: "PIT" },
   { pick: 22, team: "Los Angeles Chargers", abbrev: "LAC" },
@@ -65,7 +65,7 @@ export const DRAFT_ORDER: DraftSlot[] = [
   {
     pick: 26, team: "Dallas Cowboys", abbrev: "DAL",
     fromTeam: "Buffalo Bills", trade: true,
-    tradeNote: "Cowboys trade #20 to Bills for #26 + #126",
+    tradeNote: "DAL trade #20 to BUF for #26 + #126",
   },
   { pick: 27, team: "San Francisco 49ers", abbrev: "SF" },
   { pick: 28, team: "Houston Texans", abbrev: "HOU" },

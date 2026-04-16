@@ -723,7 +723,7 @@ export default function DraftScreen() {
           ) : (
             <>
               <span className="font-condensed text-sm sm:text-base uppercase">
-                {draftSoon ? <span className="text-white/70">Commissioner — start when ready</span> : bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="text-white/70">Brackets lock in </span><span className="text-amber font-bold">{countdown}</span></>}
+                {draftSoon ? <span className="text-white/70">Commissioner — start when ready</span> : bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{countdown}</span></>}
               </span>
               <button
                 onClick={() => draftSoon && setShowStartConfirm(true)}
@@ -745,7 +745,7 @@ export default function DraftScreen() {
       {!isLive && !isCommissioner && !draftStartsAt && (
         <div className="shrink-0 bg-surface border-b border-border px-4 py-2 text-center">
           <span className="font-condensed text-sm sm:text-base uppercase">
-            {bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="text-white/70">Brackets lock in </span><span className="text-amber font-bold">{countdown}</span></>}
+            {bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{countdown}</span></>}
           </span>
         </div>
       )}
