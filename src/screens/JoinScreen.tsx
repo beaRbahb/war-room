@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { generateRoomCode, MAX_ROOM_PLAYERS } from "../data/scoring";
+import { MAX_ROOM_PLAYERS } from "../data/scoring";
 import { BRACKET_LOCK_TIME } from "../data/scoring";
 import { createRoom, addUser, getRoom, getUsers } from "../lib/storage";
 import { saveSession, generateUserId } from "../lib/session";
@@ -19,11 +19,23 @@ export default function JoinScreen() {
       setError("Enter your name");
       return;
     }
+    if (!roomCode.trim()) {
+      setError("Enter a room code");
+      return;
+    }
     setLoading(true);
     setError("");
 
     try {
-      const code = generateRoomCode();
+      const code = roomCode.trim().toUpperCase();
+
+      // Check if room already exists
+      const existing = await getRoom(code);
+      if (existing) {
+        setError("Room already exists — pick a different code");
+        setLoading(false);
+        return;
+      }
       const userId = generateUserId();
 
       const config: RoomConfig = {
@@ -177,8 +189,8 @@ export default function JoinScreen() {
             type="text"
             value={roomCode}
             onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-            placeholder="e.g. B3ARS7"
-            maxLength={6}
+            placeholder="e.g. BEARS"
+            maxLength={20}
             className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-sm uppercase tracking-widest focus:border-amber focus:outline-none"
           />
         </div>

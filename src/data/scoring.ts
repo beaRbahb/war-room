@@ -31,15 +31,3 @@ export const DRAFT_COUNTDOWN_SECONDS = 120;
 /** Seconds remaining when countdown warning triggers */
 export const DRAFT_COUNTDOWN_WARNING_SECONDS = 30;
 
-/** Room code length */
-export const ROOM_CODE_LENGTH = 6;
-
-/** Generate a random room code */
-export function generateRoomCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
-}
