@@ -197,6 +197,11 @@ export default function JoinScreen() {
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Da Coach"
             maxLength={20}
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-bwignore
+            data-form-type="other"
             className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-sm focus:border-amber focus:outline-none"
           />
         </div>
@@ -212,6 +217,11 @@ export default function JoinScreen() {
             onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
             placeholder="e.g. BEARS"
             maxLength={20}
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-bwignore
+            data-form-type="other"
             className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-sm uppercase tracking-widest focus:border-amber focus:outline-none"
           />
         </div>
