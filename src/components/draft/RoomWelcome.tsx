@@ -246,7 +246,10 @@ export default function RoomWelcome({ roomCode, isCommissioner, onDismiss }: Roo
           {/* ═══ SHARE YOUR ROOM (commissioner only) ═══ */}
           {isCommissioner && (
             <>
-              <div className="bg-surface border border-border rounded-lg p-5 sm:p-[22px] flex flex-col">
+              <div
+                className="bg-surface border border-border rounded-lg p-5 sm:p-[22px] flex flex-col opacity-0"
+                style={{ animation: "fade-in-up 0.6s ease-out 0.2s forwards" }}
+              >
                 <h2 className="font-display text-xl text-white tracking-wide mb-3.5">
                   SHARE YOUR ROOM
                 </h2>
@@ -278,7 +281,10 @@ export default function RoomWelcome({ roomCode, isCommissioner, onDismiss }: Roo
           )}
 
           {/* ═══ FILL YOUR BRACKET ═══ */}
-          <div className="bg-surface border border-border rounded-lg p-5 sm:p-[22px] flex flex-col">
+          <div
+            className="bg-surface border border-border rounded-lg p-5 sm:p-[22px] flex flex-col opacity-0"
+            style={{ animation: `fade-in-up 0.6s ease-out ${isCommissioner ? "0.55s" : "0.2s"} forwards` }}
+          >
             <h2 className="font-display text-xl text-white tracking-wide mb-3.5">
               FILL YOUR BRACKET
             </h2>
@@ -328,7 +334,10 @@ export default function RoomWelcome({ roomCode, isCommissioner, onDismiss }: Roo
           <div className="hidden md:block" />
 
           {/* ═══ DRAFT NIGHT ═══ */}
-          <div className="bg-surface border border-border rounded-lg p-5 sm:p-[22px] flex flex-col">
+          <div
+            className="bg-surface border border-border rounded-lg p-5 sm:p-[22px] flex flex-col opacity-0"
+            style={{ animation: `fade-in-up 0.6s ease-out ${isCommissioner ? "0.9s" : "0.55s"} forwards` }}
+          >
             <h2 className="font-display text-xl text-white tracking-wide mb-3.5">
               DRAFT NIGHT
             </h2>

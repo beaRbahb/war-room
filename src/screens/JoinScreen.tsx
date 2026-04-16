@@ -206,14 +206,14 @@ export default function JoinScreen() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Da Coach"
+            placeholder="Da Coach"
             maxLength={20}
             autoComplete="off"
             data-1p-ignore
             data-lpignore="true"
             data-bwignore
             data-form-type="other"
-            className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-sm focus:border-amber focus:outline-none"
+            className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-xs focus:border-amber focus:outline-none"
           />
         </div>
 
@@ -226,16 +226,16 @@ export default function JoinScreen() {
             type="text"
             value={roomCode}
             onChange={(e) => setRoomCode(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").toUpperCase())}
-            placeholder="e.g. BEARS"
+            placeholder="BEARS"
             maxLength={20}
             autoComplete="off"
             data-1p-ignore
             data-lpignore="true"
             data-bwignore
             data-form-type="other"
-            className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-sm uppercase tracking-widest focus:border-amber focus:outline-none"
+            className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-xs uppercase tracking-widest focus:border-amber focus:outline-none"
           />
-          <p className="font-mono text-xs text-muted mt-1">Letters and numbers only — no spaces or symbols</p>
+          <p className="font-mono text-[10px] text-muted mt-1">Letters and numbers only — no spaces or symbols</p>
         </div>
 
         {/* Error */}
