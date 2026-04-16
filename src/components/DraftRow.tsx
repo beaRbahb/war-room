@@ -1,7 +1,6 @@
 import { useRef, useEffect } from "react";
 import { isBearsPick } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
-import { getPickProb } from "../data/prospectOdds";
 import { getTeamLogo, getTeamAbbrev } from "../data/teams";
 import type { DraftSlot } from "../data/draftOrder";
 import type { ConfirmedPick, ReactionType } from "../types";
@@ -152,14 +151,16 @@ export default function DraftRow({
               <span className="font-mono text-sm text-white truncate">
                 {prospect.name}
               </span>
-              {!submitted && onSubmit && (
+              {submitted ? (
+                <span className="font-condensed text-xs text-green uppercase shrink-0">locked in</span>
+              ) : onSubmit ? (
                 <button
                   onClick={(e) => { e.stopPropagation(); onSubmit(); }}
                   className="bg-green text-bg font-condensed font-bold uppercase px-3 py-1 rounded text-sm hover:brightness-110 transition-all shrink-0 animate-pulse"
                 >
                   SUBMIT
                 </button>
-              )}
+              ) : null}
             </div>
           ) : displayName && prospect ? (
             <span className="font-condensed font-bold text-sm text-white truncate block">
@@ -189,14 +190,6 @@ export default function DraftRow({
         <span className="hidden sm:block font-mono text-xs text-muted w-12 text-right shrink-0">
           {prospect ? `#${prospect.rank}` : ""}
         </span>
-        <span className="hidden sm:block font-mono text-xs text-muted w-12 text-right shrink-0">
-          {rowState !== "completed" && prospect
-            ? (() => {
-                const prob = getPickProb(slot.pick, prospect.name);
-                return prob > 0 ? `${prob}%` : "—";
-              })()
-            : ""}
-        </span>
         <span className={`hidden sm:block font-condensed text-sm font-bold uppercase w-12 text-right shrink-0 ${
           userGrade
             ? ((POLES_COLORS as Record<string, string>)[userGrade]
@@ -213,12 +206,7 @@ export default function DraftRow({
 
         {/* Status indicator */}
         <span className="text-sm w-5 text-center shrink-0">
-          {rowState === "completed" ? null
-          : rowState === "editable" && userPick ? (
-            <span className="text-green">✓</span>
-          ) : rowState === "active" && submitted ? (
-            <span className="text-green">✓</span>
-          ) : (
+          {rowState === "completed" ? null : (
             <span className="text-muted">›</span>
           )}
         </span>

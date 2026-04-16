@@ -95,7 +95,6 @@ export default function DraftScreen() {
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [commissionerTab, setCommissionerTab] = useState<"picks" | "admin">("picks");
   const [expandedPick, setExpandedPick] = useState<number | null>(null);
-  const [showEspnInfo, setShowEspnInfo] = useState(false);
 
   // ── Swap mode (commissioner admin tab) ──
   const [swapMode, setSwapMode] = useState(false);
@@ -124,6 +123,14 @@ export default function DraftScreen() {
   const processedPicks = useRef<Set<number>>(new Set());
   const bearsDoublePicks = useRef<Set<number>>(new Set());
   const prevPickRef = useRef<number>(1);
+
+  // Refs for scoring context — avoids stale closures in pick-processing effect
+  const usersRef = useRef(users);
+  usersRef.current = users;
+  const bracketsRef = useRef(brackets);
+  bracketsRef.current = brackets;
+  const allGuessesRef = useRef(allGuesses);
+  allGuessesRef.current = allGuesses;
 
   const isLive = roomStatus === "live" || roomStatus === "done";
 
@@ -317,10 +324,11 @@ export default function DraftScreen() {
 
     const pickGuessKey = `pick${latest.pick}`;
     let confettiFired = false;
+    const userName = session.name;
     const unsub = onGuesses(roomCode, latest.pick, (guesses) => {
       setAllGuesses((prev) => ({ ...prev, [pickGuessKey]: guesses }));
 
-      if (guesses[session.name] === latest.playerName) {
+      if (guesses[userName] === latest.playerName) {
         confettiFired = true;
         setShowConfetti(true);
         setTimeout(() => {
@@ -334,13 +342,14 @@ export default function DraftScreen() {
         setChaosFlash(flashData);
       }
 
-      const allUsers = Object.values(users);
+      // Scoring — use refs for latest state to avoid stale closures
+      const allUsers = Object.values(usersRef.current);
       allUsers.forEach((user) => {
-        const bracket = calcBracketScore(brackets[user.name] || null, confirmedPicks);
+        const bracket = calcBracketScore(bracketsRef.current[user.name] || null, confirmedPicks);
         const live = calcLiveScore(
           user.name,
           confirmedPicks,
-          { ...allGuesses, [pickGuessKey]: guesses },
+          { ...allGuessesRef.current, [pickGuessKey]: guesses },
           bearsDoublePicks.current
         );
         updateScores(roomCode, user.name, {
@@ -353,7 +362,9 @@ export default function DraftScreen() {
       });
       unsub();
     });
-  }, [confirmedPicks, roomCode, session, users, brackets, allGuesses, isLive]);
+    // No cleanup — listener self-unsubscribes in callback via unsub()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmedPicks, roomCode, session?.name, isLive]);
 
   // ── Personas + recap (all 32 done) ──
   useEffect(() => {
@@ -767,19 +778,6 @@ export default function DraftScreen() {
                 <span className="flex-1 font-condensed text-sm text-white/70 uppercase tracking-wide font-bold">Player</span>
                 <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right hidden md:block font-bold">Pos</span>
                 <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold">Rank</span>
-                <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold relative">
-                  <span className="cursor-help" onClick={() => setShowEspnInfo(!showEspnInfo)}>
-                    ESPN <span className="text-[10px] opacity-50">ⓘ</span>
-                  </span>
-                  {showEspnInfo && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowEspnInfo(false)} />
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 w-56 p-2.5 rounded bg-surface-elevated border border-border text-xs text-white normal-case tracking-normal font-normal font-sans z-50 shadow-lg leading-relaxed">
-                        ESPN pick probability — the % chance ESPN's draft predictor model gives for this player to be selected at this pick.
-                      </span>
-                    </>
-                  )}
-                </span>
                 <span className="font-condensed text-sm text-white/70 uppercase w-12 text-right font-bold">Grade</span>
                 <span className="w-5 shrink-0" />
               </div>
