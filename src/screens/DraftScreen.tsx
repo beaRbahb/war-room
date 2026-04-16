@@ -1062,43 +1062,20 @@ export default function DraftScreen() {
                   CONSENSUS BOARD
                 </h2>
                 <div className="space-y-0.5">
-                  {PROSPECTS.map((p, idx) => {
-                    const showTierBreak =
-                      idx === 5 || idx === 15 || idx === 32;
+                  {PROSPECTS.map((p) => {
                     const selected = selectedPlayers.has(p.name);
                     return (
                       <div key={p.rank}>
-                        {showTierBreak && (
-                          <div className="border-t border-border-bright my-1.5 pt-1">
-                            <span className="font-condensed text-xs text-amber-dim uppercase">
-                              {idx === 5
-                                ? "TIER 2"
-                                : idx === 15
-                                  ? "TIER 3"
-                                  : "DAY 2"}
-                            </span>
-                          </div>
-                        )}
                         <div
                           className={`flex items-baseline gap-2 text-xs font-mono py-0.5 ${
                             selected
                               ? "text-muted line-through opacity-50"
-                              : p.rank <= 5
-                                ? "text-white font-bold"
-                                : p.rank <= 15
-                                  ? "text-white"
-                                  : "text-white/70"
+                              : p.rank > 32
+                                ? "text-white/40"
+                                : "text-white"
                           }`}
                         >
-                          <span
-                            className={`w-6 text-right ${
-                              selected
-                                ? "text-muted"
-                                : p.rank <= 5
-                                  ? "text-amber"
-                                  : "text-muted"
-                            }`}
-                          >
+                          <span className="w-6 text-right text-muted">
                             {p.rank}
                           </span>
                           <span className="flex-1">{p.name}</span>
