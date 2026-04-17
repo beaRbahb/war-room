@@ -56,6 +56,16 @@ function deferredOnValue(
   };
 }
 
+// ── Connection State ──
+
+/** Subscribe to Firebase connection state. Returns unsubscribe. */
+export function onConnectionState(cb: (connected: boolean) => void): Unsubscribe {
+  const connRef = ref(db, ".info/connected");
+  return onValue(connRef, (snap) => {
+    cb(snap.val() === true);
+  });
+}
+
 // ── Room Config ──
 
 export async function createRoom(

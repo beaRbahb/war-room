@@ -15,7 +15,6 @@ import {
   onBrackets,
   onUsers,
   updateScores,
-  getGuessCount,
   setLiveState,
   updateLiveState,
   onGuesses,
@@ -54,6 +53,8 @@ import RecapCard from "../components/leaderboard/RecapCard";
 import RoomRecap from "../components/leaderboard/RoomRecap";
 import BracketProgressStrip from "../components/draft/BracketProgressStrip";
 import DraftTakeover from "../components/draft/DraftTakeover";
+import ConnectionIndicator from "../components/ui/ConnectionIndicator";
+import { useVisibility } from "../hooks/useVisibility";
 
 import type {
   BracketPick,
@@ -163,6 +164,11 @@ export default function DraftScreen() {
   bracketSubmittedRef.current = bracketSubmitted;
 
   const isLive = roomStatus === "live" || roomStatus === "done";
+
+  // ── Visibility tracking (tab backgrounding) ──
+  const { toast: visibilityToast, dismissToast } = useVisibility(
+    liveState?.currentPick ?? null
+  );
 
   /** Draft order with live overrides applied (bracket phase uses static DRAFT_ORDER) */
   const effectiveOrder = useMemo(
@@ -274,14 +280,15 @@ export default function DraftScreen() {
     updateRoomStatus(roomCode, "live");
   }, [roomCode, session?.isCommissioner, isLive, liveState]);
 
-  // ── Track guess count ──
+  // ── Track guess count (real-time listener) ──
   useEffect(() => {
-    if (!roomCode || !liveState?.windowOpen) return;
-    const interval = setInterval(async () => {
-      const count = await getGuessCount(roomCode, liveState.currentPick);
-      setGuessCount(count);
-    }, 2000);
-    return () => clearInterval(interval);
+    if (!roomCode || !liveState?.windowOpen) {
+      setGuessCount(0);
+      return;
+    }
+    return onGuesses(roomCode, liveState.currentPick, (guesses) => {
+      setGuessCount(Object.keys(guesses).length);
+    });
   }, [roomCode, liveState?.windowOpen, liveState?.currentPick]);
 
   // ── Reset guess state when pick advances ──
@@ -757,6 +764,9 @@ export default function DraftScreen() {
         </div>
       </header>
 
+      {/* Connection status */}
+      <ConnectionIndicator />
+
       {/* Commissioner: Start Draft banner (bracket phase) */}
       {!isLive && isCommissioner && (
         <div className="shrink-0 bg-surface border-b border-border px-4 py-2 flex items-center justify-between gap-3">
@@ -1148,6 +1158,18 @@ export default function DraftScreen() {
             {autoSubmitToast}
           </p>
         </div>
+      )}
+
+      {/* Welcome back toast (tab visibility) */}
+      {visibilityToast && (
+        <button
+          onClick={dismissToast}
+          className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-surface border border-green rounded-lg px-4 py-2 shadow-lg cursor-pointer hover:bg-surface/90 transition-all animate-bounce-once"
+        >
+          <p className="font-condensed text-sm text-green uppercase">
+            Welcome back! {visibilityToast.missedPicks} pick{visibilityToast.missedPicks !== 1 ? "s" : ""} happened — now on pick #{visibilityToast.currentPick}
+          </p>
+        </button>
       )}
     </div>
   );
