@@ -125,6 +125,7 @@ export default function DraftScreen() {
   const [showBearsMode, setShowBearsMode] = useState(false);
   const [bearsMoment, setBearsMoment] = useState<BearsMoment | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiTeam, setConfettiTeam] = useState<string | undefined>(undefined);
   const [blockbusterTrade, setBlockbusterTrade] = useState<BlockbusterTradePlayer | null>(null);
   const [blockbusterConfetti, setBlockbusterConfetti] = useState(false);
   const [chaosFlash, setChaosFlash] = useState<{
@@ -398,6 +399,7 @@ export default function DraftScreen() {
         setTimeout(() => setBlockbusterConfetti(false), 10000);
       } else if (latest.isBearsPick) {
         setShowBearsMode(true);
+        setConfettiTeam(undefined); // Bears palette
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 6000);
       }
@@ -418,6 +420,7 @@ export default function DraftScreen() {
         // Bears picks already have confetti fired from BearsMode trigger
         if (!isBlockbuster && !isBears && guesses[userName] === latest.playerName) {
           confettiFired = true;
+          setConfettiTeam(latest.teamAbbrev);
           setShowConfetti(true);
           setTimeout(() => {
             setShowConfetti(false);
@@ -670,6 +673,7 @@ export default function DraftScreen() {
     setExpandedPick(null);
     setChaosFlash(null);
     setShowConfetti(false);
+    setConfettiTeam(undefined);
     setShowRecap(false);
     setRecapData(null);
     setReassignPick(null);
@@ -706,7 +710,7 @@ export default function DraftScreen() {
           onComplete={() => setChaosFlash(null)}
         />
       )}
-      {showConfetti && <Confetti />}
+      {showConfetti && <Confetti teamAbbrev={confettiTeam} />}
       {blockbusterConfetti && <Confetti heavy />}
       {blockbusterTrade && (
         <BlockbusterTradeOverlay

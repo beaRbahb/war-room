@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { TEAMS } from "../../data/teams";
 
 interface ConfettiProps {
   /** Duration in ms before auto-remove */
   duration?: number;
   /** Extra-heavy Bears confetti for blockbuster moments */
   heavy?: boolean;
+  /** Team abbreviation — uses that team's colors instead of Bears */
+  teamAbbrev?: string;
 }
 
 interface Piece {
@@ -19,7 +22,7 @@ interface Piece {
   spin: number;
 }
 
-const COLORS = [
+const BEARS_COLORS = [
   "#0b1f4a", // Bears navy
   "#e87722", // Bears orange
   "#FFD700", // Gold
@@ -30,16 +33,24 @@ const COLORS = [
   "#FFD700",
 ];
 
-const HEAVY_COLORS = [
+const BEARS_HEAVY_COLORS = [
   "#0b1f4a", "#0b1f4a", "#0b1f4a",
   "#e87722", "#e87722", "#e87722",
   "#FFD700",
   "#FFFFFF",
 ];
 
-function generatePieces(heavy: boolean): Piece[] {
+/** Build a weighted palette from a team's primary + secondary colors */
+function getTeamColors(abbrev: string): string[] {
+  const team = TEAMS[abbrev];
+  if (!team) return BEARS_COLORS;
+  const { color, color2 } = team;
+  // Weighted: primary heavy, secondary medium, white accent
+  return [color, color, color, color2, color2, "#FFFFFF"];
+}
+
+function generatePieces(heavy: boolean, colors: string[]): Piece[] {
   const count = heavy ? 2000 : 1000;
-  const colors = heavy ? HEAVY_COLORS : COLORS;
   return Array.from({ length: count }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
@@ -57,10 +68,15 @@ function generatePieces(heavy: boolean): Piece[] {
  * New Year's Eve confetti — 1000 pieces, lateral sway, varied shapes.
  * Fires on correct live guess.
  */
-export default function Confetti({ duration, heavy = false }: ConfettiProps) {
+export default function Confetti({ duration, heavy = false, teamAbbrev }: ConfettiProps) {
   const effectiveDuration = duration ?? (heavy ? 8000 : 5000);
   const [visible, setVisible] = useState(true);
-  const [pieces] = useState<Piece[]>(() => generatePieces(heavy));
+  const [pieces] = useState<Piece[]>(() => {
+    const colors = teamAbbrev
+      ? getTeamColors(teamAbbrev)
+      : heavy ? BEARS_HEAVY_COLORS : BEARS_COLORS;
+    return generatePieces(heavy, colors);
+  });
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(false), effectiveDuration);
