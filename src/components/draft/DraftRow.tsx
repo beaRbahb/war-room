@@ -122,7 +122,7 @@ export default function DraftRow({
         </span>
 
         {/* Team logo + abbrev */}
-        <div className="flex items-center gap-1.5 w-24 shrink-0">
+        <div className="flex items-center gap-1.5 w-24 shrink-0 overflow-hidden">
           <img
             src={getTeamLogo(slot.abbrev)}
             alt={slot.abbrev}
