@@ -19,8 +19,9 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
   const [expanded, setExpanded] = useState(false);
   const [flippingScores, setFlippingScores] = useState<Set<string>>(new Set());
   const prevScoresRef = useRef<Record<string, number>>({});
-  /** Rank changes: positive = moved up, negative = moved down, 0 = unchanged */
+  /** Rank changes: positive = moved up, negative = moved down */
   const [rankChanges, setRankChanges] = useState<Record<string, number>>({});
+  const [newEntries, setNewEntries] = useState<Set<string>>(new Set());
   const prevRanksRef = useRef<Record<string, number>>({});
 
   // Build sorted leaderboard
@@ -65,8 +66,6 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
   }, [scoreKey]);
 
   // Detect rank changes (uses same scoreKey trigger as score flip)
-  // rankChanges values: positive = moved up, negative = moved down, Infinity = new entry
-  const [newEntries, setNewEntries] = useState<Set<string>>(new Set());
   useEffect(() => {
     const changes: Record<string, number> = {};
     const justNew = new Set<string>();

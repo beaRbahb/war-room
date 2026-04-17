@@ -540,30 +540,30 @@ export default function DraftScreen() {
   } | null>(null);
   const [roomPulseFading, setRoomPulseFading] = useState(false);
   const prevFinalizingRef = useRef(false);
-  const prevPickGuessesRef = useRef<Record<string, string> | null>(null);
+  const prevPulseDataRef = useRef<{ guesses: Record<string, string>; pickNumber: number } | null>(null);
 
   useEffect(() => {
-    // Track live data for stale copy
-    if (windowFinalizing && currentPickGuesses) {
-      prevPickGuessesRef.current = currentPickGuesses;
+    // Track live data for stale copy (capture pick number while still finalizing)
+    if (windowFinalizing && currentPickGuesses && liveState) {
+      prevPulseDataRef.current = {
+        guesses: currentPickGuesses,
+        pickNumber: liveState.currentPick,
+      };
     }
     // Transition: finalizing → not finalizing (pick confirmed)
-    if (prevFinalizingRef.current && !windowFinalizing && prevPickGuessesRef.current) {
-      setRoomPulseStale({
-        guesses: prevPickGuessesRef.current,
-        pickNumber: liveState?.currentPick ?? 1,
-      });
+    if (prevFinalizingRef.current && !windowFinalizing && prevPulseDataRef.current) {
+      setRoomPulseStale(prevPulseDataRef.current);
       setRoomPulseFading(true);
       const timer = setTimeout(() => {
         setRoomPulseStale(null);
         setRoomPulseFading(false);
-        prevPickGuessesRef.current = null;
+        prevPulseDataRef.current = null;
       }, 600);
       prevFinalizingRef.current = false;
       return () => clearTimeout(timer);
     }
     prevFinalizingRef.current = windowFinalizing;
-  }, [windowFinalizing, currentPickGuesses, liveState?.currentPick]);
+  }, [windowFinalizing, currentPickGuesses, liveState]);
 
   // ── Row state helper ──
   function getRowState(slotIndex: number): RowState {
