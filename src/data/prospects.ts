@@ -24,7 +24,7 @@ export const PROSPECTS: Prospect[] = [
     note: "Led Indiana to national championship, won Heisman. #3 in CFB QBR (88.4).",
   },
   {
-    rank: 2, name: "Arvell Reese", position: "EDGE/LB", college: "Ohio State",
+    rank: 2, name: "Arvell Reese", position: "EDGE", college: "Ohio State",
     height: "6'4\"", weight: 241, age: 20,
     proComp: "Raw Micah Parsons / smaller Willie McGinest",
     note: "Highest upside in class. Hybrid edge-LB, double-digit sack potential. Elite run defender and QB spy.",

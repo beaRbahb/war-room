@@ -1,17 +1,17 @@
-import { useEffect, useState, useMemo } from "react";
-import { getRandomBust } from "../../data/bearsBusts";
+import { useEffect, useState } from "react";
+import type { BearsBust } from "../../data/bearsBusts";
 
 interface BearsBustOverlayProps {
+  bust: BearsBust;
   onComplete: () => void;
 }
 
 /**
- * Full-screen Bears draft bust overlay. Picks a random bust each time.
+ * Full-screen Bears draft bust overlay.
  * Shake → reveal with headshot + name + draft info + who they passed on → auto-dismiss.
  */
-export default function BearsBustOverlay({ onComplete }: BearsBustOverlayProps) {
+export default function BearsBustOverlay({ bust, onComplete }: BearsBustOverlayProps) {
   const [phase, setPhase] = useState<"shake" | "reveal" | "done">("shake");
-  const bust = useMemo(() => getRandomBust(), []);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("reveal"), 800);

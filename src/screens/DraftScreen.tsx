@@ -674,7 +674,7 @@ export default function DraftScreen() {
       {/* Overlays */}
       {showBearsMode && <BearsMode onComplete={handleBearsModeComplete} />}
       {bearsMoment?.type === "bust" && (
-        <BearsBustOverlay onComplete={() => setBearsMoment(null)} />
+        <BearsBustOverlay bust={bearsMoment.data} onComplete={() => setBearsMoment(null)} />
       )}
       {bearsMoment?.type === "legend" && (
         <BearsIcedOverlay legend={bearsMoment.data} onComplete={() => setBearsMoment(null)} />
