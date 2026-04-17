@@ -199,8 +199,8 @@ export default function JoinScreen() {
       <div className="relative z-10 w-full max-w-sm bg-surface border border-border rounded-lg p-5 sm:p-6 space-y-3 sm:space-y-4">
         {/* Name */}
         <div>
-          <label className="block font-condensed text-sm text-muted uppercase tracking-wide mb-1">
-            Your Name
+          <label className="block font-condensed text-sm text-white uppercase tracking-wide mb-1">
+            Name
           </label>
           <input
             type="text"
@@ -219,7 +219,7 @@ export default function JoinScreen() {
 
         {/* Room code */}
         <div>
-          <label className="block font-condensed text-sm text-muted uppercase tracking-wide mb-1">
+          <label className="block font-condensed text-sm text-white uppercase tracking-wide mb-1">
             Room Code
           </label>
           <input
@@ -235,7 +235,7 @@ export default function JoinScreen() {
             data-form-type="other"
             className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-xs uppercase tracking-widest focus:border-amber focus:outline-none"
           />
-          <p className="font-mono text-[10px] text-muted mt-1">Letters and numbers only — no spaces or symbols</p>
+          <p className="font-mono text-[10px] text-muted mt-1">Letters and numbers only</p>
         </div>
 
         {/* Error */}
