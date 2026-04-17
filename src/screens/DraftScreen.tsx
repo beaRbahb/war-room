@@ -49,6 +49,7 @@ import RoomWelcome from "../components/draft/RoomWelcome";
 import RoomInterstitial from "../components/draft/RoomInterstitial";
 import PickReactionScreen from "../components/reactions/PickReactionScreen";
 import RunningChaosMeter from "../components/chaos/RunningChaosMeter";
+import RoomPulse from "../components/draft/RoomPulse";
 import RecapCard from "../components/leaderboard/RecapCard";
 import RoomRecap from "../components/leaderboard/RoomRecap";
 import BracketProgressStrip from "../components/draft/BracketProgressStrip";
@@ -837,6 +838,20 @@ export default function DraftScreen() {
       {isLive && confirmedPicks.length > 0 && commissionerTab !== "admin" && (
         <RunningChaosMeter confirmedPicks={confirmedPicks} />
       )}
+
+      {/* Room Pulse — guess distribution during finalizing (window closed, waiting for TV pick) */}
+      {isLive && liveState && !liveState.windowOpen && !!liveState.windowOpenedAt && commissionerTab !== "admin" && (() => {
+        const pickKey = `pick${liveState.currentPick}`;
+        const pickGuesses = allGuesses[pickKey] ?? {};
+        return Object.keys(pickGuesses).length > 0 ? (
+          <RoomPulse
+            pickGuesses={pickGuesses}
+            userName={session.name}
+            pickNumber={liveState.currentPick}
+            totalUsers={totalUsers}
+          />
+        ) : null;
+      })()}
 
       {/* Recap overlay */}
       {showRecap && recapData && (

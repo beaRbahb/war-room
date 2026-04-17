@@ -19,6 +19,9 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
   const [expanded, setExpanded] = useState(false);
   const [flippingScores, setFlippingScores] = useState<Set<string>>(new Set());
   const prevScoresRef = useRef<Record<string, number>>({});
+  /** Rank changes: positive = moved up, negative = moved down, 0 = unchanged */
+  const [rankChanges, setRankChanges] = useState<Record<string, number>>({});
+  const prevRanksRef = useRef<Record<string, number>>({});
 
   // Build sorted leaderboard
   const entries: LeaderboardEntry[] = Object.entries(scores)
@@ -56,6 +59,28 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
     if (newFlipping.size > 0) {
       setFlippingScores(newFlipping);
       const timer = setTimeout(() => setFlippingScores(new Set()), 400);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scoreKey tracks the values we care about
+  }, [scoreKey]);
+
+  // Detect rank changes (uses same scoreKey trigger as score flip)
+  useEffect(() => {
+    const changes: Record<string, number> = {};
+    let hasChange = false;
+    for (let i = 0; i < entries.length; i++) {
+      const name = entries[i].name;
+      const prevRank = prevRanksRef.current[name];
+      const currentRank = i + 1;
+      if (prevRank !== undefined && prevRank !== currentRank) {
+        changes[name] = prevRank - currentRank; // positive = moved up
+        hasChange = true;
+      }
+      prevRanksRef.current[name] = currentRank;
+    }
+    if (hasChange) {
+      setRankChanges(changes);
+      const timer = setTimeout(() => setRankChanges({}), 3000);
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- scoreKey tracks the values we care about
@@ -136,6 +161,19 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
                       </span>
                       {personas?.[entry.name] && (
                         <PersonaBadge persona={personas[entry.name]} />
+                      )}
+                      {rankChanges[entry.name] && (
+                        <span
+                          className={`font-mono text-[10px] font-bold px-1 rounded animate-rank-bounce ${
+                            rankChanges[entry.name] > 0
+                              ? "text-green bg-green/10"
+                              : "text-red bg-red/10"
+                          }`}
+                        >
+                          {rankChanges[entry.name] > 0
+                            ? `\u25B2${rankChanges[entry.name]}`
+                            : `\u25BC${Math.abs(rankChanges[entry.name])}`}
+                        </span>
                       )}
                     </div>
                     <p className="font-mono text-xs text-muted">
@@ -237,6 +275,19 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
                       <span className={`font-mono text-sm ${i === 0 ? "text-amber font-bold" : "text-white"}`}>
                         {entry.name}
                       </span>
+                      {rankChanges[entry.name] && (
+                        <span
+                          className={`font-mono text-[10px] font-bold px-0.5 rounded animate-rank-bounce ${
+                            rankChanges[entry.name] > 0
+                              ? "text-green"
+                              : "text-red"
+                          }`}
+                        >
+                          {rankChanges[entry.name] > 0
+                            ? `\u25B2${rankChanges[entry.name]}`
+                            : `\u25BC${Math.abs(rankChanges[entry.name])}`}
+                        </span>
+                      )}
                     </div>
                     <span className={`font-mono text-sm font-bold ${flippingScores.has(entry.name) ? "animate-score-flip" : ""} ${i === 0 ? "text-amber" : "text-amber/70"}`}>
                       {score}
