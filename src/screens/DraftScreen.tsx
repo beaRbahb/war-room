@@ -525,6 +525,46 @@ export default function DraftScreen() {
     (s) => s.pick === (liveState?.currentPick || 1)
   );
 
+  // Guesses for current pick — used by RoomPulse during finalizing state
+  const windowFinalizing = isLive && !!liveState && !liveState.windowOpen && !!liveState.windowOpenedAt;
+  const currentPickGuesses = useMemo(() => {
+    if (!windowFinalizing || !liveState) return null;
+    const guesses = allGuesses[`pick${liveState.currentPick}`] ?? {};
+    return Object.keys(guesses).length > 0 ? guesses : null;
+  }, [windowFinalizing, liveState?.currentPick, allGuesses]);
+
+  // Room Pulse fade-out: hold stale data briefly when finalizing ends
+  const [roomPulseStale, setRoomPulseStale] = useState<{
+    guesses: Record<string, string>;
+    pickNumber: number;
+  } | null>(null);
+  const [roomPulseFading, setRoomPulseFading] = useState(false);
+  const prevFinalizingRef = useRef(false);
+  const prevPickGuessesRef = useRef<Record<string, string> | null>(null);
+
+  useEffect(() => {
+    // Track live data for stale copy
+    if (windowFinalizing && currentPickGuesses) {
+      prevPickGuessesRef.current = currentPickGuesses;
+    }
+    // Transition: finalizing → not finalizing (pick confirmed)
+    if (prevFinalizingRef.current && !windowFinalizing && prevPickGuessesRef.current) {
+      setRoomPulseStale({
+        guesses: prevPickGuessesRef.current,
+        pickNumber: liveState?.currentPick ?? 1,
+      });
+      setRoomPulseFading(true);
+      const timer = setTimeout(() => {
+        setRoomPulseStale(null);
+        setRoomPulseFading(false);
+        prevPickGuessesRef.current = null;
+      }, 600);
+      prevFinalizingRef.current = false;
+      return () => clearTimeout(timer);
+    }
+    prevFinalizingRef.current = windowFinalizing;
+  }, [windowFinalizing, currentPickGuesses, liveState?.currentPick]);
+
   // ── Row state helper ──
   function getRowState(slotIndex: number): RowState {
     if (!isLive) return bracketLocked ? "locked" : "editable";
@@ -840,18 +880,24 @@ export default function DraftScreen() {
       )}
 
       {/* Room Pulse — guess distribution during finalizing (window closed, waiting for TV pick) */}
-      {isLive && liveState && !liveState.windowOpen && !!liveState.windowOpenedAt && commissionerTab !== "admin" && (() => {
-        const pickKey = `pick${liveState.currentPick}`;
-        const pickGuesses = allGuesses[pickKey] ?? {};
-        return Object.keys(pickGuesses).length > 0 ? (
-          <RoomPulse
-            pickGuesses={pickGuesses}
-            userName={session.name}
-            pickNumber={liveState.currentPick}
-            totalUsers={totalUsers}
-          />
-        ) : null;
-      })()}
+      {windowFinalizing && currentPickGuesses && liveState && commissionerTab !== "admin" && (
+        <RoomPulse
+          pickGuesses={currentPickGuesses}
+          userName={session.name}
+          pickNumber={liveState.currentPick}
+          totalUsers={totalUsers}
+        />
+      )}
+      {/* Fading stale Room Pulse — holds briefly after pick is confirmed */}
+      {roomPulseFading && roomPulseStale && commissionerTab !== "admin" && (
+        <RoomPulse
+          pickGuesses={roomPulseStale.guesses}
+          userName={session.name}
+          pickNumber={roomPulseStale.pickNumber}
+          totalUsers={totalUsers}
+          fading
+        />
+      )}
 
       {/* Recap overlay */}
       {showRecap && recapData && (
@@ -963,7 +1009,7 @@ export default function DraftScreen() {
                         onSubmit={rowState === "active" && isLive && currentGuess && !guessSubmitted ? handleLiveSubmit : undefined}
                         submitted={rowState === "active" && isLive ? guessSubmitted : undefined}
                         windowOpen={rowState === "active" && isLive ? liveState?.windowOpen : undefined}
-                        windowFinalizing={rowState === "active" && isLive && !liveState?.windowOpen && !!liveState?.windowOpenedAt}
+                        windowFinalizing={rowState === "active" && windowFinalizing}
                       />
                     </div>
                   );

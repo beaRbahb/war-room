@@ -65,14 +65,22 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
   }, [scoreKey]);
 
   // Detect rank changes (uses same scoreKey trigger as score flip)
+  // rankChanges values: positive = moved up, negative = moved down, Infinity = new entry
+  const [newEntries, setNewEntries] = useState<Set<string>>(new Set());
   useEffect(() => {
     const changes: Record<string, number> = {};
+    const justNew = new Set<string>();
     let hasChange = false;
+    const hasAnyPrev = Object.keys(prevRanksRef.current).length > 0;
     for (let i = 0; i < entries.length; i++) {
       const name = entries[i].name;
       const prevRank = prevRanksRef.current[name];
       const currentRank = i + 1;
-      if (prevRank !== undefined && prevRank !== currentRank) {
+      if (prevRank === undefined && hasAnyPrev) {
+        // First time on the board (not initial load)
+        justNew.add(name);
+        hasChange = true;
+      } else if (prevRank !== undefined && prevRank !== currentRank) {
         changes[name] = prevRank - currentRank; // positive = moved up
         hasChange = true;
       }
@@ -80,7 +88,8 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
     }
     if (hasChange) {
       setRankChanges(changes);
-      const timer = setTimeout(() => setRankChanges({}), 3000);
+      setNewEntries(justNew);
+      const timer = setTimeout(() => { setRankChanges({}); setNewEntries(new Set()); }, 3000);
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- scoreKey tracks the values we care about
@@ -162,7 +171,11 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
                       {personas?.[entry.name] && (
                         <PersonaBadge persona={personas[entry.name]} />
                       )}
-                      {rankChanges[entry.name] && (
+                      {newEntries.has(entry.name) ? (
+                        <span className="font-mono text-[10px] font-bold px-1 rounded animate-rank-bounce text-amber bg-amber/10">
+                          NEW
+                        </span>
+                      ) : rankChanges[entry.name] ? (
                         <span
                           className={`font-mono text-[10px] font-bold px-1 rounded animate-rank-bounce ${
                             rankChanges[entry.name] > 0
@@ -174,7 +187,7 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
                             ? `\u25B2${rankChanges[entry.name]}`
                             : `\u25BC${Math.abs(rankChanges[entry.name])}`}
                         </span>
-                      )}
+                      ) : null}
                     </div>
                     <p className="font-mono text-xs text-muted">
                       {tab === "live" ? (
@@ -275,19 +288,6 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
                       <span className={`font-mono text-sm ${i === 0 ? "text-amber font-bold" : "text-white"}`}>
                         {entry.name}
                       </span>
-                      {rankChanges[entry.name] && (
-                        <span
-                          className={`font-mono text-[10px] font-bold px-0.5 rounded animate-rank-bounce ${
-                            rankChanges[entry.name] > 0
-                              ? "text-green"
-                              : "text-red"
-                          }`}
-                        >
-                          {rankChanges[entry.name] > 0
-                            ? `\u25B2${rankChanges[entry.name]}`
-                            : `\u25BC${Math.abs(rankChanges[entry.name])}`}
-                        </span>
-                      )}
                     </div>
                     <span className={`font-mono text-sm font-bold ${flippingScores.has(entry.name) ? "animate-score-flip" : ""} ${i === 0 ? "text-amber" : "text-amber/70"}`}>
                       {score}
