@@ -24,70 +24,6 @@ export default function JoinScreen() {
 
   useEffect(() => onAuthError(setAuthError), []);
 
-  async function handleCreate() {
-    if (!name.trim()) {
-      setError("Enter your name");
-      return;
-    }
-    if (!roomCode.trim()) {
-      setError("Enter a room code");
-      return;
-    }
-    const code = roomCode.trim().toUpperCase();
-    if (!ROOM_CODE_REGEX.test(code)) {
-      setError("Room code can only contain letters, numbers, hyphens, and underscores");
-      return;
-    }
-    setLoading(true);
-    setError("");
-
-    try {
-
-      // Check if room already exists
-      const existing = await getRoom(code);
-      if (existing) {
-        setError("Room already exists — pick a different code");
-        setLoading(false);
-        return;
-      }
-      const userId = generateUserId();
-
-      const config: RoomConfig = {
-        roomCode: code,
-        commissionerId: userId,
-        commissionerName: name.trim(),
-        lockTime: BRACKET_LOCK_TIME.toISOString(),
-        status: "bracket",
-        createdAt: new Date().toISOString(),
-      };
-
-      const user: RoomUser = {
-        name: name.trim(),
-        id: userId,
-        joinedAt: new Date().toISOString(),
-        isCommissioner: true,
-        isActive: true,
-      };
-
-      await createRoom(code, config);
-      await addUser(code, user);
-
-      saveSession({
-        name: name.trim(),
-        id: userId,
-        roomCode: code,
-        isCommissioner: true,
-      });
-
-      navigate(`/room/${code}`, { state: { justCreated: true } });
-    } catch (err) {
-      setError("Failed to create room. Check your connection.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleJoin() {
     if (!name.trim()) {
       setError("Enter your name");
@@ -108,60 +44,88 @@ export default function JoinScreen() {
     try {
       const room = await getRoom(code);
 
-      if (!room) {
-        setError("Room not found");
-        setLoading(false);
-        return;
-      }
+      if (room) {
+        // ── Room exists → join it ──
+        const users = await getUsers(code);
+        const userList = Object.values(users);
 
-      const users = await getUsers(code);
-      const userList = Object.values(users);
+        // Check if this name already exists (rejoin)
+        const existing = userList.find(
+          (u) => u.name.toLowerCase() === name.trim().toLowerCase()
+        );
 
-      // Check if this name already exists (rejoin)
-      const existing = userList.find(
-        (u) => u.name.toLowerCase() === name.trim().toLowerCase()
-      );
+        if (existing) {
+          saveSession({
+            name: existing.name,
+            id: existing.id,
+            roomCode: code,
+            isCommissioner: existing.isCommissioner,
+          });
+          navigate(`/room/${code}`, { state: { justJoined: true } });
+          return;
+        }
 
-      if (existing) {
-        // Rejoin — restore session
+        // New user
+        if (userList.length >= MAX_ROOM_PLAYERS) {
+          setError(`Room is full (${MAX_ROOM_PLAYERS} players max)`);
+          setLoading(false);
+          return;
+        }
+
+        const userId = generateUserId();
+        const user: RoomUser = {
+          name: name.trim(),
+          id: userId,
+          joinedAt: new Date().toISOString(),
+          isCommissioner: false,
+          isActive: true,
+        };
+
+        await addUser(code, user);
+
         saveSession({
-          name: existing.name,
-          id: existing.id,
+          name: name.trim(),
+          id: userId,
           roomCode: code,
-          isCommissioner: existing.isCommissioner,
+          isCommissioner: false,
         });
-        navigate(`/room/${code}`);
-        return;
+
+        navigate(`/room/${code}`, { state: { justJoined: true } });
+      } else {
+        // ── Room doesn't exist → create it ──
+        const userId = generateUserId();
+
+        const config: RoomConfig = {
+          roomCode: code,
+          commissionerId: userId,
+          commissionerName: name.trim(),
+          lockTime: BRACKET_LOCK_TIME.toISOString(),
+          status: "bracket",
+          createdAt: new Date().toISOString(),
+        };
+
+        const user: RoomUser = {
+          name: name.trim(),
+          id: userId,
+          joinedAt: new Date().toISOString(),
+          isCommissioner: true,
+          isActive: true,
+        };
+
+        await createRoom(code, config);
+        await addUser(code, user);
+
+        saveSession({
+          name: name.trim(),
+          id: userId,
+          roomCode: code,
+          isCommissioner: true,
+        });
+
+        navigate(`/room/${code}`, { state: { justCreated: true } });
       }
-
-      // New user
-      if (userList.length >= MAX_ROOM_PLAYERS) {
-        setError(`Room is full (${MAX_ROOM_PLAYERS} players max)`);
-        setLoading(false);
-        return;
-      }
-
-      const userId = generateUserId();
-      const user: RoomUser = {
-        name: name.trim(),
-        id: userId,
-        joinedAt: new Date().toISOString(),
-        isCommissioner: false,
-        isActive: true,
-      };
-
-      await addUser(code, user);
-
-      saveSession({
-        name: name.trim(),
-        id: userId,
-        roomCode: code,
-        isCommissioner: false,
-      });
-
-      navigate(`/room/${code}`);
     } catch (err) {
-      setError("Failed to join room. Check your connection.");
+      setError("Failed to join. Check your connection.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -243,23 +207,14 @@ export default function JoinScreen() {
           <p className="text-red text-sm font-condensed">{error}</p>
         )}
 
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={handleJoin}
-            disabled={loading}
-            className="flex-1 bg-amber text-bg font-condensed font-bold uppercase tracking-wide py-2.5 rounded hover:brightness-110 disabled:opacity-50 transition-all"
-          >
-            {loading ? "..." : "JOIN ROOM"}
-          </button>
-          <button
-            onClick={handleCreate}
-            disabled={loading}
-            className="flex-1 bg-surface-elevated border border-border text-white font-condensed font-bold uppercase tracking-wide py-2.5 rounded hover:border-amber disabled:opacity-50 transition-all"
-          >
-            {loading ? "..." : "CREATE"}
-          </button>
-        </div>
+        {/* Single join button */}
+        <button
+          onClick={handleJoin}
+          disabled={loading}
+          className="w-full bg-amber text-bg font-condensed font-bold uppercase tracking-wide py-2.5 rounded hover:brightness-110 disabled:opacity-50 transition-all"
+        >
+          {loading ? "..." : "JOIN"}
+        </button>
       </div>
 
     </div>

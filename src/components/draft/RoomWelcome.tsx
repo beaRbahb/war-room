@@ -4,6 +4,7 @@ import { BRACKET_LOCK_TIME } from "../../data/scoring";
 interface RoomWelcomeProps {
   roomCode: string;
   isCommissioner: boolean;
+  playerCount: number;
   onDismiss: () => void;
 }
 
@@ -182,7 +183,7 @@ function renderFormation(canvas: HTMLCanvasElement) {
  * Commissioner sees 3 cards (share → bracket → draft night).
  * Non-commissioner sees 2 cards (bracket → draft night).
  */
-export default function RoomWelcome({ roomCode, isCommissioner, onDismiss }: RoomWelcomeProps) {
+export default function RoomWelcome({ roomCode, isCommissioner, playerCount, onDismiss }: RoomWelcomeProps) {
   const [copied, setCopied] = useState(false);
   const [draftSoon] = useState(() => BRACKET_LOCK_TIME.getTime() - Date.now() <= 30 * 60 * 1000);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -258,6 +259,9 @@ export default function RoomWelcome({ roomCode, isCommissioner, onDismiss }: Roo
                 <div className="bg-bg border border-border rounded-md px-3.5 py-3.5 text-center mb-3.5 min-h-[138px] flex flex-col justify-center">
                   <p className="font-condensed text-[9px] text-muted uppercase tracking-[0.15em] mb-0.5">Room Code</p>
                   <p className="font-mono text-[26px] text-amber font-bold tracking-[0.12em] leading-tight">{roomCode}</p>
+                  <p className="font-condensed text-[11px] text-muted uppercase tracking-wide mt-1">
+                    {playerCount} {playerCount === 1 ? "player" : "players"}
+                  </p>
                 </div>
 
                 <p className="font-condensed text-[15px] text-white leading-relaxed mb-1.5">
