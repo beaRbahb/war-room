@@ -182,47 +182,71 @@ export default function Leaderboard({ scores, roomCode, totalPicks, personas }: 
 
       {/* Mobile bottom sheet */}
       <div className={`lg:hidden fixed bottom-0 left-0 right-0 ${expanded ? "z-50" : "z-30"}`}>
-        {/* Expanded content — sits directly above collapsed bar */}
+        {/* Backdrop overlay — tap to close */}
         {expanded && (
-          <div className="bg-surface border-t border-border p-4 max-h-[60vh] overflow-auto">
-            {content}
+          <div
+            className="fixed inset-0 bg-black/50 -z-10"
+            onClick={() => setExpanded(false)}
+          />
+        )}
+
+        {/* Expanded content */}
+        {expanded && (
+          <div className="bg-surface border-t border-border">
+            {/* Close header at top of expanded content */}
+            <div
+              onClick={() => setExpanded(false)}
+              className="flex items-center justify-between px-4 pt-3 pb-2 cursor-pointer"
+            >
+              <span className="font-display text-sm text-amber tracking-wide">
+                LEADERBOARD
+              </span>
+              <span className="font-mono text-xs text-muted">
+                {"\u25BC"} CLOSE
+              </span>
+            </div>
+            <div className="px-4 pb-4 max-h-[60vh] overflow-auto">
+              {content}
+            </div>
           </div>
         )}
 
         {/* Collapsed bar */}
-        <div
-          onClick={() => setExpanded(!expanded)}
-          className="bg-surface border-t border-border px-4 py-2.5 cursor-pointer"
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="font-display text-sm text-amber tracking-wide">
-              LEADERBOARD
-            </span>
-            <span className="font-mono text-xs text-muted">
-              {expanded ? "\u25BC" : "\u25B2"}
-            </span>
-          </div>
-          <div className="space-y-0.5">
-            {entries.slice(0, 3).map((entry, i) => {
-              const score = tab === "live" ? entry.liveScore : entry.bracketScore;
-              return (
-                <div key={entry.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`font-mono text-sm w-4 text-right ${i === 0 ? "text-amber font-bold" : "text-muted"}`}>
-                      {i + 1}.
-                    </span>
-                    <span className={`font-mono text-sm ${i === 0 ? "text-amber font-bold" : "text-white"}`}>
-                      {entry.name}
+        {!expanded && (
+          <div
+            onClick={() => setExpanded(true)}
+            className="bg-surface border-t border-border px-4 py-2.5 cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-display text-sm text-amber tracking-wide">
+                LEADERBOARD
+              </span>
+              <span className="font-mono text-xs text-muted">
+                {"\u25B2"}
+              </span>
+            </div>
+            <div className="space-y-0.5">
+              {entries.slice(0, 3).map((entry, i) => {
+                const score = tab === "live" ? entry.liveScore : entry.bracketScore;
+                return (
+                  <div key={entry.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-mono text-sm w-4 text-right ${i === 0 ? "text-amber font-bold" : "text-muted"}`}>
+                        {i + 1}.
+                      </span>
+                      <span className={`font-mono text-sm ${i === 0 ? "text-amber font-bold" : "text-white"}`}>
+                        {entry.name}
+                      </span>
+                    </div>
+                    <span className={`font-mono text-sm font-bold ${flippingScores.has(entry.name) ? "animate-score-flip" : ""} ${i === 0 ? "text-amber" : "text-amber/70"}`}>
+                      {score}
                     </span>
                   </div>
-                  <span className={`font-mono text-sm font-bold ${flippingScores.has(entry.name) ? "animate-score-flip" : ""} ${i === 0 ? "text-amber" : "text-amber/70"}`}>
-                    {score}
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );

@@ -30,6 +30,8 @@ interface DraftRowProps {
   submitted?: boolean;
   /** Live mode: whether the pick window is open */
   windowOpen?: boolean;
+  /** Live mode: window was opened then closed, commissioner is finalizing */
+  windowFinalizing?: boolean;
   /** Pulse animation for first empty bracket slot */
   isPulsing?: boolean;
   /** User's locked-in reaction for completed rows */
@@ -57,6 +59,7 @@ export default function DraftRow({
   onSubmit,
   submitted,
   windowOpen,
+  windowFinalizing,
   userGrade,
   children,
 }: DraftRowProps) {
@@ -174,10 +177,15 @@ export default function DraftRow({
             <span className="font-mono text-sm text-amber animate-pulse">
               Tap to pick →
             </span>
+          ) : rowState === "active" && windowFinalizing ? (
+            <span className="font-mono text-sm text-muted">
+              <span className="sm:hidden">Finalizing pick...</span>
+              <span className="hidden sm:inline">— Finalizing pick —</span>
+            </span>
           ) : rowState === "active" ? (
             <span className="font-mono text-sm text-muted">
-              <span className="sm:hidden">— Waiting —</span>
-              <span className="hidden sm:inline">— Waiting on commissioner —</span>
+              <span className="sm:hidden">Pick #{slot.pick} coming up</span>
+              <span className="hidden sm:inline">— Pick #{slot.pick} coming up —</span>
             </span>
           ) : rowState === "locked" ? (
             <span className="font-mono text-sm text-muted">—</span>

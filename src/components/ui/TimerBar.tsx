@@ -153,8 +153,17 @@ export default function TimerBar({
         </div>
       </div>
       <span className="font-condensed text-sm text-muted uppercase">
-        <span className="sm:hidden">Waiting...</span>
-        <span className="hidden sm:inline">Waiting for commissioner...</span>
+        {liveState.windowOpenedAt ? (
+          <>
+            <span className="sm:hidden">Finalizing pick...</span>
+            <span className="hidden sm:inline">Finalizing pick...</span>
+          </>
+        ) : (
+          <>
+            <span className="sm:hidden">Pick #{liveState.currentPick} coming up</span>
+            <span className="hidden sm:inline">Pick #{liveState.currentPick} coming up</span>
+          </>
+        )}
       </span>
     </div>
   );

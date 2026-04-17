@@ -72,102 +72,95 @@ export default function PlayerSelectionPanel({
       {/* Panel — side panel on desktop, full sheet on mobile */}
       <div className="fixed inset-y-0 right-0 z-50 w-full lg:w-[720px] xl:w-[840px] bg-bg border-l border-border flex flex-col animate-fade-in-up">
         {/* ─── Team Context Header ─── */}
-        <div className="shrink-0 border-t-[5px]" style={{ borderColor: teamColor }}>
-          <div className="flex items-center gap-4 sm:gap-5 px-4 sm:px-5 py-4">
-            {/* Team logo */}
-            <img
-              src={getTeamLogo(slot.abbrev)}
-              alt={slot.abbrev}
-              className="w-16 h-16 sm:w-24 sm:h-24 object-contain shrink-0"
-            />
-
-            {/* All team info beside logo */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-mono text-sm text-amber">
-                    #{slot.pick}
-                  </span>
-                  <span className="font-display text-2xl text-white tracking-wide">
-                    {slot.team}
-                  </span>
+        <div
+          className="shrink-0 border-b border-border-bright"
+          style={{ background: `linear-gradient(180deg, ${teamColor}40 0%, var(--color-bg) 100%)` }}
+        >
+          <div className="px-4 sm:px-5 pt-5 pb-5">
+            {/* Top row: logo + team + close */}
+            <div className="flex items-center gap-3.5 mb-4.5">
+              <img
+                src={getTeamLogo(slot.abbrev)}
+                alt={slot.abbrev}
+                className="w-16 h-16 sm:w-16 sm:h-16 object-contain shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="font-mono text-sm text-amber tracking-wide">
+                  PICK #{slot.pick}
+                </span>
+                <div className="font-display text-[28px] text-white tracking-wide leading-none">
+                  {slot.team}
                 </div>
-                <button
-                  onClick={onClose}
-                  className="text-muted hover:text-white font-mono text-xl px-2"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {slot.fromTeam && (
-                <p className="font-mono text-xs text-muted">
-                  via {slot.fromTeam}
-                </p>
-              )}
-              {slot.trade && slot.tradeNote && (
-                <p className="font-mono text-xs text-amber-dim">
-                  {slot.tradeNote}
-                </p>
-              )}
-
-              {/* Needs / Chalk / Odds — aligned rows */}
-              <div className="mt-3 flex flex-col gap-1.5">
-                {teamNeeds.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="font-condensed text-xs text-muted uppercase w-11">
-                      Needs
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      {teamNeeds.map((pos) => (
-                        <span
-                          key={pos}
-                          className="font-mono text-xs bg-surface-elevated border border-border rounded px-1.5 py-0.5 text-amber"
-                        >
-                          {pos}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                {slot.fromTeam && (
+                  <p className="font-mono text-xs text-muted mt-0.5">
+                    via {slot.fromTeam}
+                  </p>
                 )}
+                {slot.trade && slot.tradeNote && (
+                  <p className="font-mono text-xs text-amber-dim mt-0.5">
+                    {slot.tradeNote}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={onClose}
+                className="text-muted hover:text-white font-mono text-xl px-2 self-start"
+              >
+                ✕
+              </button>
+            </div>
 
-              {slotOdds && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="font-condensed text-xs text-muted uppercase w-11">
-                      Chalk
-                    </span>
-                    <span className="font-mono text-xs text-white">
+            {/* Needs — larger pills */}
+            {teamNeeds.length > 0 && (
+              <div className="flex items-center gap-2 mb-4.5 flex-wrap">
+                <span className="font-condensed text-xs text-muted uppercase tracking-wide">
+                  NEEDS
+                </span>
+                {teamNeeds.map((pos) => (
+                  <span
+                    key={pos}
+                    className="font-mono text-xs font-bold bg-amber/15 border border-amber/30 rounded px-3 py-1 text-amber"
+                  >
+                    {pos}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Chalk callout box */}
+            {slotOdds && (
+              <div className="bg-surface border border-border-bright rounded-md px-4 py-3.5 flex items-center justify-between">
+                <div>
+                  <span className="font-condensed text-[10px] uppercase tracking-wide text-muted">
+                    VEGAS CHALK PICK
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="font-mono text-base text-white font-bold">
                       {slotOdds.expectedPlayer}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-condensed text-xs text-muted uppercase w-11">
-                      Odds
-                    </span>
-                    <span
-                      className={`font-mono text-xs ${
-                        slotOdds.odds.startsWith("-")
-                          ? "text-green"
-                          : "text-white"
-                      }`}
-                    >
-                      {slotOdds.odds}
-                    </span>
-                    <span className="text-muted/40 text-xs">·</span>
-                    <span className="font-mono text-xs text-muted">
-                      {slotOdds.oddsType}
-                    </span>
+                </div>
+                <div className="text-right">
+                  <span
+                    className={`font-mono text-lg font-bold ${
+                      slotOdds.odds.startsWith("-")
+                        ? "text-green"
+                        : "text-white"
+                    }`}
+                  >
+                    {slotOdds.odds}
+                  </span>
+                  <div className="font-mono text-[10px] text-muted">
+                    {slotOdds.oddsType}
                   </div>
-                </>
-              )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Current selection */}
           {currentPick && (
-            <div className="mx-5 mb-3 flex items-center justify-between bg-surface-elevated border border-green/30 rounded px-3 py-1.5">
+            <div className="mx-4 sm:mx-5 mb-4 flex items-center justify-between bg-surface-elevated border border-green/30 rounded px-3 py-1.5">
               <span className="font-mono text-sm text-green">
                 {liveSubmitted ? "LOCKED IN: " : "Selected: "}{currentPick}
               </span>

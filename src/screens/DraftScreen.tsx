@@ -1081,6 +1081,7 @@ export default function DraftScreen() {
                         onSubmit={rowState === "active" && isLive && currentGuess && !guessSubmitted ? handleLiveSubmit : undefined}
                         submitted={rowState === "active" && isLive ? guessSubmitted : undefined}
                         windowOpen={rowState === "active" && isLive ? liveState?.windowOpen : undefined}
+                        windowFinalizing={rowState === "active" && isLive && !liveState?.windowOpen && !!liveState?.windowOpenedAt}
                       />
                     </div>
                   );
