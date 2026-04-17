@@ -101,6 +101,28 @@ body {
 .animate-score-flip { animation: score-flip 0.4s ease-in-out; }
 .animate-fade-in-up { animation: fade-in-up 0.3s ease-out; }
 
+/* ── Iced Out Overlay ── */
+@keyframes iced-crack-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes iced-sheen-in {
+  to { opacity: 1; }
+}
+@keyframes iced-snowfall {
+  0% { transform: translateY(-40px) rotate(0deg); opacity: 0; }
+  5% { opacity: 1; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(calc(100vh + 40px)) rotate(var(--spin, 360deg)); opacity: 0; }
+}
+@keyframes iced-sway {
+  from { transform: translateX(calc(var(--sway, 15px) * -1)); }
+  to { transform: translateX(var(--sway, 15px)); }
+}
+@keyframes iced-tag-pulse {
+  0%, 100% { text-shadow: 0 0 12px rgba(180, 220, 255, 0.3); border-color: rgba(180, 220, 255, 0.3); }
+  50% { text-shadow: 0 0 25px rgba(180, 220, 255, 0.7), 0 0 50px rgba(180, 220, 255, 0.3); border-color: rgba(180, 220, 255, 0.7); }
+}
+
 /* ── CRT / Tecmo Title Effect ── */
 @keyframes crt-flicker {
   0%, 100% { opacity: 1; }

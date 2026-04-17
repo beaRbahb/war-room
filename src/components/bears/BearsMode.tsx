@@ -1,5 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import bearDownSrc from "../../assets/audio/bear-down.m4a";
+
+/** Module-level audio ref so PickReactionScreen can stop the music */
+let activeBearsAudio: HTMLAudioElement | null = null;
+
+/** Fade out and stop the Bears mode music */
+export function stopBearsAudio() {
+  const audio = activeBearsAudio;
+  if (!audio) return;
+  const fade = setInterval(() => {
+    if (audio.volume > 0.02) {
+      audio.volume = Math.max(0, audio.volume - 0.02);
+    } else {
+      audio.pause();
+      clearInterval(fade);
+      activeBearsAudio = null;
+    }
+  }, 40);
+}
 
 interface BearsModeProps {
   /** Called when the Bears mode animation completes */
@@ -13,16 +31,21 @@ interface BearsModeProps {
  */
 export default function BearsMode({ onComplete }: BearsModeProps) {
   const [phase, setPhase] = useState<"flash" | "title" | "done">("flash");
+  const startedRef = useRef(false);
 
+  // Play audio once (guard against strict mode double-play)
   useEffect(() => {
-    // Play Bear Down quietly in the background
+    if (startedRef.current) return;
+    startedRef.current = true;
     const audio = new Audio(bearDownSrc);
-    audio.volume = 0.15;
-    audio.play().catch(() => {}); // ignore autoplay blocks
+    audio.volume = 0.1;
+    audio.play().catch(() => {});
+    activeBearsAudio = audio;
+  }, []);
 
-    // Flash phase: 1.8s (3 × 0.6s animation)
+  // Phase timers (must re-run on strict mode remount)
+  useEffect(() => {
     const t1 = setTimeout(() => setPhase("title"), 1800);
-    // Title phase: 1.5s
     const t2 = setTimeout(() => {
       setPhase("done");
       onComplete();
@@ -31,7 +54,6 @@ export default function BearsMode({ onComplete }: BearsModeProps) {
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      // Don't stop audio — let it keep playing in the background
     };
   }, [onComplete]);
 
@@ -61,17 +83,6 @@ export default function BearsMode({ onComplete }: BearsModeProps) {
             <p className="font-display text-8xl sm:text-[10rem] text-bears-orange tracking-wider leading-none">
               DA BEARS
             </p>
-            <div className="mt-4 flex justify-center gap-2">
-              {[...Array(5)].map((_, i) => (
-                <span
-                  key={i}
-                  className="text-4xl"
-                  style={{ animationDelay: `${i * 0.1}s` }}
-                >
-                  {"\u{1F43B}"}
-                </span>
-              ))}
-            </div>
           </div>
         )}
       </div>

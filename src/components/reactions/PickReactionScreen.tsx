@@ -6,6 +6,7 @@ import { getPickProb, PICK_PROBS } from "../../data/prospectOdds";
 import { getTeamLogo } from "../../data/teams";
 import { isBlockbusterTrade } from "../../data/blockbusterTrades";
 import { stopBlockbusterAudio } from "../bears/BlockbusterTradeOverlay";
+import { stopBearsAudio } from "../bears/BearsMode";
 import { getHeadshot } from "../../lib/headshots";
 import { submitReaction, onReactions } from "../../lib/storage";
 import type { UserReaction, ReactionType } from "../../types";
@@ -101,6 +102,7 @@ export default function PickReactionScreen({
 
   async function handleReact(reaction: ReactionType) {
     stopBlockbusterAudio();
+    stopBearsAudio();
     await submitReaction(roomCode, slot, userName, {
       reaction,
       bearsTierCompId: null,

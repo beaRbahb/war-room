@@ -43,8 +43,10 @@ import Leaderboard from "../components/leaderboard/Leaderboard";
 import BearsMode from "../components/bears/BearsMode";
 import Confetti from "../components/bears/Confetti";
 import BearsBustOverlay from "../components/bears/BearsBustOverlay";
+import BearsIcedOverlay from "../components/bears/BearsIcedOverlay";
 import BlockbusterTradeOverlay from "../components/bears/BlockbusterTradeOverlay";
 import { isBlockbusterTrade, type BlockbusterTradePlayer } from "../data/blockbusterTrades";
+import { getRandomBearsMoment, type BearsMoment } from "../data/bearsBusts";
 import BracketShareModal from "../components/draft/BracketShareModal";
 import RoomWelcome from "../components/draft/RoomWelcome";
 import PickReactionScreen from "../components/reactions/PickReactionScreen";
@@ -130,6 +132,7 @@ export default function DraftScreen() {
 
   // ── Overlays ──
   const [showBearsMode, setShowBearsMode] = useState(false);
+  const [bearsMoment, setBearsMoment] = useState<BearsMoment | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [blockbusterTrade, setBlockbusterTrade] = useState<BlockbusterTradePlayer | null>(null);
   const [blockbusterConfetti, setBlockbusterConfetti] = useState(false);
@@ -279,13 +282,6 @@ export default function DraftScreen() {
     updateRoomStatus(roomCode, "live");
   }, [roomCode, session?.isCommissioner, isLive, liveState]);
 
-  // ── Trubisky safety reset ──
-  useEffect(() => {
-    if (!roomCode || !liveState?.trubiskyActive) return;
-    const t = setTimeout(() => updateLiveState(roomCode, { trubiskyActive: false }), 10000);
-    return () => clearTimeout(t);
-  }, [roomCode, liveState?.trubiskyActive]);
-
   // ── Track guess count ──
   useEffect(() => {
     if (!roomCode || !liveState?.windowOpen) return;
@@ -411,6 +407,8 @@ export default function DraftScreen() {
         setTimeout(() => setBlockbusterConfetti(false), 10000);
       } else if (latest.isBearsPick) {
         setShowBearsMode(true);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 6000);
       }
     }
 
@@ -423,8 +421,11 @@ export default function DraftScreen() {
 
       // Skip confetti/chaos for late joiners
       if (!isLateJoin) {
+        const isBears = latest.isBearsPick && !isBlockbuster;
+
         // Blockbuster trades get their own heavy confetti — skip normal confetti
-        if (!isBlockbuster && guesses[userName] === latest.playerName) {
+        // Bears picks already have confetti fired from BearsMode trigger
+        if (!isBlockbuster && !isBears && guesses[userName] === latest.playerName) {
           confettiFired = true;
           setShowConfetti(true);
           setTimeout(() => {
@@ -433,14 +434,14 @@ export default function DraftScreen() {
           }, 5500);
         }
 
-        // Show reaction screen immediately if no confetti (and not blockbuster — that has its own timing)
-        if (!confettiFired && !isBlockbuster) {
-          setChaosFlash(flashData);
-        }
-
-        // For blockbuster trades, show reaction screen after the overlay completes (8s)
+        // Show reaction screen: delay for overlays, immediate otherwise
         if (isBlockbuster) {
           setTimeout(() => setChaosFlash(flashData), 8000);
+        } else if (isBears) {
+          // Wait for BearsMode to finish (3.3s) + brief pause
+          setTimeout(() => setChaosFlash(flashData), 3800);
+        } else if (!confettiFired) {
+          setChaosFlash(flashData);
         }
       }
 
@@ -672,7 +673,12 @@ export default function DraftScreen() {
     <div className="h-dvh bg-bg flex flex-col overflow-hidden">
       {/* Overlays */}
       {showBearsMode && <BearsMode onComplete={handleBearsModeComplete} />}
-      {liveState?.trubiskyActive && <BearsBustOverlay onComplete={() => {}} />}
+      {bearsMoment?.type === "bust" && (
+        <BearsBustOverlay onComplete={() => setBearsMoment(null)} />
+      )}
+      {bearsMoment?.type === "legend" && (
+        <BearsIcedOverlay legend={bearsMoment.data} onComplete={() => setBearsMoment(null)} />
+      )}
       {chaosFlash && (
         <PickReactionScreen
           slot={chaosFlash.slot}
@@ -1184,19 +1190,14 @@ export default function DraftScreen() {
         />
       )}
 
-      {/* Commissioner: Bears Bust floating button (live phase) */}
+      {/* Commissioner: Bears Draft History floating button (live phase) */}
       {isCommissioner && isLive && liveState && commissionerTab === "admin" && (
         <button
-          onClick={async () => {
-            await updateLiveState(roomCode, { trubiskyActive: true });
-            setTimeout(() => {
-              updateLiveState(roomCode, { trubiskyActive: false });
-            }, 4000);
-          }}
-          disabled={liveState.windowOpen}
-          className="fixed bottom-24 right-4 z-40 lg:bottom-4 bg-bears-navy border-2 border-bears-orange text-bears-orange font-condensed font-bold uppercase px-4 py-3 rounded-full shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+          onClick={() => setBearsMoment(getRandomBearsMoment())}
+          disabled={liveState.windowOpen || !!bearsMoment}
+          className="fixed bottom-24 right-4 z-40 lg:bottom-4 bg-bears-navy border border-bears-orange text-bears-orange font-condensed font-bold uppercase px-3 py-2 rounded text-xs shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          🐻 BUST
+          BEARS DRAFT HISTORY
         </button>
       )}
 
