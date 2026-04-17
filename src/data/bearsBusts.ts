@@ -73,16 +73,19 @@ export const BEARS_LEGENDS: BearsLegend[] = [
   },
 ];
 
-/** Pick a random bust */
-export function getRandomBust(): BearsBust {
-  return BEARS_BUSTS[Math.floor(Math.random() * BEARS_BUSTS.length)];
-}
+/** Ordered sequence: Caleb first, then busts by draft year (most recent → oldest) */
+const MOMENTS_SEQUENCE: BearsMoment[] = [
+  ...BEARS_LEGENDS.map((l) => ({ type: "legend" as const, data: l })),
+  ...[...BEARS_BUSTS]
+    .sort((a, b) => b.year - a.year)
+    .map((b) => ({ type: "bust" as const, data: b })),
+];
 
-/** Pick a random Bears draft moment (bust or legend) */
+let momentIndex = 0;
+
+/** Cycle through Bears draft moments in order (no repeats until full loop) */
 export function getRandomBearsMoment(): BearsMoment {
-  const all: BearsMoment[] = [
-    ...BEARS_BUSTS.map((b) => ({ type: "bust" as const, data: b })),
-    ...BEARS_LEGENDS.map((l) => ({ type: "legend" as const, data: l })),
-  ];
-  return all[Math.floor(Math.random() * all.length)];
+  const moment = MOMENTS_SEQUENCE[momentIndex % MOMENTS_SEQUENCE.length];
+  momentIndex++;
+  return moment;
 }

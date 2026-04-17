@@ -711,11 +711,6 @@ export default function DraftScreen() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {!isLive && bracketSubmitted && (
-            <p className="font-condensed text-xs text-green uppercase">
-              Submitted
-            </p>
-          )}
           {isLive && isCommissioner && (
             <button
               onClick={async () => {
