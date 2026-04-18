@@ -151,7 +151,7 @@ export default function BearsIcedOverlay({ legend, onComplete }: BearsIcedOverla
   if (phase === "done") return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ background: "#0b1f4a" }}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden" style={{ background: "#0b1f4a" }}>
       {/* Thin ice edge */}
       <div
         className="absolute inset-0 pointer-events-none"

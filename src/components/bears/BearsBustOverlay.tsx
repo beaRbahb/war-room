@@ -29,7 +29,7 @@ export default function BearsBustOverlay({ bust, onComplete }: BearsBustOverlayP
   if (phase === "done") return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
       {/* Background */}
       <div
         className={`absolute inset-0 bg-bears-navy ${
