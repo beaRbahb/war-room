@@ -8,6 +8,8 @@ interface ConfettiProps {
   heavy?: boolean;
   /** Team abbreviation — uses that team's colors instead of Bears */
   teamAbbrev?: string;
+  /** Called when confetti animation completes (after duration) */
+  onComplete?: () => void;
 }
 
 interface Piece {
@@ -68,7 +70,7 @@ function generatePieces(heavy: boolean, colors: string[]): Piece[] {
  * New Year's Eve confetti — 1000 pieces, lateral sway, varied shapes.
  * Fires on correct live guess.
  */
-export default function Confetti({ duration, heavy = false, teamAbbrev }: ConfettiProps) {
+export default function Confetti({ duration, heavy = false, teamAbbrev, onComplete }: ConfettiProps) {
   const effectiveDuration = duration ?? (heavy ? 8000 : 5000);
   const [visible, setVisible] = useState(true);
   const [pieces] = useState<Piece[]>(() => {
@@ -81,7 +83,14 @@ export default function Confetti({ duration, heavy = false, teamAbbrev }: Confet
   useEffect(() => {
     const t = setTimeout(() => setVisible(false), effectiveDuration);
     return () => clearTimeout(t);
-  }, [duration]);
+  }, [effectiveDuration]);
+
+  // Fire onComplete callback after duration (with proper cleanup)
+  useEffect(() => {
+    if (!onComplete) return;
+    const t = setTimeout(onComplete, effectiveDuration);
+    return () => clearTimeout(t);
+  }, [onComplete, effectiveDuration]);
 
   if (!visible) return null;
 

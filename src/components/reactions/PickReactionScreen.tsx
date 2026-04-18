@@ -28,6 +28,12 @@ interface PickReactionScreenProps {
   roomCode: string;
   userName: string;
   onComplete: () => void;
+  /** Current user's rank (1-indexed) */
+  userRank?: number;
+  /** Name of the current leader */
+  leaderName?: string;
+  /** Leader's live score */
+  leaderScore?: number;
 }
 
 const LEVEL_COLORS: Record<ChaosLevel, { text: string; bg: string; border: string }> = {
@@ -66,9 +72,16 @@ function getNeedDescription(position: string | undefined, teamAbbrev: string): s
  * Full-screen pick reaction takeover.
  * Shows chaos breakdown with full context, requires user to react before dismissing.
  */
+/** Convert number to ordinal string: 1 → "1st", 2 → "2nd", etc. */
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 export default function PickReactionScreen({
   slot, playerName, teamAbbrev, isBearsPick, priorPicks,
-  roomCode, userName, onComplete,
+  roomCode, userName, onComplete, userRank, leaderName, leaderScore,
 }: PickReactionScreenProps) {
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -212,6 +225,16 @@ export default function PickReactionScreen({
         </div>
       </div>
 
+      {/* Score flash — current standing */}
+      {userRank != null && leaderName && (
+        <p className="font-condensed text-sm text-muted text-center mb-4">
+          You're <span className="text-white font-bold">{ordinal(userRank)}</span>
+          {userRank === 1
+            ? ` (${leaderScore}pts)`
+            : <>{" · "}Leader: <span className="text-amber font-bold">{leaderName}</span> ({leaderScore}pts)</>}
+        </p>
+      )}
+
       {/* Reaction area — pinned bottom section */}
       <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 py-5 z-[71]">
         <p className="font-condensed text-xs text-muted uppercase tracking-wider text-center mb-3">
@@ -220,7 +243,6 @@ export default function PickReactionScreen({
         <div className={`flex gap-2 justify-center max-w-sm mx-auto ${isBearsPick ? "" : "flex-wrap"}`}>
           {reactionOptions.map((opt) => {
             const isSelected = submitted && reactions[userName]?.reaction === opt;
-            const count = counts[opt as string] ?? 0;
             return (
               <button
                 key={opt}

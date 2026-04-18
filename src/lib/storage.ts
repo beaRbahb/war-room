@@ -238,6 +238,16 @@ export function onGuesses(
   );
 }
 
+/** Single read of all guesses for a confirmed pick */
+export async function getGuessesForPick(
+  code: string,
+  pickNum: number
+): Promise<Record<string, string>> {
+  await waitForAuth();
+  const snap = await get(ref(db, `${roomPath(code)}/live_guesses/pick${pickNum}`));
+  return snap.exists() ? (snap.val() as Record<string, string>) : {};
+}
+
 export async function clearGuesses(
   code: string,
   pickNum: number

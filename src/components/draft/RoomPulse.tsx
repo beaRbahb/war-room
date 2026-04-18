@@ -12,8 +12,6 @@ interface RoomPulseProps {
   pickNumber: number;
   /** Total users in the room */
   totalUsers: number;
-  /** When true, component fades out before unmounting */
-  fading?: boolean;
 }
 
 interface GuessTally {
@@ -35,7 +33,6 @@ export default function RoomPulse({
   userName,
   pickNumber,
   totalUsers,
-  fading = false,
 }: RoomPulseProps) {
   const chalk = getExpectedPlayer(pickNumber);
   const guessers = Object.keys(pickGuesses);
@@ -76,9 +73,7 @@ export default function RoomPulse({
   const hiddenCount = tallies.length - visible.length;
 
   return (
-    <div className={`bg-surface border border-border rounded-lg overflow-hidden transition-opacity duration-500 ${
-      fading ? "opacity-0" : "opacity-100 animate-fade-in-up"
-    }`}>
+    <div className="bg-surface border border-border rounded-lg overflow-hidden animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
         <div className="flex items-center gap-2">
