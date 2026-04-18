@@ -40,5 +40,5 @@ export default function RoomRouter() {
     );
   }
 
-  return <DraftScreen />;
+  return <DraftScreen initialStatus={status as "bracket" | "live" | "done"} />;
 }

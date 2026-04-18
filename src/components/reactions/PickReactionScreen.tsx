@@ -73,6 +73,14 @@ export default function PickReactionScreen({
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
   const [submitted, setSubmitted] = useState(false);
 
+  // If user already reacted (e.g., page refresh), mark as submitted
+  useEffect(() => {
+    if (!submitted && reactions[userName]) {
+      setSubmitted(true);
+      setTimeout(onComplete, 600);
+    }
+  }, [reactions, userName, submitted, onComplete]);
+
   const prospect = PROSPECTS.find((p) => p.name === playerName);
   const { level, tags } = calcChaosScore(slot, playerName, teamAbbrev, priorPicks);
   const espnProb = getPickProb(slot, playerName);
@@ -227,9 +235,6 @@ export default function PickReactionScreen({
                 }`}
               >
                 {(reactionLabels as Record<string, string>)[opt]}
-                {count > 0 && (
-                  <span className="font-mono text-xs ml-1.5 opacity-70">{count}</span>
-                )}
               </button>
             );
           })}

@@ -10,6 +10,8 @@ export interface SlotOdds {
   oddsType: string;
   /** The consensus mock pick — who's expected to go here */
   expectedPlayer: string;
+  /** Team abbreviation the oddsType was written for (if team-specific). Used to hide stale odds after trades. */
+  oddsTeam?: string;
 }
 
 /** Odds and consensus pick for each slot in Round 1 */
@@ -26,26 +28,26 @@ export const SLOT_ODDS: Record<number, SlotOdds> = {
   10: { odds: "+285", expectedPlayer: "Caleb Downs", oddsType: "to be #10 pick" },
   11: { odds: "-210", expectedPlayer: "Mansoor Delane", oddsType: "to be 1st CB drafted" },
   12: { odds: "+170", expectedPlayer: "Makai Lemon", oddsType: "to be 2nd WR drafted" },
-  13: { odds: "+135", expectedPlayer: "Keldric Faulk", oddsType: "Buccaneers to draft DL" },
-  14: { odds: "+140", expectedPlayer: "Olaivavega Ioane", oddsType: "Ravens to draft OL" },
-  15: { odds: "+105", expectedPlayer: "Kevin Concepcion", oddsType: "Rams to draft WR" },
+  13: { odds: "+135", expectedPlayer: "Keldric Faulk", oddsType: "Rams to draft DL", oddsTeam: "LAR" },
+  14: { odds: "+140", expectedPlayer: "Olaivavega Ioane", oddsType: "Ravens to draft OL", oddsTeam: "BAL" },
+  15: { odds: "+105", expectedPlayer: "Kevin Concepcion", oddsType: "Buccaneers to draft WR", oddsTeam: "TB" },
   16: { odds: "-4000", expectedPlayer: "Jermod McCoy", oddsType: "to be drafted Round 1" },
-  17: { odds: "-175", expectedPlayer: "Monroe Freeling", oddsType: "Lions to draft OL" },
-  18: { odds: "+190", expectedPlayer: "Dillon Thieneman", oddsType: "Vikings to draft SAF" },
-  19: { odds: "+300", expectedPlayer: "Kenyon Sadiq", oddsType: "drafted by Panthers" },
-  20: { odds: "+475", expectedPlayer: "Jordyn Tyson", oddsType: "Bills to draft WR" },
-  21: { odds: "+185", expectedPlayer: "Kadyn Proctor", oddsType: "Steelers to draft OL" },
-  22: { odds: "+850", expectedPlayer: "Chris Johnson", oddsType: "Chargers to draft CB" },
-  23: { odds: "+115", expectedPlayer: "Max Iheanachor", oddsType: "Eagles to draft OL" },
+  17: { odds: "-175", expectedPlayer: "Monroe Freeling", oddsType: "Lions to draft OL", oddsTeam: "DET" },
+  18: { odds: "+190", expectedPlayer: "Dillon Thieneman", oddsType: "Vikings to draft SAF", oddsTeam: "MIN" },
+  19: { odds: "+300", expectedPlayer: "Kenyon Sadiq", oddsType: "drafted by Panthers", oddsTeam: "CAR" },
+  20: { odds: "+475", expectedPlayer: "Jordyn Tyson", oddsType: "Cowboys to draft WR", oddsTeam: "DAL" },
+  21: { odds: "+185", expectedPlayer: "Kadyn Proctor", oddsType: "Steelers to draft OL", oddsTeam: "PIT" },
+  22: { odds: "+850", expectedPlayer: "Chris Johnson", oddsType: "Chargers to draft CB", oddsTeam: "LAC" },
+  23: { odds: "+115", expectedPlayer: "Max Iheanachor", oddsType: "Eagles to draft OL", oddsTeam: "PHI" },
   24: { odds: "-200", expectedPlayer: "Omar Cooper Jr.", oddsType: "drafted Under 23.5" },
-  25: { odds: "+275", expectedPlayer: "Emmanuel McNeil-Warren", oddsType: "Bears to draft SAF" },
+  25: { odds: "+275", expectedPlayer: "Emmanuel McNeil-Warren", oddsType: "Bears to draft SAF", oddsTeam: "CHI" },
   26: { odds: "-550", expectedPlayer: "Akheem Mesidor", oddsType: "to be drafted Round 1" },
-  27: { odds: "+115", expectedPlayer: "Caleb Lomu", oddsType: "49ers to draft OL" },
-  28: { odds: "+160", expectedPlayer: "Kayden McDonald", oddsType: "Texans to draft DL" },
+  27: { odds: "+115", expectedPlayer: "Caleb Lomu", oddsType: "49ers to draft OL", oddsTeam: "SF" },
+  28: { odds: "+160", expectedPlayer: "Kayden McDonald", oddsType: "Texans to draft DL", oddsTeam: "HOU" },
   29: { odds: "-180", expectedPlayer: "Avieon Terrell", oddsType: "to be drafted Round 1" },
   30: { odds: "-190", expectedPlayer: "Denzel Boston", oddsType: "to be drafted Round 1" },
-  31: { odds: "+200", expectedPlayer: "Blake Miller", oddsType: "Patriots to draft OL" },
-  32: { odds: "+400", expectedPlayer: "T.J. Parker", oddsType: "Seahawks to draft EDGE" },
+  31: { odds: "+200", expectedPlayer: "Blake Miller", oddsType: "Patriots to draft OL", oddsTeam: "NE" },
+  32: { odds: "+400", expectedPlayer: "T.J. Parker", oddsType: "Seahawks to draft EDGE", oddsTeam: "SEA" },
 };
 
 /**

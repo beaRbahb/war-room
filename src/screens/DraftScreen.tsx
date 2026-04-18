@@ -70,7 +70,7 @@ import type {
 
 type RoomStatus = "bracket" | "live" | "done";
 
-export default function DraftScreen() {
+export default function DraftScreen({ initialStatus }: { initialStatus?: RoomStatus }) {
   const { roomCode } = useParams<{ roomCode: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,8 +78,15 @@ export default function DraftScreen() {
   const justCreated = (location.state as { justCreated?: boolean })?.justCreated ?? false;
   const justJoined = (location.state as { justJoined?: boolean })?.justJoined ?? false;
 
+  // Clear location state so refresh doesn't replay interstitial/welcome
+  useEffect(() => {
+    if (justCreated || justJoined) {
+      window.history.replaceState({}, "");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Room status ──
-  const [roomStatus, setRoomStatus] = useState<RoomStatus>("bracket");
+  const [roomStatus, setRoomStatus] = useState<RoomStatus>(initialStatus ?? "bracket");
   const [backupCommissionerId, setBackupCommissionerId] = useState<string | null>(null);
 
   // ── Bracket phase state ──
@@ -165,6 +172,13 @@ export default function DraftScreen() {
   bracketSubmittedRef.current = bracketSubmitted;
 
   const isLive = roomStatus === "live" || roomStatus === "done";
+
+  // ── Commissioner defaults to admin tab when joining live ──
+  const commissionerTabInitRef = useRef(false);
+  if (!commissionerTabInitRef.current && session?.isCommissioner && isLive) {
+    commissionerTabInitRef.current = true;
+    setCommissionerTab("admin");
+  }
 
   // ── Visibility tracking (tab backgrounding) ──
   const { toast: visibilityToast, dismissToast } = useVisibility(
@@ -267,9 +281,11 @@ export default function DraftScreen() {
     return () => unsubs.forEach((u) => u());
   }, [roomCode, isLive]);
 
-  // ── Live phase: initialize live state if commissioner ──
+  // ── Live phase: initialize live state if commissioner (only on fresh start via handleStartDraft) ──
+  const shouldInitLive = useRef(false);
   useEffect(() => {
-    if (!roomCode || !session?.isCommissioner || !isLive || liveState) return;
+    if (!roomCode || !session?.isCommissioner || !isLive || !shouldInitLive.current) return;
+    shouldInitLive.current = false;
     setLiveState(roomCode, {
       currentPick: 1,
       windowOpen: false,
@@ -279,7 +295,7 @@ export default function DraftScreen() {
       bearsDoubleActive: false,
     });
     updateRoomStatus(roomCode, "live");
-  }, [roomCode, session?.isCommissioner, isLive, liveState]);
+  }, [roomCode, session?.isCommissioner, isLive]);
 
   // ── Track guess count (real-time listener) ──
   useEffect(() => {
@@ -289,6 +305,7 @@ export default function DraftScreen() {
     }
     return onGuesses(roomCode, liveState.currentPick, (guesses) => {
       setGuessCount(Object.keys(guesses).length);
+      setAllGuesses((prev) => ({ ...prev, [`pick${liveState.currentPick}`]: guesses }));
     });
   }, [roomCode, liveState?.windowOpen, liveState?.currentPick]);
 
@@ -366,9 +383,9 @@ export default function DraftScreen() {
     const latest = confirmedPicks[confirmedPicks.length - 1];
     if (processedPicks.current.has(latest.pick)) return;
 
-    // Late joiner: if this is our first processing pass and there are already multiple
+    // Late joiner / refresh: if this is our first processing pass and there are already
     // confirmed picks, pre-seed processedPicks to skip stale animations.
-    const isLateJoin = processedPicks.current.size === 0 && confirmedPicks.length > 1;
+    const isLateJoin = processedPicks.current.size === 0 && confirmedPicks.length >= 1;
     if (isLateJoin) {
       confirmedPicks.forEach((p) => processedPicks.current.add(p.pick));
       // Still run scoring for all picks (below) but skip animations
@@ -636,8 +653,18 @@ export default function DraftScreen() {
 
     // Commissioner transitions to live
     if (session.isCommissioner) {
+      shouldInitLive.current = true;
       await updateRoomStatus(roomCode, "live");
     }
+
+    // Commissioner starts on admin tab
+    if (session.isCommissioner) {
+      setCommissionerTab("admin");
+    }
+
+    // Dismiss welcome screen and persist
+    setShowWelcome(false);
+    if (welcomeKey) localStorage.setItem(welcomeKey, "1");
 
     // Show takeover
     setShowTakeover(true);
@@ -658,6 +685,9 @@ export default function DraftScreen() {
     if (!liveState.windowOpen) return;
     await submitGuess(roomCode, liveState.currentPick, session.name, currentGuess);
     setGuessSubmitted(true);
+    if (session.isCommissioner) {
+      setCommissionerTab("admin");
+    }
   }
 
   function handleRowClick(slotIndex: number) {
@@ -736,6 +766,28 @@ export default function DraftScreen() {
   const isCommissioner = isPrimaryCommissioner || session.id === backupCommissionerId;
   const showCommissionerTabs = isCommissioner && isLive;
 
+  // Room Pulse element — reused in both commissioner admin and picks tab
+  const roomPulseElement = (windowFinalizing && currentPickGuesses && liveState) ? (
+    <div className="mb-3">
+      <RoomPulse
+        pickGuesses={currentPickGuesses}
+        userName={session.name}
+        pickNumber={liveState.currentPick}
+        totalUsers={totalUsers}
+      />
+    </div>
+  ) : (roomPulseFading && roomPulseStale) ? (
+    <div className="mb-3">
+      <RoomPulse
+        pickGuesses={roomPulseStale.guesses}
+        userName={session.name}
+        pickNumber={roomPulseStale.pickNumber}
+        totalUsers={totalUsers}
+        fading
+      />
+    </div>
+  ) : null;
+
   return (
     <div className="h-dvh bg-bg flex flex-col overflow-hidden">
       {/* Overlays */}
@@ -786,14 +838,6 @@ export default function DraftScreen() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          {isLive && isCommissioner && (
-            <button
-              onClick={handleReset}
-              className="bg-red/20 border border-red text-red font-condensed font-bold uppercase text-xs px-3 py-1.5 rounded hover:bg-red/30 transition-all"
-            >
-              RESET
-            </button>
-          )}
           {isLive && confirmedPicks.length >= 32 && recapData && (
             <button
               onClick={() => setShowRecap(true)}
@@ -814,22 +858,14 @@ export default function DraftScreen() {
           <span className="font-condensed text-sm sm:text-base uppercase">
             {bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{countdown}</span></>}
           </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={async () => {
-                await handleStartDraft();
-              }}
-              className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
-            >
-              START DRAFT
-            </button>
-            <button
-              onClick={handleReset}
-              className="bg-red/20 border border-red text-red font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:bg-red/30 transition-all"
-            >
-              RESET
-            </button>
-          </div>
+          <button
+            onClick={async () => {
+              await handleStartDraft();
+            }}
+            className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
+          >
+            START DRAFT
+          </button>
         </div>
       )}
 
@@ -879,25 +915,6 @@ export default function DraftScreen() {
         <RunningChaosMeter confirmedPicks={confirmedPicks} />
       )}
 
-      {/* Room Pulse — guess distribution during finalizing (window closed, waiting for TV pick) */}
-      {windowFinalizing && currentPickGuesses && liveState && commissionerTab !== "admin" && (
-        <RoomPulse
-          pickGuesses={currentPickGuesses}
-          userName={session.name}
-          pickNumber={liveState.currentPick}
-          totalUsers={totalUsers}
-        />
-      )}
-      {/* Fading stale Room Pulse — holds briefly after pick is confirmed */}
-      {roomPulseFading && roomPulseStale && commissionerTab !== "admin" && (
-        <RoomPulse
-          pickGuesses={roomPulseStale.guesses}
-          userName={session.name}
-          pickNumber={roomPulseStale.pickNumber}
-          totalUsers={totalUsers}
-          fading
-        />
-      )}
 
       {/* Recap overlay */}
       {showRecap && recapData && (
@@ -938,6 +955,7 @@ export default function DraftScreen() {
               isPrimaryCommissioner={isPrimaryCommissioner}
               guessCount={guessCount}
               totalUsers={totalUsers}
+              aboveBoardSlot={roomPulseElement}
             />
           ) : (
             <>
@@ -951,7 +969,8 @@ export default function DraftScreen() {
                 </>
               )}
 
-
+              {/* Room Pulse — picks tab */}
+              {roomPulseElement}
 
               {/* Column headers */}
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 mb-1 border-b border-border">
@@ -1043,6 +1062,26 @@ export default function DraftScreen() {
               )}
             </div>
           )}
+
+          {/* Post-submit confirmation card (visible when locked) */}
+          {!isLive && bracketLocked && bracketSubmitted && (
+            <div className="mt-4 bg-surface-elevated border border-green/30 rounded-lg p-4 text-center space-y-3">
+              <div className="text-green font-condensed font-bold uppercase text-lg tracking-wide">
+                ✓ BRACKET LOCKED IN
+              </div>
+              <div className="font-mono text-sm text-white/70">
+                {picks.filter(Boolean).length}/32 picks submitted
+              </div>
+              <div className="border-t border-border pt-3">
+                <span className="font-condensed text-xs uppercase text-muted tracking-wide">
+                  Waiting for commissioner to start the draft
+                </span>
+                <div className="mt-1.5 flex justify-center">
+                  <span className="w-2 h-2 rounded-full bg-amber animate-pulse-glow" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -1114,15 +1153,23 @@ export default function DraftScreen() {
         />
       )}
 
-      {/* Commissioner: Bears Draft History floating button (live phase) */}
+      {/* Commissioner: floating buttons (admin tab, live phase) */}
       {isCommissioner && isLive && liveState && commissionerTab === "admin" && (
-        <button
-          onClick={() => setBearsMoment(getRandomBearsMoment())}
-          disabled={liveState.windowOpen || !!bearsMoment}
-          className="fixed bottom-24 right-4 z-40 lg:bottom-4 bg-bears-navy border border-bears-orange text-bears-orange font-condensed font-bold uppercase px-3 py-2 rounded text-xs shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          BEARS DRAFT HISTORY
-        </button>
+        <div className="fixed bottom-24 right-4 z-40 lg:bottom-4 flex flex-col gap-2 items-end">
+          <button
+            onClick={handleReset}
+            className="bg-red/20 border border-red text-red font-condensed font-bold uppercase text-xs px-3 py-2 rounded shadow-lg hover:bg-red/30 transition-all"
+          >
+            RESET DRAFT
+          </button>
+          <button
+            onClick={() => setBearsMoment(getRandomBearsMoment())}
+            disabled={liveState.windowOpen || !!bearsMoment}
+            className="bg-bears-navy border border-bears-orange text-bears-orange font-condensed font-bold uppercase px-3 py-2 rounded text-xs shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            BEARS DRAFT HISTORY
+          </button>
+        </div>
       )}
 
       {/* Team reassignment picker modal */}
@@ -1185,8 +1232,8 @@ export default function DraftScreen() {
         <DraftTakeover onComplete={() => setShowTakeover(false)} />
       )}
 
-      {/* Room interstitial (creating/joining animation) */}
-      {showInterstitial && (
+      {/* Room interstitial (creating/joining animation — bracket phase only) */}
+      {showInterstitial && !isLive && (
         <RoomInterstitial
           mode={justCreated ? "creating" : "joining"}
           onFadeStart={() => setInterstitialFading(true)}
@@ -1194,8 +1241,8 @@ export default function DraftScreen() {
         />
       )}
 
-      {/* Room welcome onboarding (shows behind interstitial during fade, then fully visible) */}
-      {showWelcome && (!showInterstitial || interstitialFading) && roomCode && session && (
+      {/* Room welcome onboarding (shows behind interstitial during fade, then fully visible — bracket phase only) */}
+      {showWelcome && !isLive && (!showInterstitial || interstitialFading) && roomCode && session && (
         <RoomWelcome
           roomCode={roomCode}
           isCommissioner={session.isCommissioner}

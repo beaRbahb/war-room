@@ -131,11 +131,11 @@ export default function PlayerSelectionPanel({
             {slotOdds && (
               <div className="bg-surface border border-border-bright rounded-md px-4 py-3.5 flex items-center justify-between">
                 <div>
-                  <span className="font-condensed text-[10px] uppercase tracking-wide text-muted">
+                  <span className="font-condensed text-xs uppercase tracking-wide text-muted">
                     VEGAS CHALK PICK
                   </span>
                   <div className="flex items-baseline gap-2 mt-1">
-                    <span className="font-mono text-base text-white font-bold">
+                    <span className="font-mono text-lg text-white font-bold">
                       {slotOdds.expectedPlayer}
                     </span>
                   </div>
@@ -150,9 +150,11 @@ export default function PlayerSelectionPanel({
                   >
                     {slotOdds.odds}
                   </span>
-                  <div className="font-mono text-[10px] text-muted">
-                    {slotOdds.oddsType}
-                  </div>
+                  {(!slotOdds.oddsTeam || slotOdds.oddsTeam === slot.abbrev) && (
+                    <div className="font-mono text-[10px] text-muted">
+                      {slotOdds.oddsType}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

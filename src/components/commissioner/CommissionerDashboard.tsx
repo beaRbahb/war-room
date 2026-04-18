@@ -13,6 +13,8 @@ interface CommissionerDashboardProps {
   liveState: LiveState;
   effectiveOrder: DraftSlot[];
   results: Record<string, ConfirmedPick>;
+  /** Optional element rendered between hero/room panel and draft board */
+  aboveBoardSlot?: React.ReactNode;
   pickedPlayers: string[];
   users: Record<string, RoomUser>;
   backupCommissionerId: string | null;
@@ -32,6 +34,7 @@ export default function CommissionerDashboard({
   isPrimaryCommissioner,
   guessCount,
   totalUsers,
+  aboveBoardSlot,
 }: CommissionerDashboardProps) {
   // ── Finalize flow state ──
   const [pickSearch, setPickSearch] = useState("");
@@ -550,8 +553,9 @@ export default function CommissionerDashboard({
         {renderRoomPanel()}
       </div>
 
-      {/* Right column — Draft Board */}
+      {/* Right column — Room Pulse + Draft Board */}
       <div className="flex-1 min-w-0 mt-4 lg:mt-0">
+        {aboveBoardSlot}
         {renderDraftBoard()}
       </div>
     </div>

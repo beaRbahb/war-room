@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { PROSPECTS } from "../../data/prospects";
-import { getExpectedPlayer } from "../../data/prospectOdds";
+import { getExpectedPlayer, getPickProb } from "../../data/prospectOdds";
+import { getHeadshot } from "../../lib/headshots";
 
 interface RoomPulseProps {
   /** All guesses for the current pick: { userName: playerName } */
@@ -18,12 +19,16 @@ interface RoomPulseProps {
 interface GuessTally {
   playerName: string;
   position: string;
-  college: string;
+  rank: number | null;
+  espnProb: number;
+  headshot: string | undefined;
   count: number;
   pct: number;
   isChalk: boolean;
   isUserPick: boolean;
 }
+
+const MAX_VISIBLE = 5;
 
 export default function RoomPulse({
   pickGuesses,
@@ -37,20 +42,20 @@ export default function RoomPulse({
   const guessCount = guessers.length;
 
   const tallies = useMemo(() => {
-    // Count occurrences of each guessed player
     const counts: Record<string, number> = {};
     for (const player of Object.values(pickGuesses)) {
       counts[player] = (counts[player] || 0) + 1;
     }
 
-    // Build tally entries sorted by count desc
     const result: GuessTally[] = Object.entries(counts)
       .map(([playerName, count]) => {
         const prospect = PROSPECTS.find((p) => p.name === playerName);
         return {
           playerName,
           position: prospect?.position ?? "—",
-          college: prospect?.college ?? "",
+          rank: prospect?.rank ?? null,
+          espnProb: getPickProb(pickNumber, playerName),
+          headshot: getHeadshot(playerName),
           count,
           pct: Math.round((count / guessCount) * 100),
           isChalk: playerName === chalk,
@@ -60,17 +65,18 @@ export default function RoomPulse({
       .sort((a, b) => b.count - a.count);
 
     return result;
-  }, [pickGuesses, userName, guessCount, chalk]);
+  }, [pickGuesses, userName, pickNumber, guessCount, chalk]);
 
-  // No guesses yet — shouldn't show, but handle gracefully
   if (guessCount === 0) return null;
 
   const userGuessed = !!pickGuesses[userName];
   const uniqueGuesses = tallies.length;
   const roomAgreesWithChalk = tallies[0]?.isChalk;
+  const visible = tallies.slice(0, MAX_VISIBLE);
+  const hiddenCount = tallies.length - visible.length;
 
   return (
-    <div className={`mx-2 sm:mx-4 mb-3 bg-surface border border-border rounded-lg overflow-hidden transition-opacity duration-500 ${
+    <div className={`bg-surface border border-border rounded-lg overflow-hidden transition-opacity duration-500 ${
       fading ? "opacity-0" : "opacity-100 animate-fade-in-up"
     }`}>
       {/* Header */}
@@ -90,12 +96,33 @@ export default function RoomPulse({
         )}
       </div>
 
-      {/* Distribution bars */}
-      <div className="px-3 py-2 space-y-1.5">
-        {tallies.map((tally) => (
-          <div key={tally.playerName} className="flex items-center gap-2">
-            {/* Player info */}
-            <div className="w-28 sm:w-36 shrink-0 truncate">
+      {/* Distribution bars — top 5 */}
+      <div className="px-3 py-2 space-y-2">
+        {/* Column headers */}
+        <div className="flex items-center gap-3 font-condensed text-xs text-muted uppercase tracking-wide">
+          <div className="w-7 shrink-0" />
+          <div className="w-24 sm:w-32 shrink-0">Player</div>
+          <div className="w-12 shrink-0 text-right">Rank</div>
+          <div className="w-14 shrink-0 text-right">Odds</div>
+          <div className="flex-1">Votes</div>
+          <div className="w-16 shrink-0" />
+        </div>
+
+        {visible.map((tally) => (
+          <div key={tally.playerName} className="flex items-center gap-3">
+            {/* Headshot */}
+            {tally.headshot ? (
+              <img
+                src={tally.headshot}
+                alt={tally.playerName}
+                className="w-7 h-7 rounded-full object-cover border border-border shrink-0"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-surface-elevated border border-border shrink-0" />
+            )}
+
+            {/* Player name */}
+            <div className="w-24 sm:w-32 shrink-0 truncate">
               <span
                 className={`font-mono text-xs font-bold ${
                   tally.isUserPick ? "text-amber" : "text-white"
@@ -103,9 +130,16 @@ export default function RoomPulse({
               >
                 {tally.playerName}
               </span>
-              <span className="font-mono text-xs text-muted ml-1">
-                {tally.position}
-              </span>
+            </div>
+
+            {/* Rank */}
+            <div className="w-12 shrink-0 text-right font-mono text-xs text-muted">
+              {tally.rank ? `#${tally.rank}` : "—"}
+            </div>
+
+            {/* Odds */}
+            <div className="w-14 shrink-0 text-right font-mono text-xs text-white/50">
+              {tally.espnProb > 0 ? `${tally.espnProb}%` : "—"}
             </div>
 
             {/* Bar */}
@@ -113,7 +147,7 @@ export default function RoomPulse({
               <div
                 className={`h-full rounded transition-all duration-500 ${
                   tally.isChalk
-                    ? "bg-green/30"
+                    ? "bg-white/20"
                     : tally.isUserPick
                       ? "bg-amber/30"
                       : "bg-border-bright"
@@ -128,7 +162,7 @@ export default function RoomPulse({
             {/* Badges */}
             <div className="flex gap-1 w-16 shrink-0 justify-end">
               {tally.isChalk && (
-                <span className="font-mono text-[10px] text-green bg-green/10 border border-green/30 px-1 rounded">
+                <span className="font-mono text-[10px] text-white/70 bg-white/5 border border-white/20 px-1 rounded">
                   CHALK
                 </span>
               )}
@@ -140,6 +174,13 @@ export default function RoomPulse({
             </div>
           </div>
         ))}
+
+        {/* Overflow summary */}
+        {hiddenCount > 0 && (
+          <p className="font-mono text-xs text-muted text-center pt-0.5">
+            +{hiddenCount} more pick{hiddenCount !== 1 ? "s" : ""}
+          </p>
+        )}
       </div>
 
       {/* Footer insight */}

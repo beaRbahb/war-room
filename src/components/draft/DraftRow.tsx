@@ -76,24 +76,24 @@ export default function DraftRow({
   // Determine display player and stats
   const displayName = confirmedPick?.playerName ?? userPick;
   const prospect = displayName ? getProspect(displayName) : null;
-  // Row background — pulsing slot overrides bears navy to avoid color clash
+  // Row background — pulsing slot uses subtle hint, active uses full amber
   const rowBg =
     rowState === "active"
       ? "bg-amber/5"
       : isPulsing
-        ? "bg-amber/5"
+        ? "bg-white/[0.02]"
         : bears
           ? "bg-bears-navy/15"
           : index % 2 === 0
             ? "bg-surface"
             : "bg-surface-elevated/50";
 
-  // Row border
+  // Row border — pulsing uses dimmed amber, active uses full amber
   const borderClass =
     rowState === "active"
       ? "border-amber animate-pulse-border"
       : isPulsing
-        ? "border-amber animate-pulse-border"
+        ? "border-amber/40 animate-pulse-border"
         : rowState === "completed" && isCorrect
           ? "border-green"
           : rowState === "completed" && isCorrect === false
