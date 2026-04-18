@@ -280,6 +280,22 @@ export async function confirmPick(
   );
 }
 
+/** Atomic: confirm pick + advance live state in a single Firebase write */
+export async function confirmPickAndAdvance(
+  code: string,
+  pick: ConfirmedPick,
+  liveUpdates: Partial<LiveState>
+): Promise<void> {
+  await waitForAuth();
+  const updates: Record<string, unknown> = {
+    [`results/pick${pick.pick}`]: pick,
+  };
+  for (const [key, value] of Object.entries(liveUpdates)) {
+    updates[`live/${key}`] = value ?? null;
+  }
+  await update(ref(db, roomPath(code)), updates);
+}
+
 export function onResults(
   code: string,
   cb: (results: Record<string, ConfirmedPick>) => void

@@ -4,7 +4,7 @@ import { PROSPECTS } from "../../data/prospects";
 import { BLOCKBUSTER_TRADES } from "../../data/blockbusterTrades";
 import { GUESS_WINDOW_SECONDS, FLASH_WARNING_SECONDS } from "../../data/scoring";
 import { getTeamLogo } from "../../data/teams";
-import { updateLiveState, confirmPick, removeUser, setBackupCommissioner } from "../../lib/storage";
+import { updateLiveState, confirmPickAndAdvance, removeUser, setBackupCommissioner } from "../../lib/storage";
 import type { LiveState, ConfirmedPick, RoomUser } from "../../types";
 import type { DraftSlot } from "../../data/draftOrder";
 
@@ -152,9 +152,7 @@ export default function CommissionerDashboard({
         isBearsPick: isBearsPick(teamAbbrev),
       };
 
-      await confirmPick(roomCode, pick);
-
-      await updateLiveState(roomCode, {
+      await confirmPickAndAdvance(roomCode, pick, {
         currentPick: liveState.currentPick + 1,
         windowOpen: false,
         windowOpenedAt: null,

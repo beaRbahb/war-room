@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DRAFT_ORDER } from "../data/draftOrder";
 import { PROSPECTS } from "../data/prospects";
@@ -71,6 +71,8 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const [expandedPick, setExpandedPick] = useState<number | null>(null);
   const [showScoreboard, setShowScoreboard] = useState(false);
 
+  const startingDraft = useRef(false);
+
   // ── Team reassignment (commissioner admin tab) ──
   const [reassignPick, setReassignPick] = useState<number | null>(null);
 
@@ -112,7 +114,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     const rank = sorted.findIndex((e) => e.name === session.name) + 1;
     const leader = sorted[0];
     return { userRank: rank, leaderName: leader.name, leaderScore: leader.score };
-  }, [isLive, confirmedPicks.length, session, scores]);
+  }, [isLive, confirmedPicks.length, session?.name, scores]);
 
   // ── Commissioner defaults to admin tab when joining live ──
   useEffect(() => {
@@ -159,7 +161,8 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
   // ── Draft countdown expired ──
   const handleStartDraft = useCallback(async () => {
-    if (!roomCode || !session) return;
+    if (!roomCode || !session || startingDraft.current) return;
+    startingDraft.current = true;
 
     // Auto-submit bracket if not already submitted
     await bracket.autoSubmitBracket();
