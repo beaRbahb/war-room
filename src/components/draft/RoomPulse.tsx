@@ -102,8 +102,8 @@ export default function RoomPulse({
         <div className="flex items-center gap-3 font-condensed text-xs text-muted uppercase tracking-wide">
           <div className="w-7 shrink-0" />
           <div className="w-24 sm:w-32 shrink-0">Player</div>
-          <div className="w-12 shrink-0 text-right">Rank</div>
-          <div className="w-14 shrink-0 text-right">Odds</div>
+          <div className="w-10 shrink-0 text-right">Rank</div>
+          <div className="w-12 shrink-0 text-right mr-3">Odds</div>
           <div className="flex-1">Votes</div>
           <div className="w-16 shrink-0" />
         </div>
@@ -133,12 +133,12 @@ export default function RoomPulse({
             </div>
 
             {/* Rank */}
-            <div className="w-12 shrink-0 text-right font-mono text-xs text-muted">
+            <div className="w-10 shrink-0 text-right font-mono text-xs text-muted">
               {tally.rank ? `#${tally.rank}` : "—"}
             </div>
 
             {/* Odds */}
-            <div className="w-14 shrink-0 text-right font-mono text-xs text-white/50">
+            <div className="w-12 shrink-0 text-right mr-3 font-mono text-xs text-white/50">
               {tally.espnProb > 0 ? `${tally.espnProb}%` : "—"}
             </div>
 
