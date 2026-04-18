@@ -141,14 +141,14 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   );
 
   // ── Row state helper ──
-  function getRowState(slotIndex: number): RowState {
+  const getRowState = useCallback((slotIndex: number): RowState => {
     if (!isLive) return bracket.bracketLocked ? "locked" : "editable";
     const pickNum = slotIndex + 1;
     const currentPick = liveState?.currentPick || 1;
     if (results[`pick${pickNum}`]) return "completed";
     if (pickNum === currentPick) return "active";
     return "locked";
-  }
+  }, [isLive, bracket.bracketLocked, liveState?.currentPick, results]);
 
   // ── Get user's live guess for a pick ──
   function getUserGuess(pickNum: number): string | null {
@@ -189,21 +189,25 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   }
 
   /** Wraps cycle.handleLiveSubmit + switches commissioner to admin tab */
-  async function handleLiveSubmit() {
+  const handleLiveSubmit = useCallback(async () => {
     await cycle.handleLiveSubmit();
     if (session?.isCommissioner) {
       setCommissionerTab("admin");
     }
-  }
+  }, [cycle, session?.isCommissioner]);
 
-  function handleRowClick(slotIndex: number) {
+  const handleRowClick = useCallback((slotIndex: number) => {
     const state = getRowState(slotIndex);
     if (state === "editable") {
       setActiveSlot(slotIndex);
     } else if (state === "active" && liveState?.windowOpen && !cycle.guessSubmitted) {
       setActiveSlot(slotIndex);
     }
-  }
+  }, [getRowState, liveState?.windowOpen, cycle.guessSubmitted]);
+
+  const handleToggleExpand = useCallback((pickNum: number) => {
+    setExpandedPick((prev) => (prev === pickNum ? null : pickNum));
+  }, []);
 
   async function handleReassignTeam(pickNum: number, newAbbrev: string) {
     if (!roomCode || !liveState) return;
@@ -514,11 +518,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                         confirmedPick={confirmed}
                         isCorrect={isCorrect}
                         userGrade={allReactions[`pick${pickNum}`]?.[session.name]?.reaction ?? null}
-                        onClick={() => handleRowClick(i)}
+                        onClick={handleRowClick}
                         expanded={expandedPick === pickNum}
-                        onToggleExpand={() =>
-                          setExpandedPick(expandedPick === pickNum ? null : pickNum)
-                        }
+                        onToggleExpand={handleToggleExpand}
                         isPulsing={i === bracket.firstEmptyIndex && !userPick}
                         shouldScroll={shouldScroll}
                         onSubmit={rowState === "active" && isLive && cycle.currentGuess && !cycle.guessSubmitted ? handleLiveSubmit : undefined}

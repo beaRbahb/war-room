@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { memo, useRef, useEffect } from "react";
 import { isBearsPick } from "../../data/draftOrder";
 import { PROSPECTS } from "../../data/prospects";
 import { getTeamLogo, getTeamAbbrev } from "../../data/teams";
@@ -18,10 +18,10 @@ interface DraftRowProps {
   confirmedPick: ConfirmedPick | null;
   /** Whether user's guess matched the actual pick */
   isCorrect: boolean | null;
-  onClick: () => void;
+  onClick: (index: number) => void;
   /** Whether the reaction row is expanded (completed rows only) */
   expanded: boolean;
-  onToggleExpand: () => void;
+  onToggleExpand: (pickNum: number) => void;
   /** Auto-scroll to this row when active */
   shouldScroll?: boolean;
   /** Live mode: submit guess callback (shown as inline button when guess selected but not submitted) */
@@ -44,7 +44,7 @@ function getProspect(name: string) {
   return PROSPECTS.find((p) => p.name === name);
 }
 
-export default function DraftRow({
+export default memo(function DraftRow({
   slot,
   index,
   rowState,
@@ -107,8 +107,8 @@ export default function DraftRow({
     <div ref={rowRef}>
       <button
         onClick={() => {
-          if (isClickable) onClick();
-          if (isExpandable) onToggleExpand();
+          if (isClickable) onClick(index);
+          if (isExpandable) onToggleExpand(slot.pick);
         }}
         disabled={rowState === "locked"}
         className={`w-full flex items-center gap-1.5 sm:gap-2 ${rowBg} border rounded pl-1 pr-2 sm:px-3 h-14 sm:h-12 text-left transition-colors ${borderClass} ${
@@ -243,4 +243,4 @@ export default function DraftRow({
       )}
     </div>
   );
-}
+})
