@@ -1,14 +1,9 @@
-import {
-  BRACKET_EXACT_MATCH,
-  BRACKET_PLAYER_ONLY,
-  LIVE_CORRECT,
-  LIVE_CORRECT_BEARS_DOUBLE,
-} from "../data/scoring";
+import { getTierScoring } from "../data/scoring";
 import type { ConfirmedPick, UserBracket } from "../types";
 
 /**
  * Calculate bracket score for a user based on all confirmed picks.
- * Correct player + correct slot = 10, correct player + wrong slot = 4.
+ * Points scale by pick tier — later picks are worth more.
  */
 export function calcBracketScore(
   bracket: UserBracket | null,
@@ -20,13 +15,15 @@ export function calcBracketScore(
   let exact = 0;
   let partial = 0;
   for (const confirmed of confirmedPicks) {
+    const tier = getTierScoring(confirmed.pick);
+
     // Check exact match (player in correct slot)
     const exactMatch = bracket.picks.find(
       (bp) =>
         bp.playerName === confirmed.playerName && bp.slot === confirmed.pick
     );
     if (exactMatch) {
-      score += BRACKET_EXACT_MATCH;
+      score += tier.bracketExact;
       exact++;
       continue;
     }
@@ -36,7 +33,7 @@ export function calcBracketScore(
       (bp) => bp.playerName === confirmed.playerName
     );
     if (playerMatch) {
-      score += BRACKET_PLAYER_ONLY;
+      score += tier.bracketPartial;
       partial++;
     }
   }
@@ -53,6 +50,7 @@ export function getBracketHitsForPick(
   allBrackets: Record<string, UserBracket>
 ): { name: string; points: number }[] {
   const hits: { name: string; points: number }[] = [];
+  const tier = getTierScoring(pick.pick);
 
   for (const [userName, bracket] of Object.entries(allBrackets)) {
     if (!bracket?.picks) continue;
@@ -62,7 +60,7 @@ export function getBracketHitsForPick(
         bp.playerName === pick.playerName && bp.slot === pick.pick
     );
     if (exactMatch) {
-      hits.push({ name: userName, points: BRACKET_EXACT_MATCH });
+      hits.push({ name: userName, points: tier.bracketExact });
       continue;
     }
 
@@ -70,7 +68,7 @@ export function getBracketHitsForPick(
       (bp) => bp.playerName === pick.playerName
     );
     if (playerMatch) {
-      hits.push({ name: userName, points: BRACKET_PLAYER_ONLY });
+      hits.push({ name: userName, points: tier.bracketPartial });
     }
   }
 
@@ -79,6 +77,7 @@ export function getBracketHitsForPick(
 
 /**
  * Calculate live score for a user based on all confirmed picks and their guesses.
+ * Points scale by pick tier. Bears double = 2x the tiered value.
  */
 export function calcLiveScore(
   userName: string,
@@ -99,9 +98,10 @@ export function calcLiveScore(
 
     if (correct) {
       hits++;
+      const tier = getTierScoring(pick.pick);
       score += bearsDoublePicks.has(pick.pick)
-        ? LIVE_CORRECT_BEARS_DOUBLE
-        : LIVE_CORRECT;
+        ? tier.liveCorrect * 2
+        : tier.liveCorrect;
     }
   }
 

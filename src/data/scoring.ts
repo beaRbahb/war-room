@@ -1,14 +1,29 @@
-/** Bracket scoring: correct player in correct slot */
-export const BRACKET_EXACT_MATCH = 10;
+/**
+ * Tiered difficulty scoring — later picks are worth more because they're harder to predict.
+ * Chalk (1-8): consensus picks, lowest value.
+ * Crystal Ball (25-32): near-impossible, highest value.
+ * Bears double = 2x the tiered live value.
+ */
+export interface TierScoring {
+  bracketExact: number;
+  bracketPartial: number;
+  liveCorrect: number;
+}
 
-/** Bracket scoring: correct player in wrong slot */
-export const BRACKET_PLAYER_ONLY = 4;
+const TIERS: { maxPick: number; scoring: TierScoring }[] = [
+  { maxPick: 8, scoring: { bracketExact: 5, bracketPartial: 3, liveCorrect: 3 } },
+  { maxPick: 16, scoring: { bracketExact: 10, bracketPartial: 3, liveCorrect: 5 } },
+  { maxPick: 24, scoring: { bracketExact: 15, bracketPartial: 3, liveCorrect: 7 } },
+  { maxPick: 32, scoring: { bracketExact: 20, bracketPartial: 3, liveCorrect: 10 } },
+];
 
-/** Live pick scoring: correct guess */
-export const LIVE_CORRECT = 10;
-
-/** Live pick scoring: correct guess with Bears double points */
-export const LIVE_CORRECT_BEARS_DOUBLE = 20;
+/** Get scoring values for a pick based on its tier */
+export function getTierScoring(pickNumber: number): TierScoring {
+  for (const tier of TIERS) {
+    if (pickNumber <= tier.maxPick) return tier.scoring;
+  }
+  return TIERS[TIERS.length - 1].scoring;
+}
 
 /** Maximum players per room */
 export const MAX_ROOM_PLAYERS = 20;
