@@ -54,6 +54,7 @@ export default function CommissionerDashboard({
 
   useEffect(() => {
     if (!liveState.windowOpen || !liveState.windowOpenedAt) return;
+    setNow(Date.now());
     const interval = setInterval(() => setNow(Date.now()), 200);
     return () => clearInterval(interval);
   }, [liveState.windowOpen, liveState.windowOpenedAt]);
@@ -62,10 +63,13 @@ export default function CommissionerDashboard({
     !liveState.windowOpen || !liveState.windowOpenedAt
       ? GUESS_WINDOW_SECONDS
       : Math.ceil(
-          Math.max(
-            0,
-            GUESS_WINDOW_SECONDS -
-              (now - new Date(liveState.windowOpenedAt).getTime()) / 1000
+          Math.min(
+            GUESS_WINDOW_SECONDS,
+            Math.max(
+              0,
+              GUESS_WINDOW_SECONDS -
+                (now - new Date(liveState.windowOpenedAt).getTime()) / 1000
+            )
           )
         );
 
