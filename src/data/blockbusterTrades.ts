@@ -1,5 +1,4 @@
 import crosbyImg from "../assets/images/blockbuster-crosby.jpg";
-import lawrenceImg from "../assets/images/blockbuster-lawrence.webp";
 
 export interface BlockbusterTradePlayer {
   /** Display name (used as playerName in ConfirmedPick) */
@@ -34,20 +33,6 @@ export const BLOCKBUSTER_TRADES: BlockbusterTradePlayer[] = [
     ],
     headline: "THE MAD MAXX ERA BEGINS",
     accolades: "4x Pro Bowl · 2x All-Pro",
-  },
-  {
-    name: "Dexter Lawrence",
-    position: "DL",
-    currentTeam: "New York Giants",
-    currentTeamAbbrev: "NYG",
-    image: lawrenceImg,
-    tradePackage: [
-      "#25 overall (1st round)",
-      "2027 1st round pick",
-      "2027 3rd round pick",
-    ],
-    headline: "SEXY DEXY IN THE WINDY CITY",
-    accolades: "2x Pro Bowl · 1x All-Pro",
   },
 ];
 

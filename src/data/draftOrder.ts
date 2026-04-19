@@ -23,7 +23,10 @@ export const DRAFT_ORDER: DraftSlot[] = [
   { pick: 7, team: "Washington Commanders", abbrev: "WAS" },
   { pick: 8, team: "New Orleans Saints", abbrev: "NO" },
   { pick: 9, team: "Kansas City Chiefs", abbrev: "KC" },
-  { pick: 10, team: "Cincinnati Bengals", abbrev: "CIN" },
+  {
+    pick: 10, team: "New York Giants", abbrev: "NYG",
+    fromTeam: "Cincinnati Bengals", trade: true,
+  },
   { pick: 11, team: "Miami Dolphins", abbrev: "MIA" },
   { pick: 12, team: "Dallas Cowboys", abbrev: "DAL" },
   {
