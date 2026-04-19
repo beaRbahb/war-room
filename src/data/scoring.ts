@@ -29,7 +29,7 @@ export function getTierScoring(pickNumber: number): TierScoring {
 export const MAX_ROOM_PLAYERS = 20;
 
 /** Live guess window duration in seconds */
-export const GUESS_WINDOW_SECONDS = 60;
+export const GUESS_WINDOW_SECONDS = 90;
 
 /** Seconds remaining when flash-red warning triggers */
 export const FLASH_WARNING_SECONDS = 10;
