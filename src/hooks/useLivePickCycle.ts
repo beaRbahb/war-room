@@ -13,6 +13,7 @@ import {
   isBlockbusterTrade,
   type BlockbusterTradePlayer,
 } from "../data/blockbusterTrades";
+import { playDraftChime } from "../lib/sounds";
 import type {
   LiveState,
   ConfirmedPick,
@@ -213,6 +214,7 @@ export function useLivePickCycle({
     guesses: Record<string, string>,
     userName: string,
   ) {
+    playDraftChime();
     const bt = isBlockbusterTrade(latest.playerName);
     if (latest.isBearsPick && bt) {
       setAnimation({ type: "blockbuster", trade: bt, flashData });
