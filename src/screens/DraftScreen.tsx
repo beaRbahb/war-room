@@ -78,6 +78,8 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
   // ── Bears history overlay (button-triggered, not pick-processed) ──
   const [bearsMoment, setBearsMoment] = useState<BearsMoment | null>(null);
+  const [showStartButton, setShowStartButton] = useState(false);
+  const tripleTapRef = useRef<number[]>([]);
 
   // ── Room data hook (Firebase subs + derived state) ──
   const isPrimaryCommissioner = session?.isCommissioner ?? false;
@@ -359,20 +361,34 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
       {/* Connection status */}
       <ConnectionIndicator />
 
-      {/* Commissioner: Start Draft banner (bracket phase) */}
+      {/* Commissioner: Start Draft banner (bracket phase) — triple-tap countdown to reveal button */}
       {!isLive && isCommissioner && (
         <div className="shrink-0 bg-surface border-b border-border px-4 py-2 flex items-center justify-between gap-3">
-          <span className="font-condensed text-sm sm:text-base uppercase">
+          <span
+            className="font-condensed text-sm sm:text-base uppercase select-none cursor-default"
+            onClick={() => {
+              const now = Date.now();
+              const recent = tripleTapRef.current.filter((t) => now - t < 500);
+              recent.push(now);
+              tripleTapRef.current = recent;
+              if (recent.length >= 3) {
+                setShowStartButton((v) => !v);
+                tripleTapRef.current = [];
+              }
+            }}
+          >
             {bracket.bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{bracket.countdown}</span></>}
           </span>
-          <button
-            onClick={async () => {
-              await handleStartDraft();
-            }}
-            className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
-          >
-            START DRAFT
-          </button>
+          {showStartButton && (
+            <button
+              onClick={async () => {
+                await handleStartDraft();
+              }}
+              className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
+            >
+              START DRAFT
+            </button>
+          )}
         </div>
       )}
 
