@@ -92,6 +92,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
 
   async function handleBracketSubmit() {
     if (!roomCode || !session || bracketLocked) return;
+    const isFirstSubmit = !bracketSubmitted;
     const bracket: UserBracket = {
       userName: session.name,
       picks: picks.filter(Boolean) as BracketPick[],
@@ -99,7 +100,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
     };
     await saveBracket(roomCode, session.name, bracket);
     setBracketSubmitted(true);
-    setShowShareModal(true);
+    if (isFirstSubmit) setShowShareModal(true);
   }
 
   /** Called by handleStartDraft in orchestrator to auto-submit if not already submitted */
