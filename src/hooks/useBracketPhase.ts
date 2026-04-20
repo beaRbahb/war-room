@@ -19,6 +19,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
   const [picks, setPicks] = useState<(BracketPick | null)[]>(Array(32).fill(null));
   const [bracketLocked, setBracketLocked] = useState(false);
   const [bracketSubmitted, setBracketSubmitted] = useState(false);
+  const [bracketDirty, setBracketDirty] = useState(false);
   const [countdown, setCountdown] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [autoSubmitToast, setAutoSubmitToast] = useState<string | null>(null);
@@ -35,6 +36,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
     // Reset state before loading — prevents stale picks from a previous room
     setPicks(Array(32).fill(null));
     setBracketSubmitted(false);
+    setBracketDirty(false);
     getBracket(roomCode, session.name).then((bracket) => {
       if (bracket?.picks) {
         const loaded: (BracketPick | null)[] = Array(32).fill(null);
@@ -79,6 +81,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
       next[slotIndex] = { slot: slotIndex + 1, playerName };
       return next;
     });
+    if (bracketSubmitted) setBracketDirty(true);
   }
 
   function handleBracketClear(slotIndex: number) {
@@ -88,10 +91,12 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
       next[slotIndex] = null;
       return next;
     });
+    if (bracketSubmitted) setBracketDirty(true);
   }
 
   async function handleBracketSubmit() {
     if (!roomCode || !session || bracketLocked) return;
+    if (bracketSubmitted && !bracketDirty) return;
     const isFirstSubmit = !bracketSubmitted;
     const bracket: UserBracket = {
       userName: session.name,
@@ -100,6 +105,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
     };
     await saveBracket(roomCode, session.name, bracket);
     setBracketSubmitted(true);
+    setBracketDirty(false);
     if (isFirstSubmit) setShowShareModal(true);
   }
 
@@ -116,6 +122,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
     };
     await saveBracket(roomCode, session.name, bracket);
     setBracketSubmitted(true);
+    setBracketDirty(false);
     setAutoSubmitToast(`Bracket auto-submitted (${filledCount}/32 filled)`);
     setTimeout(() => setAutoSubmitToast(null), 4000);
   }, [roomCode, session]);
@@ -138,6 +145,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
     picks,
     bracketLocked,
     bracketSubmitted,
+    bracketDirty,
     countdown,
     showShareModal,
     setShowShareModal,

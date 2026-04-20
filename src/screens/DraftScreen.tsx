@@ -560,14 +560,18 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
               <button
                 onClick={bracket.handleBracketSubmit}
                 className={`w-full font-condensed font-bold uppercase tracking-wide py-3 rounded transition-all ${
-                  bracket.bracketSubmitted
-                    ? "bg-green/20 border border-green text-green hover:bg-green/30"
-                    : "bg-amber text-bg hover:brightness-110"
+                  !bracket.bracketSubmitted
+                    ? "bg-amber text-bg hover:brightness-110"
+                    : bracket.bracketDirty
+                      ? "bg-amber text-bg hover:brightness-110"
+                      : "bg-green/20 border border-green text-green"
                 }`}
               >
-                {bracket.bracketSubmitted
-                  ? "\u2713 BRACKET SUBMITTED — TAP TO UPDATE"
-                  : "SUBMIT BRACKET"}
+                {!bracket.bracketSubmitted
+                  ? "SUBMIT BRACKET"
+                  : bracket.bracketDirty
+                    ? "UPDATE BRACKET"
+                    : "BRACKET SUBMITTED"}
               </button>
               {bracket.bracketSubmitted && (
                 <button
