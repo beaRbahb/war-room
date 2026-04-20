@@ -34,7 +34,6 @@ export default function BracketShareModal({ roomCode, onClose }: BracketShareMod
   async function handleShare() {
     const shareData = {
       title: "Join my War Room draft!",
-      text: "Predict Round 1 of the NFL Draft.",
       url: shareUrl,
     };
 
