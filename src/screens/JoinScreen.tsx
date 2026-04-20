@@ -170,7 +170,7 @@ export default function JoinScreen() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="ICEMAN"
+            placeholder=""
             maxLength={20}
             autoComplete="off"
             data-1p-ignore
@@ -190,7 +190,7 @@ export default function JoinScreen() {
             type="text"
             value={roomCode}
             onChange={(e) => setRoomCode(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").toUpperCase())}
-            placeholder="BEARS"
+            placeholder=""
             maxLength={20}
             autoComplete="off"
             data-1p-ignore
