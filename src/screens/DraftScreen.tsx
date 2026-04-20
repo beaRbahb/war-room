@@ -364,8 +364,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
       {/* Commissioner: Start Draft banner (bracket phase) — triple-tap countdown to reveal button */}
       {!isLive && isCommissioner && (
         <div className="shrink-0 bg-surface border-b border-border px-4 py-2 flex items-center justify-between gap-3">
-          <span
-            className="font-condensed text-sm sm:text-base uppercase select-none cursor-default"
+          <button
+            type="button"
+            className="font-condensed text-sm sm:text-base uppercase select-none cursor-default bg-transparent border-none p-0 text-left"
             onClick={() => {
               const now = Date.now();
               const recent = tripleTapRef.current.filter((t) => now - t < 500);
@@ -378,7 +379,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
             }}
           >
             {bracket.bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{bracket.countdown}</span></>}
-          </span>
+          </button>
           {showStartButton && (
             <button
               onClick={async () => {
@@ -394,7 +395,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
       {/* Non-commissioner: bracket lock countdown (bracket phase) */}
       {!isLive && !isCommissioner && (
-        <div className="shrink-0 bg-surface border-b border-border px-4 py-2 text-center">
+        <div className="shrink-0 bg-surface border-b border-border px-4 py-2">
           <span className="font-condensed text-sm sm:text-base uppercase">
             {bracket.bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{bracket.countdown}</span></>}
           </span>
