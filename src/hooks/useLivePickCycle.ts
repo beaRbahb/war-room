@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { PROSPECTS } from "../data/prospects";
-import { GUESS_WINDOW_SECONDS } from "../data/scoring";
+import { GUESS_WINDOW_SECONDS, getTierScoring } from "../data/scoring";
 import {
   updateScores,
   updateLiveState,
@@ -32,6 +32,7 @@ export interface ChaosFlashData {
   teamAbbrev: string;
   isBearsPick: boolean;
   priorPicks: { position: string }[];
+  scoreDelta: { bracket: number; live: number };
 }
 
 // ── Animation state machine ──
@@ -278,19 +279,33 @@ export function useLivePickCycle({
       .map((p) => ({
         position: PROSPECTS.find((pr) => pr.name === p.playerName)?.position ?? "",
       }));
-    const flashData: ChaosFlashData = {
-      slot: latest.pick,
-      playerName: latest.playerName,
-      teamAbbrev: latest.teamAbbrev,
-      isBearsPick: latest.isBearsPick,
-      priorPicks,
-    };
 
     const pickGuessKey = `pick${latest.pick}`;
     const userName = session.name;
 
     (async () => {
       const guesses = await getGuessesForPick(roomCode, latest.pick);
+
+      // Compute score delta for this pick (no refs needed — uses data in scope)
+      const tier = getTierScoring(latest.pick);
+      const userBracket = bracketsRef.current[userName];
+      let bracketDelta = 0;
+      if (userBracket) {
+        const exact = userBracket.picks[latest.pick - 1]?.playerName === latest.playerName;
+        const partial = !exact && userBracket.picks.some((p) => p?.playerName === latest.playerName);
+        bracketDelta = exact ? tier.bracketExact : partial ? tier.bracketPartial : 0;
+      }
+      let liveDelta = guesses[userName] === latest.playerName ? tier.liveCorrect : 0;
+      if (liveDelta > 0 && liveState?.bearsDoubleActive) liveDelta *= 2;
+
+      const flashData: ChaosFlashData = {
+        slot: latest.pick,
+        playerName: latest.playerName,
+        teamAbbrev: latest.teamAbbrev,
+        isBearsPick: latest.isBearsPick,
+        priorPicks,
+        scoreDelta: { bracket: bracketDelta, live: liveDelta },
+      };
       updateGuessesForPick(pickGuessKey, guesses);
       if (!isLateJoin) triggerAnimation(latest, flashData, guesses, userName);
       computeScores(roomCode, confirmedPicks, pickGuessKey, guesses);

@@ -12,11 +12,8 @@ import { submitReaction, onReactions, submitRoastAnswer } from "../../lib/storag
 import { chaosLevelToTag, getRandomPrompt, interpolatePrompt } from "../../data/roastPrompts";
 import type { UserReaction, ReactionType } from "../../types";
 import {
-  POLES_LABELS,
-  POLES_COLORS,
   GRADE_LABELS,
   GRADE_COLORS,
-  type PolesReaction,
   type GradeType,
 } from "../../types";
 
@@ -35,8 +32,12 @@ interface PickReactionScreenProps {
   userRank?: number;
   /** Name of the current leader */
   leaderName?: string;
-  /** Leader's live score */
+  /** Leader's total score */
   leaderScore?: number;
+  /** Score delta for this pick */
+  scoreDelta?: { bracket: number; live: number };
+  /** Top 3 standings */
+  top3?: { name: string; score: number }[];
 }
 
 const LEVEL_COLORS: Record<ChaosLevel, { text: string; bg: string; border: string }> = {
@@ -46,7 +47,6 @@ const LEVEL_COLORS: Record<ChaosLevel, { text: string; bg: string; border: strin
   CHAOS: { text: "text-red", bg: "bg-red/15", border: "border-red/30" },
 };
 
-const POLES_OPTIONS: PolesReaction[] = ["king", "meh", "bad"];
 const GRADE_OPTIONS: GradeType[] = ["a-plus", "a", "b", "c", "d", "f"];
 
 /** Maps prospect positions → readable need match description */
@@ -80,6 +80,7 @@ function ordinal(n: number): string {
 export default function PickReactionScreen({
   slot, playerName, teamAbbrev, isBearsPick, priorPicks,
   roomCode, userName, onComplete, userRank, leaderName, leaderScore,
+  scoreDelta, top3,
 }: PickReactionScreenProps) {
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -113,6 +114,7 @@ export default function PickReactionScreen({
 
   // Generate roast prompt (stable per mount)
   const roastPrompt = useMemo(() => {
+    if (isBearsPick) return "Which Ryan Poles are you right now?";
     const tag = chaosLevelToTag(level);
     const { text } = getRandomPrompt(tag);
     return interpolatePrompt(text, {
@@ -121,7 +123,7 @@ export default function PickReactionScreen({
       pick: slot,
       position: playerPosition,
     });
-  }, [level, teamAbbrev, playerName, slot, playerPosition]);
+  }, [isBearsPick, level, teamAbbrev, playerName, slot, playerPosition]);
 
   // Listen for reactions (to show counts)
   useEffect(() => {
@@ -147,119 +149,201 @@ export default function PickReactionScreen({
           submitRoastAnswer(roomCode, slot, userName, {
             text: roastText.trim(),
             submittedAt: new Date().toISOString(),
+            prompt: roastPrompt,
           }),
         );
       }
 
       await Promise.all(promises);
       setSubmitted(true);
-      setTimeout(onComplete, 600);
+      setTimeout(onComplete, 3000);
     } catch {
       // Firebase write failed — let user retry
       console.error("Failed to submit reaction");
     }
   }
 
-  const reactionOptions = isBearsPick ? POLES_OPTIONS : GRADE_OPTIONS;
-  const reactionLabels = isBearsPick ? POLES_LABELS : GRADE_LABELS;
-  const reactionColors = isBearsPick ? POLES_COLORS : GRADE_COLORS;
+  const hasPoints = scoreDelta && (scoreDelta.bracket > 0 || scoreDelta.live > 0);
 
   return (
     <div className="fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto p-4 pb-80 animate-fade-in-up">
-      {/* Team + Pick header */}
-      <div className="flex items-center gap-3 mb-4 mt-4">
-        <img src={teamLogo} alt={teamAbbrev} className="w-10 h-10 object-contain" />
-        <div>
-          <p className="font-display text-2xl text-white tracking-wide">
-            PICK #{slot}
+      {submitted ? (
+        /* ── Leaderboard Flash (3s after submit) ── */
+        <div className="flex flex-col items-center justify-center flex-1 w-full max-w-[280px]">
+          {/* Big rank */}
+          <p className={`font-display text-[96px] leading-none ${userRank === 1 ? "text-amber" : "text-muted"}`}>
+            {userRank ? ordinal(userRank) : "—"}
           </p>
-          <p className="font-condensed text-sm text-muted uppercase">{teamAbbrev}</p>
-        </div>
-      </div>
+          <p className="font-condensed text-lg text-muted uppercase tracking-[4px] mb-7">
+            YOUR RANK
+          </p>
 
-      {/* Player */}
-      <div className="flex flex-col items-center mb-6">
-        {headshot && (
-          <img
-            src={headshot}
-            alt={playerName}
-            className="w-24 h-24 rounded-full object-cover border-2 border-border mb-3"
-          />
-        )}
-        <p className="font-display text-3xl sm:text-4xl text-white tracking-wide">
-          {playerName}
-        </p>
-        {prospect ? (
-          <p className="font-condensed text-sm text-muted uppercase mt-1">
-            {prospect.position} · {prospect.college}
-          </p>
-        ) : bt ? (
-          <p className="font-condensed text-sm text-bears-orange uppercase mt-1">
-            {bt.position} · TRADE from {bt.currentTeamAbbrev}
-          </p>
-        ) : null}
-      </div>
+          {/* Score delta boxes */}
+          <div className="flex gap-4 w-full mb-3">
+            <div className={`flex-1 text-center py-3.5 rounded-lg border ${
+              scoreDelta && scoreDelta.bracket > 0
+                ? "bg-[#4a9eff]/10 border-[#4a9eff]/30"
+                : "bg-surface-elevated border-border"
+            }`}>
+              <p className={`font-mono text-[32px] font-bold leading-none ${
+                scoreDelta && scoreDelta.bracket > 0 ? "text-[#4a9eff]" : "text-muted"
+              }`}>
+                {scoreDelta && scoreDelta.bracket > 0 ? `+${scoreDelta.bracket}` : "--"}
+              </p>
+              <p className="font-condensed text-sm text-muted uppercase tracking-[2px] mt-1">BRACKET</p>
+            </div>
+            <div className={`flex-1 text-center py-3.5 rounded-lg border ${
+              scoreDelta && scoreDelta.live > 0
+                ? "bg-green/[0.08] border-green/25"
+                : "bg-surface-elevated border-border"
+            }`}>
+              <p className={`font-mono text-[32px] font-bold leading-none ${
+                scoreDelta && scoreDelta.live > 0 ? "text-green" : "text-muted"
+              }`}>
+                {scoreDelta && scoreDelta.live > 0 ? `+${scoreDelta.live}` : "--"}
+              </p>
+              <p className="font-condensed text-sm text-muted uppercase tracking-[2px] mt-1">LIVE</p>
+            </div>
+          </div>
 
-      {/* Chaos description — skip if this was the top expected pick */}
-      {!isTopExpected && (
-        <div className="text-center mb-4">
-          <p className={`font-display text-2xl sm:text-3xl tracking-wider ${colors.text}`}>
-            {level === "MILD" ? "SLIGHT SURPRISE"
-              : level === "SPICY" ? "BIG SURPRISE"
-              : "NOBODY SAW THIS COMING"}
-          </p>
-          {tags.length > 0 && (
-            <div className="flex gap-2 justify-center mt-2 flex-wrap">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className={`font-condensed text-sm font-bold uppercase px-3 py-1 rounded border ${colors.text} ${colors.border}`}
-                >
-                  {tag}
-                </span>
-              ))}
+          {/* Movement text */}
+          {!hasPoints && (
+            <p className="font-condensed text-lg font-bold text-muted uppercase tracking-[2px] mb-7">
+              No points this pick
+            </p>
+          )}
+          {hasPoints && <div className="mb-7" />}
+
+          {/* Top 3 standings */}
+          {top3 && top3.length > 0 && (
+            <div className="w-full border border-border rounded-lg overflow-hidden">
+              {top3.map((entry, i) => {
+                const isYou = entry.name === userName;
+                return (
+                  <div
+                    key={entry.name}
+                    className={`flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 ${
+                      isYou ? "bg-amber/[0.06]" : ""
+                    }`}
+                  >
+                    <span className={`font-mono text-base font-bold w-7 text-center ${
+                      i === 0 ? "text-amber" : "text-muted"
+                    }`}>
+                      {i + 1}
+                    </span>
+                    <span className={`font-condensed text-lg font-bold flex-1 ${
+                      isYou ? "text-amber" : "text-white"
+                    }`}>
+                      {isYou ? "You" : entry.name}
+                    </span>
+                    <span className="font-mono text-lg font-bold text-amber">
+                      {entry.score}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
-      )}
+      ) : (
+        /* ── Pre-submit: Pick info + chaos breakdown ── */
+        <>
+          {/* Team + Pick header */}
+          <div className="flex items-center gap-3 mb-4 mt-4">
+            <img src={teamLogo} alt={teamAbbrev} className="w-10 h-10 object-contain" />
+            <div>
+              <p className="font-display text-2xl text-white tracking-wide">
+                PICK #{slot}
+              </p>
+              <p className="font-condensed text-sm text-muted uppercase">{teamAbbrev}</p>
+            </div>
+          </div>
 
-      {/* Full breakdown */}
-      <div className={`rounded border ${colors.border} ${colors.bg} px-4 py-3 mb-6 w-full max-w-sm`}>
-        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-          <span className="font-condensed text-muted uppercase text-xs">Odds</span>
-          <span className={`font-mono text-right ${espnProb === 0 ? "text-red" : espnProb >= 50 ? "text-green" : "text-white"}`}>
-            {espnProb > 0 ? `${espnProb}%` : "0%"}
-          </span>
-
-          <span className="font-condensed text-muted uppercase text-xs">Consensus</span>
-          <span className="font-mono text-right text-white">
-            {prospect ? `#${prospect.rank}` : "—"}
-            {prospect && (
-              <span className={`ml-1 ${
-                rankDrift > 3 ? "text-red" : rankDrift < -3 ? "text-green" : "text-muted"
-              }`}>
-                ({rankDrift > 0 ? `+${rankDrift}` : rankDrift < 0 ? `${rankDrift}` : "exact"})
-              </span>
+          {/* Player */}
+          <div className="flex flex-col items-center mb-6">
+            {headshot && (
+              <img
+                src={headshot}
+                alt={playerName}
+                className="w-24 h-24 rounded-full object-cover border-2 border-border mb-3"
+              />
             )}
-          </span>
+            <p className="font-display text-3xl sm:text-4xl text-white tracking-wide">
+              {playerName}
+            </p>
+            {prospect ? (
+              <p className="font-condensed text-sm text-muted uppercase mt-1">
+                {prospect.position} · {prospect.college}
+              </p>
+            ) : bt ? (
+              <p className="font-condensed text-sm text-bears-orange uppercase mt-1">
+                {bt.position} · TRADE from {bt.currentTeamAbbrev}
+              </p>
+            ) : null}
+          </div>
 
-          <span className="font-condensed text-muted uppercase text-xs">Need</span>
-          <span className={`font-mono text-right text-xs ${
-            needDesc.startsWith("Not") ? "text-red" : needDesc.startsWith("#1") ? "text-green" : "text-white"
-          }`}>
-            {needDesc}
-          </span>
-        </div>
-      </div>
+          {/* Chaos description — skip if this was the top expected pick */}
+          {!isTopExpected && (
+            <div className="text-center mb-4">
+              <p className={`font-display text-2xl sm:text-3xl tracking-wider ${colors.text}`}>
+                {level === "MILD" ? "SLIGHT SURPRISE"
+                  : level === "SPICY" ? "BIG SURPRISE"
+                  : "NOBODY SAW THIS COMING"}
+              </p>
+              {tags.length > 0 && (
+                <div className="flex gap-2 justify-center mt-2 flex-wrap">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className={`font-condensed text-sm font-bold uppercase px-3 py-1 rounded border ${colors.text} ${colors.border}`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-      {/* Score flash — current standing */}
-      {userRank != null && leaderName && (
-        <p className="font-condensed text-sm text-muted text-center mb-4">
-          You're <span className="text-white font-bold">{ordinal(userRank)}</span>
-          {userRank === 1
-            ? ` (${leaderScore}pts)`
-            : <>{" · "}Leader: <span className="text-amber font-bold">{leaderName}</span> ({leaderScore}pts)</>}
-        </p>
+          {/* Full breakdown */}
+          <div className={`rounded border ${colors.border} ${colors.bg} px-4 py-3 mb-6 w-full max-w-sm`}>
+            <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+              <span className="font-condensed text-muted uppercase text-xs">Odds</span>
+              <span className={`font-mono text-right ${espnProb === 0 ? "text-red" : espnProb >= 50 ? "text-green" : "text-white"}`}>
+                {espnProb > 0 ? `${espnProb}%` : "0%"}
+              </span>
+
+              <span className="font-condensed text-muted uppercase text-xs">Consensus</span>
+              <span className="font-mono text-right text-white">
+                {prospect ? `#${prospect.rank}` : "—"}
+                {prospect && (
+                  <span className={`ml-1 ${
+                    rankDrift > 3 ? "text-red" : rankDrift < -3 ? "text-green" : "text-muted"
+                  }`}>
+                    ({rankDrift > 0 ? `+${rankDrift}` : rankDrift < 0 ? `${rankDrift}` : "exact"})
+                  </span>
+                )}
+              </span>
+
+              <span className="font-condensed text-muted uppercase text-xs">Need</span>
+              <span className={`font-mono text-right text-xs ${
+                needDesc.startsWith("Not") ? "text-red" : needDesc.startsWith("#1") ? "text-green" : "text-white"
+              }`}>
+                {needDesc}
+              </span>
+            </div>
+          </div>
+
+          {/* Score flash — current standing */}
+          {userRank != null && leaderName && (
+            <p className="font-condensed text-sm text-muted text-center mb-4">
+              You're <span className="text-white font-bold">{ordinal(userRank)}</span>
+              {userRank === 1
+                ? ` (${leaderScore}pts)`
+                : <>{" · "}Leader: <span className="text-amber font-bold">{leaderName}</span> ({leaderScore}pts)</>}
+            </p>
+          )}
+        </>
       )}
 
       {/* Pinned bottom: Roast + Grade + Submit */}
@@ -301,10 +385,10 @@ export default function PickReactionScreen({
 
         {/* Grade buttons (selectable, not submit) */}
         <p className="font-condensed text-xs text-muted uppercase tracking-wider text-center mb-2">
-          {isBearsPick ? "RATE THIS PICK" : "GRADE THIS PICK"}
+          GRADE THIS PICK
         </p>
-        <div className={`flex gap-1.5 justify-center max-w-sm mx-auto ${isBearsPick ? "" : "flex-wrap"} mb-2.5`}>
-          {reactionOptions.map((opt) => {
+        <div className="flex gap-1.5 justify-center max-w-sm mx-auto flex-wrap mb-2.5">
+          {GRADE_OPTIONS.map((opt) => {
             const isSelected = selectedGrade === opt;
             const isSubmittedSelection = submitted && reactions[userName]?.reaction === opt;
             return (
@@ -314,7 +398,7 @@ export default function PickReactionScreen({
                 disabled={submitted}
                 className={`flex-1 font-condensed text-xl font-bold uppercase py-2.5 rounded border transition-all ${
                   isSubmittedSelection
-                    ? (reactionColors as Record<string, string>)[opt] + " border-current scale-105"
+                    ? GRADE_COLORS[opt] + " border-current scale-105"
                     : isSelected
                       ? "text-amber bg-amber/10 border-amber scale-105"
                       : submitted
@@ -322,7 +406,7 @@ export default function PickReactionScreen({
                         : "text-white bg-surface-elevated border-border-bright hover:border-white active:scale-95"
                 }`}
               >
-                {(reactionLabels as Record<string, string>)[opt]}
+                {GRADE_LABELS[opt]}
               </button>
             );
           })}

@@ -56,24 +56,7 @@ export interface ConfirmedPick {
   isBearsPick: boolean;
 }
 
-/** Poles reaction types — Bears picks only */
-export type PolesReaction = "king" | "meh" | "bad";
-
-/** Display labels for Poles reactions */
-export const POLES_LABELS: Record<PolesReaction, string> = {
-  king: "KING",
-  meh: "MEH",
-  bad: "BAD",
-};
-
-/** Color classes for Poles reactions */
-export const POLES_COLORS: Record<PolesReaction, string> = {
-  king: "text-green bg-green/10 border-green/30",
-  meh: "text-muted bg-surface-elevated border-border",
-  bad: "text-red bg-red/10 border-red/30",
-};
-
-/** Letter grade types — all non-Bears picks */
+/** Letter grade types — all picks */
 export type GradeType = "a-plus" | "a" | "b" | "c" | "d" | "f";
 
 /** Display labels for grades */
@@ -96,8 +79,8 @@ export const GRADE_COLORS: Record<GradeType, string> = {
   f: "text-red bg-red/10 border-red/30",
 };
 
-/** Combined reaction type stored in Firebase */
-export type ReactionType = PolesReaction | GradeType;
+/** Reaction type stored in Firebase */
+export type ReactionType = GradeType;
 
 /** A user's reaction to a pick */
 export interface UserReaction {
@@ -132,6 +115,8 @@ export type PickTag = "chalk" | "regular" | "shocking";
 export interface RoastAnswer {
   text: string;
   submittedAt: string;
+  /** The prompt this user answered */
+  prompt: string;
 }
 
 /** App-level user session (stored in localStorage) */

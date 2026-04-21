@@ -29,6 +29,7 @@ import RunningChaosMeter from "../components/chaos/RunningChaosMeter";
 import RoomPulse from "../components/draft/RoomPulse";
 import RecapOverlay from "../components/leaderboard/RecapOverlay";
 import BracketProgressStrip from "../components/draft/BracketProgressStrip";
+import PickRecapCard from "../components/draft/PickRecapCard";
 import DraftTakeover from "../components/draft/DraftTakeover";
 import ReassignTeamModal from "../components/commissioner/ReassignTeamModal";
 import ConnectionIndicator from "../components/ui/ConnectionIndicator";
@@ -110,12 +111,25 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const scoreFlash = useMemo(() => {
     if (!isLive || confirmedPicks.length === 0 || !session) return null;
     const sorted = Object.entries(scores)
-      .map(([name, s]) => ({ name, score: s.liveScore }))
-      .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+      .map(([name, s]) => ({
+        name,
+        total: s.bracketScore + s.liveScore,
+        bracket: s.bracketScore,
+        live: s.liveScore,
+      }))
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
     if (sorted.length === 0) return null;
-    const rank = sorted.findIndex((e) => e.name === session.name) + 1;
-    const leader = sorted[0];
-    return { userRank: rank, leaderName: leader.name, leaderScore: leader.score };
+    const idx = sorted.findIndex((e) => e.name === session.name);
+    const me = sorted[idx];
+    return {
+      userRank: idx + 1,
+      leaderName: sorted[0].name,
+      leaderScore: sorted[0].total,
+      userBracket: me?.bracket ?? 0,
+      userLive: me?.live ?? 0,
+      userTotal: me?.total ?? 0,
+      top3: sorted.slice(0, 3).map((s) => ({ name: s.name, score: s.total })),
+    };
   }, [isLive, confirmedPicks.length, session?.name, scores]);
 
   // ── Commissioner defaults to admin tab when joining live ──
@@ -139,6 +153,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
   // ── Derived data ──
   const pickedPlayers = confirmedPicks.map((p) => p.playerName);
+  const latestPick = confirmedPicks.length > 0
+    ? confirmedPicks[confirmedPicks.length - 1].pick
+    : null;
 
   const currentSlot = effectiveOrder.find(
     (s) => s.pick === (liveState?.currentPick || 1)
@@ -309,6 +326,8 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
           userRank={scoreFlash?.userRank}
           leaderName={scoreFlash?.leaderName}
           leaderScore={scoreFlash?.leaderScore}
+          scoreDelta={cycle.animation.flashData.scoreDelta}
+          top3={scoreFlash?.top3}
         />
       )}
 
@@ -548,6 +567,13 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                         windowOpen={rowState === "active" && isLive ? liveState?.windowOpen : undefined}
                         windowFinalizing={rowState === "active" && windowFinalizing}
                       />
+                      {pickNum === latestPick && !cycle.animation && (
+                        <PickRecapCard
+                          roomCode={roomCode}
+                          pickNum={pickNum}
+                          reactions={allReactions[`pick${pickNum}`] ?? {}}
+                        />
+                      )}
                     </div>
                   );
                 })}

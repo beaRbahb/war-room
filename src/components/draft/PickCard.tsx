@@ -1,27 +1,15 @@
 import { useEffect, useState } from "react";
 import { DRAFT_ORDER } from "../../data/draftOrder";
 import {
-  POLES_LABELS, POLES_COLORS,
   GRADE_LABELS, GRADE_COLORS,
 } from "../../types";
 import type {
   ConfirmedPick,
   UserReaction,
   ReactionType,
-  PolesReaction,
   GradeType,
 } from "../../types";
-import polesKing from "../../assets/images/poles/poles-king.webp";
-import polesStoic from "../../assets/images/poles/poles-stoic.jpg";
-import polesHoodie from "../../assets/images/poles/poles-hoodie.jpeg";
-
-const POLES_IMAGES: Record<PolesReaction, string> = {
-  king: polesKing,
-  meh: polesStoic,
-  bad: polesHoodie,
-};
 import { onReactions, submitReaction, onGuesses } from "../../lib/storage";
-import { getCompsByTier } from "../../data/bearsTiers";
 import { getTeamLogo } from "../../data/teams";
 import { getHeadshot } from "../../lib/headshots";
 import ChaosMeter from "../chaos/ChaosMeter";
@@ -45,10 +33,8 @@ export default function PickCard({
 }: PickCardProps) {
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
   const [guesses, setGuesses] = useState<Record<string, string>>({});
-  const [showBearsTier, setShowBearsTier] = useState(false);
 
   const slot = DRAFT_ORDER.find((s) => s.pick === pick.pick);
-  const isBears = pick.isBearsPick;
   const myReaction = reactions[userName];
   const teamLogo = getTeamLogo(pick.teamAbbrev);
   const headshot = getHeadshot(pick.playerName);
@@ -67,23 +53,11 @@ export default function PickCard({
     });
   }
 
-  function handleBearsTier(compId: string) {
-    submitReaction(roomCode, pick.pick, userName, {
-      reaction: myReaction?.reaction || "king",
-      bearsTierCompId: compId,
-    });
-    setShowBearsTier(false);
-  }
-
   // Aggregate reactions
   const totalReactions = Object.values(reactions).length;
 
-  // Poles counts (Bears picks)
-  const polesCounts: Record<PolesReaction, number> = { king: 0, meh: 0, bad: 0 };
-  // Grade counts (non-Bears picks)
   const gradeCounts: Record<GradeType, number> = { "a-plus": 0, a: 0, b: 0, c: 0, d: 0, f: 0 };
   Object.values(reactions).forEach((r) => {
-    if (r.reaction in polesCounts) polesCounts[r.reaction as PolesReaction]++;
     if (r.reaction in gradeCounts) gradeCounts[r.reaction as GradeType]++;
   });
 
@@ -95,7 +69,7 @@ export default function PickCard({
   return (
     <div
       className={`bg-surface border rounded-lg p-4 animate-fade-in-up ${
-        isBears ? "border-bears-orange" : "border-border"
+        pick.isBearsPick ? "border-bears-orange" : "border-border"
       }`}
     >
       {/* Pick header + player */}
@@ -124,7 +98,7 @@ export default function PickCard({
               <span className="font-condensed font-bold text-white uppercase">
                 {slot?.abbrev || "??"}
               </span>
-              {isBears && (
+              {pick.isBearsPick && (
                 <span className="bg-bears-navy text-bears-orange font-condensed text-xs font-bold px-2 py-0.5 rounded uppercase">
                   DA BEARS
                 </span>
@@ -201,133 +175,42 @@ export default function PickCard({
       {/* Reactions */}
       {reactionsUnlocked && (
         <div className="border-t border-border pt-3">
-          {isBears ? (
-            <>
-              {/* Poles reaction buttons — Bears picks only */}
-              {!myReaction && (
-                <div className="flex gap-3 mb-2 justify-center">
-                  {(Object.keys(POLES_LABELS) as PolesReaction[]).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => handleReaction(type)}
-                      className="flex flex-col items-center gap-1 group"
-                    >
-                      <img
-                        src={POLES_IMAGES[type]}
-                        alt={POLES_LABELS[type]}
-                        className={`w-16 h-16 rounded-full object-cover border-2 transition-all group-hover:scale-110 group-hover:brightness-125 ${POLES_COLORS[type]}`}
-                      />
-                      <span className={`font-condensed text-xs font-bold uppercase ${POLES_COLORS[type].split(" ")[0]}`}>
-                        {POLES_LABELS[type]}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Results — Poles photos with percentages */}
-              {totalReactions > 0 && (
-                <div className="flex gap-3 flex-wrap mb-2 items-end justify-center">
-                  {(Object.keys(POLES_LABELS) as PolesReaction[]).map((type) => {
-                    if (polesCounts[type] === 0) return null;
-                    const pct = Math.round((polesCounts[type] / totalReactions) * 100);
-                    return (
-                      <div key={type} className="flex flex-col items-center gap-1">
-                        <img
-                          src={POLES_IMAGES[type]}
-                          alt={POLES_LABELS[type]}
-                          className={`w-10 h-10 rounded-full object-cover border-2 ${POLES_COLORS[type]} ${
-                            myReaction?.reaction === type ? "ring-2 ring-white/40" : ""
-                          }`}
-                        />
-                        <span className={`font-condensed text-xs font-bold ${POLES_COLORS[type].split(" ")[0]}`}>
-                          {pct}%
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <span className="font-mono text-xs text-muted self-center">
-                    {totalReactions} vote{totalReactions !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              )}
-
-              {/* Bears tier comp selector */}
-              {myReaction && !myReaction.bearsTierCompId && (
+          {/* Letter grade buttons */}
+          {!myReaction && (
+            <div className="flex gap-2 mb-2">
+              {(Object.keys(GRADE_LABELS) as GradeType[]).map((type) => (
                 <button
-                  onClick={() => setShowBearsTier(true)}
-                  className="mt-2 font-condensed text-xs text-bears-orange uppercase hover:underline"
+                  key={type}
+                  onClick={() => handleReaction(type)}
+                  className={`flex-1 border rounded py-2 font-display text-lg tracking-wide text-center transition-colors hover:brightness-125 ${GRADE_COLORS[type]}`}
                 >
-                  Pick a Bears comp...
+                  {GRADE_LABELS[type]}
                 </button>
-              )}
+              ))}
+            </div>
+          )}
 
-              {showBearsTier && (
-                <div className="mt-2 bg-surface-elevated border border-bears-orange rounded-lg p-3">
-                  <p className="font-condensed text-sm text-bears-orange uppercase mb-2 font-bold">
-                    Bears Tier Comp
-                  </p>
-                  {(["goat", "great", "cursed"] as const).map((tier) => (
-                    <div key={tier} className="mb-2">
-                      <p className="font-mono text-xs text-muted uppercase mb-1">
-                        {tier === "goat" ? "GOAT" : tier === "great" ? "GREAT" : "CURSED"}
-                      </p>
-                      <div className="flex gap-1 flex-wrap">
-                        {getCompsByTier()[tier].map((comp) => (
-                          <button
-                            key={comp.id}
-                            onClick={() => handleBearsTier(comp.id)}
-                            className="bg-bg border border-border rounded px-2 py-1 font-condensed text-xs text-white hover:border-bears-orange transition-colors"
-                          >
-                            {comp.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {/* Letter grade buttons — non-Bears picks */}
-              {!myReaction && (
-                <div className="flex gap-2 mb-2">
-                  {(Object.keys(GRADE_LABELS) as GradeType[]).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => handleReaction(type)}
-                      className={`flex-1 border rounded py-2 font-display text-lg tracking-wide text-center transition-colors hover:brightness-125 ${GRADE_COLORS[type]}`}
-                    >
-                      {GRADE_LABELS[type]}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Grade results */}
-              {totalReactions > 0 && (
-                <div className="flex gap-2 flex-wrap mb-2">
-                  {(Object.keys(GRADE_LABELS) as GradeType[]).map((type) => {
-                    if (gradeCounts[type] === 0) return null;
-                    const pct = Math.round((gradeCounts[type] / totalReactions) * 100);
-                    return (
-                      <span
-                        key={type}
-                        className={`font-condensed text-sm font-bold border rounded px-2 py-0.5 ${GRADE_COLORS[type]} ${
-                          myReaction?.reaction === type ? "ring-1 ring-white/30" : ""
-                        }`}
-                      >
-                        {GRADE_LABELS[type]} {pct}%
-                      </span>
-                    );
-                  })}
-                  <span className="font-mono text-xs text-muted self-center">
-                    {totalReactions} vote{totalReactions !== 1 ? "s" : ""}
+          {/* Grade results */}
+          {totalReactions > 0 && (
+            <div className="flex gap-2 flex-wrap mb-2">
+              {(Object.keys(GRADE_LABELS) as GradeType[]).map((type) => {
+                if (gradeCounts[type] === 0) return null;
+                const pct = Math.round((gradeCounts[type] / totalReactions) * 100);
+                return (
+                  <span
+                    key={type}
+                    className={`font-condensed text-sm font-bold border rounded px-2 py-0.5 ${GRADE_COLORS[type]} ${
+                      myReaction?.reaction === type ? "ring-1 ring-white/30" : ""
+                    }`}
+                  >
+                    {GRADE_LABELS[type]} {pct}%
                   </span>
-                </div>
-              )}
-            </>
+                );
+              })}
+              <span className="font-mono text-xs text-muted self-center">
+                {totalReactions} vote{totalReactions !== 1 ? "s" : ""}
+              </span>
+            </div>
           )}
         </div>
       )}

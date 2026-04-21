@@ -1,4 +1,4 @@
-import crosbyImg from "../assets/images/blockbuster-crosby.jpg";
+import crosbyImg from "../assets/images/blockbuster-crosby.webp";
 
 export interface BlockbusterTradePlayer {
   /** Display name (used as playerName in ConfirmedPick) */

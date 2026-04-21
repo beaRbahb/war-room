@@ -1,9 +1,9 @@
-import trubiskyImg from "../assets/images/trubisky.jpg";
+import trubiskyImg from "../assets/images/trubisky.webp";
 import kevinWhiteImg from "../assets/images/kevin-white.avif";
 import cadeMcNownImg from "../assets/images/cade-mcnown.webp";
 import curtisEnisImg from "../assets/images/curtis-enis.webp";
-import sheaMcClellinImg from "../assets/images/shea-mcclellin.jpeg";
-import calebWilliamsImg from "../assets/images/caleb-williams.jpeg";
+import sheaMcClellinImg from "../assets/images/shea-mcclellin.webp";
+import calebWilliamsImg from "../assets/images/caleb-williams.webp";
 
 export interface BearsBust {
   name: string;

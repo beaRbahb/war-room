@@ -383,6 +383,18 @@ export async function submitRoastAnswer(
   );
 }
 
+/** Real-time listener for roast answers on a specific pick */
+export function onRoastAnswersForPick(
+  code: string,
+  pickNum: number,
+  cb: (answers: Record<string, RoastAnswer>) => void,
+): Unsubscribe {
+  return deferredOnValue(
+    ref(db, `${roomPath(code)}/roasts/pick${pickNum}`),
+    (snap) => cb(snap.exists() ? (snap.val() as Record<string, RoastAnswer>) : {}),
+  );
+}
+
 export async function getRoastAnswersForPick(
   code: string,
   pickNum: number

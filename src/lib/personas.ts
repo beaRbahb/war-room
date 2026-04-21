@@ -126,7 +126,7 @@ function findHomer(
     let count = 0;
     for (const pick of bearsPicks) {
       const r = reactions[`pick${pick.pick}`]?.[name];
-      if (r && r.reaction === "king") count++;
+      if (r && (r.reaction === "a-plus" || r.reaction === "a")) count++;
     }
     if (count > bestCount) { bestCount = count; best = name; }
   }
