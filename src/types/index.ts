@@ -125,6 +125,15 @@ export interface LeaderboardEntry {
   bracketPartial: number;
 }
 
+/** Pick tag for roast prompt selection (auto-derived from chaos level) */
+export type PickTag = "chalk" | "regular" | "shocking";
+
+/** A user's roast answer for a pick */
+export interface RoastAnswer {
+  text: string;
+  submittedAt: string;
+}
+
 /** App-level user session (stored in localStorage) */
 export interface UserSession {
   name: string;

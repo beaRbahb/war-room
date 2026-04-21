@@ -39,6 +39,13 @@
             }
           }
         },
+        "roasts": {
+          "$pickKey": {
+            "$userName": {
+              ".validate": "newData.hasChildren(['text', 'submittedAt']) && newData.child('text').isString() && newData.child('text').val().length <= 120"
+            }
+          }
+        },
         "scores": {
           "$userName": {
             ".validate": "newData.hasChildren(['bracketScore', 'liveScore'])"

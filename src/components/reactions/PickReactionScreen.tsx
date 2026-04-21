@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { calcChaosScore, type ChaosLevel } from "../../lib/chaos";
 import { PROSPECTS } from "../../data/prospects";
 import { TEAM_NEEDS } from "../../data/teamNeeds";
@@ -8,7 +8,8 @@ import { isBlockbusterTrade } from "../../data/blockbusterTrades";
 import { stopBlockbusterAudio } from "../bears/BlockbusterTradeOverlay";
 import { stopBearsAudio } from "../bears/BearsMode";
 import { getHeadshot } from "../../lib/headshots";
-import { submitReaction, onReactions } from "../../lib/storage";
+import { submitReaction, onReactions, submitRoastAnswer } from "../../lib/storage";
+import { chaosLevelToTag, getRandomPrompt, interpolatePrompt } from "../../data/roastPrompts";
 import type { UserReaction, ReactionType } from "../../types";
 import {
   POLES_LABELS,
@@ -18,6 +19,8 @@ import {
   type PolesReaction,
   type GradeType,
 } from "../../types";
+
+const ROAST_CHAR_LIMIT = 120;
 
 interface PickReactionScreenProps {
   slot: number;
@@ -52,7 +55,6 @@ function getNeedDescription(position: string | undefined, teamAbbrev: string): s
   const needs = TEAM_NEEDS[teamAbbrev] ?? [];
   if (needs.length === 0) return "No need data";
 
-  // Use same mapping logic as chaos.ts
   const POSITION_NEED_MAP: Record<string, string[]> = {
     QB: ["QB"], RB: ["RB"], WR: ["WR"], TE: ["TE"],
     OT: ["OL", "OT"], IOL: ["OL", "OG", "C"],
@@ -68,10 +70,6 @@ function getNeedDescription(position: string | undefined, teamAbbrev: string): s
   return `Not a need (${needs.join(", ")})`;
 }
 
-/**
- * Full-screen pick reaction takeover.
- * Shows chaos breakdown with full context, requires user to react before dismissing.
- */
 /** Convert number to ordinal string: 1 → "1st", 2 → "2nd", etc. */
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
@@ -85,6 +83,8 @@ export default function PickReactionScreen({
 }: PickReactionScreenProps) {
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [selectedGrade, setSelectedGrade] = useState<ReactionType | null>(null);
+  const [roastText, setRoastText] = useState("");
 
   // If user already reacted (e.g., page refresh), mark as submitted
   useEffect(() => {
@@ -111,26 +111,53 @@ export default function PickReactionScreen({
   const playerPosition = prospect?.position ?? bt?.position;
   const needDesc = getNeedDescription(playerPosition, teamAbbrev);
 
+  // Generate roast prompt (stable per mount)
+  const roastPrompt = useMemo(() => {
+    const tag = chaosLevelToTag(level);
+    const { text } = getRandomPrompt(tag);
+    return interpolatePrompt(text, {
+      team: teamAbbrev,
+      player: playerName,
+      pick: slot,
+      position: playerPosition,
+    });
+  }, [level, teamAbbrev, playerName, slot, playerPosition]);
+
   // Listen for reactions (to show counts)
   useEffect(() => {
     return onReactions(roomCode, slot, setReactions);
   }, [roomCode, slot]);
 
-  const counts: Record<string, number> = {};
-  for (const r of Object.values(reactions)) {
-    counts[r.reaction] = (counts[r.reaction] ?? 0) + 1;
-  }
-
-  async function handleReact(reaction: ReactionType) {
+  async function handleSubmit() {
+    if (!selectedGrade || submitted) return;
     stopBlockbusterAudio();
     stopBearsAudio();
-    await submitReaction(roomCode, slot, userName, {
-      reaction,
-      bearsTierCompId: null,
-    });
-    setSubmitted(true);
-    // Brief pause to show selection before dismissing
-    setTimeout(onComplete, 600);
+
+    try {
+      // Submit reaction + roast together
+      const promises: Promise<void>[] = [
+        submitReaction(roomCode, slot, userName, {
+          reaction: selectedGrade,
+          bearsTierCompId: null,
+        }),
+      ];
+
+      if (roastText.trim()) {
+        promises.push(
+          submitRoastAnswer(roomCode, slot, userName, {
+            text: roastText.trim(),
+            submittedAt: new Date().toISOString(),
+          }),
+        );
+      }
+
+      await Promise.all(promises);
+      setSubmitted(true);
+      setTimeout(onComplete, 600);
+    } catch {
+      // Firebase write failed — let user retry
+      console.error("Failed to submit reaction");
+    }
   }
 
   const reactionOptions = isBearsPick ? POLES_OPTIONS : GRADE_OPTIONS;
@@ -138,9 +165,9 @@ export default function PickReactionScreen({
   const reactionColors = isBearsPick ? POLES_COLORS : GRADE_COLORS;
 
   return (
-    <div className="fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-center p-4 animate-fade-in-up">
+    <div className="fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto p-4 pb-80 animate-fade-in-up">
       {/* Team + Pick header */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4 mt-4">
         <img src={teamLogo} alt={teamAbbrev} className="w-10 h-10 object-contain" />
         <div>
           <p className="font-display text-2xl text-white tracking-wide">
@@ -235,25 +262,64 @@ export default function PickReactionScreen({
         </p>
       )}
 
-      {/* Reaction area — pinned bottom section */}
-      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 py-5 z-[71]">
-        <p className="font-condensed text-xs text-muted uppercase tracking-wider text-center mb-3">
+      {/* Pinned bottom: Roast + Grade + Submit */}
+      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 pt-3.5 pb-4 z-[71]">
+        {/* Roast prompt + input */}
+        {!submitted && (
+          <div className="mb-3 max-w-sm mx-auto">
+            <div className="flex items-baseline gap-2 mb-1.5">
+              <span className="font-condensed text-sm text-amber uppercase tracking-wide font-bold">GM Roast</span>
+              <span className="font-condensed text-xs text-muted">optional</span>
+            </div>
+            <p className="font-condensed text-lg text-white leading-snug mb-2">
+              {roastPrompt}
+            </p>
+            <div className="relative">
+              <textarea
+                value={roastText}
+                onChange={(e) => setRoastText(e.target.value.slice(0, ROAST_CHAR_LIMIT))}
+                placeholder="Type your answer..."
+                maxLength={ROAST_CHAR_LIMIT}
+                rows={2}
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
+                data-bwignore
+                data-form-type="other"
+                className={`w-full bg-bg border rounded-lg px-3.5 py-2.5 pr-16 text-white font-mono text-sm outline-none resize-none ${
+                  roastText ? "border-amber" : "border-border-bright"
+                } focus:border-amber`}
+              />
+              <span className={`absolute right-3 bottom-2.5 font-mono text-xs ${
+                roastText ? "text-amber" : "text-muted"
+              }`}>
+                {roastText.length}/{ROAST_CHAR_LIMIT}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Grade buttons (selectable, not submit) */}
+        <p className="font-condensed text-xs text-muted uppercase tracking-wider text-center mb-2">
           {isBearsPick ? "RATE THIS PICK" : "GRADE THIS PICK"}
         </p>
-        <div className={`flex gap-2 justify-center max-w-sm mx-auto ${isBearsPick ? "" : "flex-wrap"}`}>
+        <div className={`flex gap-1.5 justify-center max-w-sm mx-auto ${isBearsPick ? "" : "flex-wrap"} mb-2.5`}>
           {reactionOptions.map((opt) => {
-            const isSelected = submitted && reactions[userName]?.reaction === opt;
+            const isSelected = selectedGrade === opt;
+            const isSubmittedSelection = submitted && reactions[userName]?.reaction === opt;
             return (
               <button
                 key={opt}
-                onClick={() => !submitted && handleReact(opt)}
+                onClick={() => !submitted && setSelectedGrade(opt)}
                 disabled={submitted}
-                className={`flex-1 font-condensed text-xl font-bold uppercase py-3 rounded border transition-all ${
-                  isSelected
+                className={`flex-1 font-condensed text-xl font-bold uppercase py-2.5 rounded border transition-all ${
+                  isSubmittedSelection
                     ? (reactionColors as Record<string, string>)[opt] + " border-current scale-105"
-                    : submitted
-                      ? "text-muted/30 bg-surface-elevated border-border/30 cursor-not-allowed"
-                      : "text-white bg-surface-elevated border-border-bright hover:border-white active:scale-95"
+                    : isSelected
+                      ? "text-amber bg-amber/10 border-amber scale-105"
+                      : submitted
+                        ? "text-muted/30 bg-surface-elevated border-border/30 cursor-not-allowed"
+                        : "text-white bg-surface-elevated border-border-bright hover:border-white active:scale-95"
                 }`}
               >
                 {(reactionLabels as Record<string, string>)[opt]}
@@ -261,6 +327,21 @@ export default function PickReactionScreen({
             );
           })}
         </div>
+
+        {/* Submit button */}
+        {!submitted && (
+          <button
+            onClick={handleSubmit}
+            disabled={!selectedGrade}
+            className={`w-full max-w-sm mx-auto block font-condensed text-base font-bold uppercase tracking-wide py-3 rounded-lg transition-all ${
+              selectedGrade
+                ? "bg-green text-bg cursor-pointer hover:brightness-110"
+                : "bg-border text-muted cursor-not-allowed opacity-50"
+            }`}
+          >
+            SUBMIT
+          </button>
+        )}
       </div>
     </div>
   );

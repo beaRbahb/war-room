@@ -16,6 +16,7 @@ import type {
   ConfirmedPick,
   UserReaction,
   UserScores,
+  RoastAnswer,
 } from "../types";
 
 // Sign in anonymously on first import — all DB operations below
@@ -179,6 +180,7 @@ export async function resetDraft(code: string): Promise<void> {
     remove(ref(db, `${roomPath(code)}/results`)),
     remove(ref(db, `${roomPath(code)}/scores`)),
     remove(ref(db, `${roomPath(code)}/reactions`)),
+    remove(ref(db, `${roomPath(code)}/roasts`)),
   ]);
   await update(ref(db, `${roomPath(code)}/config`), { status: "bracket" });
 }
@@ -364,6 +366,30 @@ export async function getAllReactions(
   return snap.exists()
     ? (snap.val() as Record<string, Record<string, UserReaction>>)
     : {};
+}
+
+// ── Roasts ──
+
+export async function submitRoastAnswer(
+  code: string,
+  pickNum: number,
+  userName: string,
+  answer: RoastAnswer
+): Promise<void> {
+  await waitForAuth();
+  await set(
+    ref(db, `${roomPath(code)}/roasts/pick${pickNum}/${userName}`),
+    answer
+  );
+}
+
+export async function getRoastAnswersForPick(
+  code: string,
+  pickNum: number
+): Promise<Record<string, RoastAnswer>> {
+  await waitForAuth();
+  const snap = await get(ref(db, `${roomPath(code)}/roasts/pick${pickNum}`));
+  return snap.exists() ? (snap.val() as Record<string, RoastAnswer>) : {};
 }
 
 // ── Scores ──
