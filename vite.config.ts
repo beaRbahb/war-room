@@ -8,6 +8,9 @@ export default defineConfig({
   server: {
     port: 8585,
   },
+  optimizeDeps: {
+    include: ['html2canvas'],
+  },
   test: {
     globals: true,
     environment: 'node',

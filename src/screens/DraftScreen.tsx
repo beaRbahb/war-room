@@ -376,9 +376,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
           {isLive && confirmedPicks.length >= 32 && recap.recapData && (
             <button
               onClick={() => recap.setShowRecap(true)}
-              className="bg-amber text-bg font-condensed font-bold uppercase text-xs px-3 py-1.5 rounded hover:brightness-110 transition-all"
+              className="font-display text-lg tracking-wider text-amber border-2 border-amber bg-transparent px-4 py-1 rounded-lg hover:bg-amber/10 transition-all"
             >
-              VIEW RECAP
+              🏆 VIEW RESULTS
             </button>
           )}
         </div>
@@ -472,6 +472,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
           recapData={recap.recapData}
           personas={recap.personas}
           roomCode={roomCode}
+          confirmedPicks={confirmedPicks}
           onClose={() => recap.setShowRecap(false)}
         />
       )}

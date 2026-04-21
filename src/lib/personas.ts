@@ -1,11 +1,10 @@
 import { calcChaosScore } from "./chaos";
 import { getPickProb } from "../data/prospectOdds";
-import type { ConfirmedPick, UserBracket, UserScores, UserReaction } from "../types";
+import type { ConfirmedPick, UserBracket, UserScores } from "../types";
 
 export type PersonaType =
   | "THE_ORACLE"
   | "THE_GAMBLER"
-  | "THE_HOMER"
   | "THE_ANALYST"
   | "THE_CONTRARIAN"
   | "THE_STREAK";
@@ -19,7 +18,6 @@ export interface PersonaInfo {
 export const PERSONA_META: Record<PersonaType, Omit<PersonaInfo, "type">> = {
   THE_ORACLE: { label: "The Oracle", description: "Highest overall accuracy" },
   THE_GAMBLER: { label: "The Gambler", description: "Predicted the most upsets" },
-  THE_HOMER: { label: "The Homer", description: "Biggest Bears fan" },
   THE_ANALYST: { label: "The Analyst", description: "Most consistent scorer" },
   THE_CONTRARIAN: { label: "The Contrarian", description: "Went against the grain" },
   THE_STREAK: { label: "The Streak", description: "Longest correct run" },
@@ -28,7 +26,6 @@ export const PERSONA_META: Record<PersonaType, Omit<PersonaInfo, "type">> = {
 export const PERSONA_COLORS: Record<PersonaType, string> = {
   THE_ORACLE: "text-amber bg-amber/10 border-amber/30",
   THE_GAMBLER: "text-red bg-red/10 border-red/30",
-  THE_HOMER: "text-bears-orange bg-bears-orange/10 border-bears-orange/30",
   THE_ANALYST: "text-green bg-green/10 border-green/30",
   THE_CONTRARIAN: "text-muted bg-surface-elevated border-border",
   THE_STREAK: "text-amber bg-amber/10 border-amber/30",
@@ -36,14 +33,13 @@ export const PERSONA_COLORS: Record<PersonaType, string> = {
 
 /**
  * Assign one persona per user, one user per persona.
- * Priority: Oracle > Gambler > Homer > Analyst > Contrarian > Streak.
+ * Priority: Oracle > Gambler > Analyst > Contrarian > Streak.
  */
 export function assignPersonas(
   confirmedPicks: ConfirmedPick[],
   allGuesses: Record<string, Record<string, string>>,
   _allBrackets: Record<string, UserBracket>,
   scores: Record<string, UserScores>,
-  allReactions: Record<string, Record<string, UserReaction>>
 ): Record<string, PersonaType> {
   const userNames = Object.keys(scores);
   if (userNames.length === 0) return {};
@@ -62,9 +58,6 @@ export function assignPersonas(
 
   // THE GAMBLER — most correct guesses on high-chaos picks
   assign("THE_GAMBLER", findGambler(userNames, confirmedPicks, allGuesses, taken));
-
-  // THE HOMER — most positive reactions on Bears picks
-  assign("THE_HOMER", findHomer(userNames, confirmedPicks, allReactions, taken));
 
   // THE ANALYST — most consistent (smallest bracket-live gap relative to total)
   assign("THE_ANALYST", findAnalyst(userNames, scores, taken));
@@ -106,27 +99,6 @@ function findGambler(
         const chaos = calcChaosScore(pick.pick, pick.playerName);
         if (chaos.score > 60) count++;
       }
-    }
-    if (count > bestCount) { bestCount = count; best = name; }
-  }
-  return bestCount > 0 ? best : null;
-}
-
-function findHomer(
-  users: string[], picks: ConfirmedPick[],
-  reactions: Record<string, Record<string, UserReaction>>, taken: Set<string>
-): string | null {
-  const bearsPicks = picks.filter((p) => p.isBearsPick);
-  if (bearsPicks.length === 0) return null;
-
-  let best: string | null = null;
-  let bestCount = 0;
-  for (const name of users) {
-    if (taken.has(name)) continue;
-    let count = 0;
-    for (const pick of bearsPicks) {
-      const r = reactions[`pick${pick.pick}`]?.[name];
-      if (r && (r.reaction === "a-plus" || r.reaction === "a")) count++;
     }
     if (count > bestCount) { bestCount = count; best = name; }
   }

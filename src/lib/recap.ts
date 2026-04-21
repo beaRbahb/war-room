@@ -12,7 +12,9 @@ export interface UserRecapStats {
   bracketExactSlots: number;
   liveCorrect: number;
   liveTotal: number;
+  longestStreak: number;
   bestCall: { pick: ConfirmedPick; chaosScore: number } | null;
+  bestBracketCall: { pick: ConfirmedPick; chaosScore: number } | null;
   bearsPrediction: {
     bracketPick: string | null;
     livePick: string | null;
@@ -27,6 +29,7 @@ export interface RoomRecapStats {
   mostChalkPick: { pick: ConfirmedPick; chaosScore: number } | null;
   roomAccuracy: number;
   avgChaos: number;
+  surprisePicks: number;
 }
 
 export function calcUserRecap(
@@ -41,6 +44,7 @@ export function calcUserRecap(
   let bracketExactSlots = 0;
   let liveCorrect = 0;
   let bestCall: { pick: ConfirmedPick; chaosScore: number } | null = null;
+  let bestBracketCall: { pick: ConfirmedPick; chaosScore: number } | null = null;
 
   for (const pick of confirmedPicks) {
     // Bracket checks
@@ -51,6 +55,11 @@ export function calcUserRecap(
       if (exact) {
         bracketPlayersCorrect++;
         bracketExactSlots++;
+        // Track best bracket call (exact slot hit with highest chaos)
+        const chaos = calcChaosScore(pick.pick, pick.playerName);
+        if (!bestBracketCall || chaos.score > bestBracketCall.chaosScore) {
+          bestBracketCall = { pick, chaosScore: chaos.score };
+        }
       } else {
         const playerMatch = bracket.picks.find(
           (bp) => bp.playerName === pick.playerName
@@ -67,6 +76,20 @@ export function calcUserRecap(
       if (!bestCall || chaos.score > bestCall.chaosScore) {
         bestCall = { pick, chaosScore: chaos.score };
       }
+    }
+  }
+
+  // Longest streak of consecutive correct live guesses
+  const sorted = [...confirmedPicks].sort((a, b) => a.pick - b.pick);
+  let streak = 0;
+  let longestStreak = 0;
+  for (const pick of sorted) {
+    const guess = allGuesses[`pick${pick.pick}`]?.[userName];
+    if (guess === pick.playerName) {
+      streak++;
+      if (streak > longestStreak) longestStreak = streak;
+    } else {
+      streak = 0;
     }
   }
 
@@ -93,7 +116,9 @@ export function calcUserRecap(
     bracketExactSlots,
     liveCorrect,
     liveTotal: confirmedPicks.length,
+    longestStreak,
     bestCall,
+    bestBracketCall,
     bearsPrediction,
   };
 }
@@ -118,10 +143,12 @@ export function calcRoomRecap(
   let mostChaosPick: RoomRecapStats["mostChaosPick"] = null;
   let mostChalkPick: RoomRecapStats["mostChalkPick"] = null;
   let totalChaos = 0;
+  let surprisePicks = 0;
 
   for (const pick of confirmedPicks) {
     const chaos = calcChaosScore(pick.pick, pick.playerName);
     totalChaos += chaos.score;
+    if (chaos.score > 60) surprisePicks++;
     if (!mostChaosPick || chaos.score > mostChaosPick.chaosScore) {
       mostChaosPick = { pick, chaosScore: chaos.score };
     }
@@ -149,5 +176,6 @@ export function calcRoomRecap(
     mostChalkPick,
     roomAccuracy: totalGuesses > 0 ? Math.round((correctGuesses / totalGuesses) * 100) : 0,
     avgChaos: confirmedPicks.length > 0 ? Math.round(totalChaos / confirmedPicks.length) : 0,
+    surprisePicks,
   };
 }
