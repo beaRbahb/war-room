@@ -334,6 +334,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
           roomCode={roomCode}
           userName={session.name}
           onComplete={cycle.dismissAnimation}
+          totalUsers={totalUsers}
           userRank={scoreFlash?.userRank}
           leaderName={scoreFlash?.leaderName}
           leaderScore={scoreFlash?.leaderScore}

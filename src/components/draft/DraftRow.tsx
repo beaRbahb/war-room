@@ -66,10 +66,13 @@ export default memo(function DraftRow({
   const rowRef = useRef<HTMLDivElement>(null);
   const bears = isBearsPick(slot.abbrev);
 
-  // Auto-scroll to active row
+  // Auto-scroll: completed rows to top (so recap + next pick visible), active rows to center
   useEffect(() => {
-    if (shouldScroll && rowState === "active" && rowRef.current) {
-      rowRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (shouldScroll && (rowState === "active" || rowState === "completed") && rowRef.current) {
+      rowRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: rowState === "completed" ? "start" : "center",
+      });
     }
   }, [shouldScroll, rowState]);
 
@@ -94,17 +97,13 @@ export default memo(function DraftRow({
       ? "border-amber animate-pulse-border"
       : isPulsing
         ? "border-amber/40 animate-pulse-border"
-        : rowState === "completed" && isCorrect
-          ? "border-green"
-          : rowState === "completed" && isCorrect === false
-            ? "border-red/50"
-            : "border-border hover:border-border-bright";
+        : "border-border hover:border-border-bright";
 
   const isClickable = rowState === "editable" || rowState === "active";
   const isExpandable = rowState === "completed" && confirmedPick;
 
   return (
-    <div ref={rowRef}>
+    <div ref={rowRef} className="scroll-mt-28">
       <button
         onClick={() => {
           if (isClickable) onClick(index);
@@ -147,7 +146,9 @@ export default memo(function DraftRow({
         <div className="flex-1 min-w-0">
           {rowState === "completed" && confirmedPick ? (
             <div className="min-w-0">
-              <span className="font-mono text-sm text-white truncate block">
+              <span className={`font-mono text-sm truncate block ${
+                isCorrect ? "text-green" : isCorrect === false ? "text-red" : "text-white"
+              }`}>
                 {confirmedPick.playerName}
               </span>
               {userPick && !isCorrect ? (

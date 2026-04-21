@@ -197,6 +197,8 @@ export function useLivePickCycle({
 
   const processedPicks = useRef<Set<number>>(new Set());
   const bearsDoublePicks = useRef<Set<number>>(new Set());
+  /** True once we've seen confirmedPicks empty — proves we're not a late joiner */
+  const sawEmptyRef = useRef(false);
 
   /** Advance from overlay phase (bears/blockbuster/confetti) to reaction screen */
   const advanceToReaction = useCallback(() => {
@@ -257,13 +259,17 @@ export function useLivePickCycle({
   // ── Watch for new picks: animation + scoring ──
   useEffect(() => {
     if (!roomCode || !session || !isLive) return;
-    if (confirmedPicks.length === 0) return;
+    if (confirmedPicks.length === 0) {
+      sawEmptyRef.current = true;
+      return;
+    }
 
     const latest = confirmedPicks[confirmedPicks.length - 1];
     if (processedPicks.current.has(latest.pick)) return;
 
-    // Late joiner / refresh: pre-seed processedPicks to skip stale animations
-    const isLateJoin = processedPicks.current.size === 0 && confirmedPicks.length >= 1;
+    // Late joiner / refresh: pre-seed processedPicks to skip stale animations.
+    // If we ever saw an empty confirmedPicks array, we were here from the start.
+    const isLateJoin = !sawEmptyRef.current && processedPicks.current.size === 0;
     if (isLateJoin) {
       confirmedPicks.forEach((p) => processedPicks.current.add(p.pick));
     } else {
@@ -348,6 +354,7 @@ export function useLivePickCycle({
     setAnimation(null);
     processedPicks.current = new Set();
     bearsDoublePicks.current = new Set();
+    sawEmptyRef.current = false;
   }, []);
 
   return {

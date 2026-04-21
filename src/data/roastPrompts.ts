@@ -1,58 +1,176 @@
 import type { PickTag } from "../types";
 import { TEAMS } from "./teams";
 
-interface PromptTemplate {
-  text: string;
-  tag: PickTag;
+/** Per-pick prompt assignments — one prompt per chaos level per pick.
+ *  Edit these to tailor prompts to each team's draft slot.
+ *  Placeholders: {player}, {team}, {pick}, {position} */
+interface PickPrompts {
+  chalk: string;
+  regular: string;
+  shocking: string;
 }
 
-const ROAST_PROMPTS: PromptTemplate[] = [
-  // ── Chalk (predictable energy — could be relief or boredom) ──
-  { tag: "chalk", text: "{player} to {team}. One word reaction:" },
-  { tag: "chalk", text: "{player} at #{pick} — {team}'s GM press conference opener:" },
-  { tag: "chalk", text: "Your face when {player}'s name was called for {team}:" },
-  { tag: "chalk", text: "{team} did exactly what the mocks said. Group chat text:" },
-  { tag: "chalk", text: "ESPN ticker for {player} to {team}:" },
-  { tag: "chalk", text: "{player}'s first thought crossing the stage to {team}:" },
-  { tag: "chalk", text: "Mel Kiper on {player} at #{pick} — one sentence:" },
-  { tag: "chalk", text: "Rate {player} to {team} as a meal. What did they order?" },
-  { tag: "chalk", text: "Orlovsky draws {player} to {team} on the whiteboard. What's on it?" },
-  { tag: "chalk", text: "Kyle and Travis react to {player} at #{pick}. The Skodcast take:" },
-  { tag: "chalk", text: "WalterFootball had this mocked for months. His victory lap:" },
-  { tag: "chalk", text: "Camera cuts to {player}'s living room. They knew. Describe the scene:" },
-  { tag: "chalk", text: "{player}'s hug with Goodell — rate it 1-10 and describe:" },
-
-  // ── Regular (general energy — no surprise factor implied) ──
-  { tag: "regular", text: "{player}'s first tweet after going #{pick} to {team}:" },
-  { tag: "regular", text: "{player} to {team} as a movie title:" },
-  { tag: "regular", text: "{player}'s leaked scouting report that {team} doesn't want you to see:" },
-  { tag: "regular", text: "{player}'s {team} nickname by Week 3:" },
-  { tag: "regular", text: "{team} subreddit, one sentence, right now:" },
-  { tag: "regular", text: "{player} to {team} as a Yelp review:" },
-  { tag: "regular", text: "{player}'s Instagram caption tonight:" },
-  { tag: "regular", text: "Goodell's whisper handing {player} the {team} hat:" },
-  { tag: "regular", text: "{player} to {team} as a dating app bio:" },
-  { tag: "regular", text: "Orlovsky stands up at the ESPN desk. About {player} to {team} he yells:" },
-  { tag: "regular", text: "Kyle and Travis on {player} to {team}. Who's more fired up and why?" },
-  { tag: "regular", text: "WalterFootball's grade for {player} to {team}:" },
-  { tag: "regular", text: "Describe {player}'s Goodell handshake in three words:" },
-  { tag: "regular", text: "What did {player}'s mom just yell from the living room?" },
-
-  // ── Shocking (WTF energy — could be genius or madness) ──
-  { tag: "shocking", text: "{player} at #{pick}?! First reply on X:" },
-  { tag: "shocking", text: "{team}'s GM right now, one honest sentence:" },
-  { tag: "shocking", text: "Other 31 GMs group chat after {player} at #{pick}:" },
-  { tag: "shocking", text: "ESPN cuts to {team}'s war room. Describe the scene:" },
-  { tag: "shocking", text: "Breaking news chyron for {player} to {team} at #{pick}:" },
-  { tag: "shocking", text: "{player} to {team} — steal of the draft or bust of the decade?" },
-  { tag: "shocking", text: "{team}'s owner's face as an emoji. Explain:" },
-  { tag: "shocking", text: "In 3 years, {team} fans will call this pick:" },
-  { tag: "shocking", text: "{player} at #{pick}. Genius or chaos? One sentence:" },
-  { tag: "shocking", text: "Orlovsky runs out the back of the studio. His {player} at #{pick} take:" },
-  { tag: "shocking", text: "Kyle and Travis on {player} at #{pick}. Who's screaming louder?" },
-  { tag: "shocking", text: "WalterFootball didn't have {player} in his top 50. Site update:" },
-  { tag: "shocking", text: "How many of those high fives in {team}'s draft room were real?" },
-  { tag: "shocking", text: "{player}'s girlfriend on the split screen right now:" },
+const PICK_PROMPTS: PickPrompts[] = [
+  /* pick  1 — LV  */ {
+    chalk: "{player} at #{pick} — {team}'s GM press conference opener:",
+    regular: "{player}'s first tweet after going #{pick} to {team}:",
+    shocking: "{player} at #{pick}?! First reply on X:",
+  },
+  /* pick  2 — NYJ */ {
+    chalk: "Mel Kiper on {player} at #{pick} — one sentence:",
+    regular: "{player} to {team} as a movie title:",
+    shocking: "{team}'s GM right now, one honest sentence:",
+  },
+  /* pick  3 — ARI */ {
+    chalk: "Camera cuts to {player}'s living room. They knew. Describe the scene:",
+    regular: "{player}'s leaked scouting report that {team} doesn't want you to see:",
+    shocking: "Other 31 GMs group chat after {player} at #{pick}:",
+  },
+  /* pick  4 — TEN */ {
+    chalk: "{player}'s hug with Goodell — rate it 1-10 and describe:",
+    regular: "{player}'s {team} nickname by Week 3:",
+    shocking: "ESPN cuts to {team}'s war room. Describe the scene:",
+  },
+  /* pick  5 — NYG */ {
+    chalk: "{player}'s first thought crossing the stage to {team}:",
+    regular: "{team} subreddit, one sentence, right now:",
+    shocking: "Breaking news chyron for {player} to {team} at #{pick}:",
+  },
+  /* pick  6 — CLE */ {
+    chalk: "ESPN ticker for {player} to {team}:",
+    regular: "{player} to {team} as a Yelp review:",
+    shocking: "{player} to {team} — steal of the draft or bust of the decade?",
+  },
+  /* pick  7 — WAS */ {
+    chalk: "{team} did exactly what the mocks said. Group chat text:",
+    regular: "{player}'s Instagram caption tonight:",
+    shocking: "{team}'s owner's face as an emoji. Explain:",
+  },
+  /* pick  8 — NO  */ {
+    chalk: "Your face when {player}'s name was called for {team}:",
+    regular: "Goodell's whisper handing {player} the {team} hat:",
+    shocking: "In 3 years, {team} fans will call this pick:",
+  },
+  /* pick  9 — KC  */ {
+    chalk: "Rate {player} to {team} as a meal. What did they order?",
+    regular: "{player} to {team} as a dating app bio:",
+    shocking: "{player} at #{pick}. Genius or chaos? One sentence:",
+  },
+  /* pick 10 — NYG (via CIN) */ {
+    chalk: "Orlovsky draws {player} to {team} on the whiteboard. What's on it?",
+    regular: "Orlovsky stands up at the ESPN desk. About {player} to {team} he yells:",
+    shocking: "Orlovsky runs out the back of the studio. His {player} at #{pick} take:",
+  },
+  /* pick 11 — MIA */ {
+    chalk: "Kyle and Travis react to {player} at #{pick}. The Skodcast take:",
+    regular: "Kyle and Travis on {player} to {team}. Who's more fired up and why?",
+    shocking: "Kyle and Travis on {player} at #{pick}. Who's screaming louder?",
+  },
+  /* pick 12 — DAL */ {
+    chalk: "WalterFootball had this mocked for months. His victory lap:",
+    regular: "WalterFootball's grade for {player} to {team}:",
+    shocking: "WalterFootball didn't have {player} in his top 50. Site update:",
+  },
+  /* pick 13 — LAR (via ATL) */ {
+    chalk: "{player} to {team}. One word reaction:",
+    regular: "Describe {player}'s Goodell handshake in three words:",
+    shocking: "How many of those high fives in {team}'s draft room were real?",
+  },
+  /* pick 14 — BAL */ {
+    chalk: "{player} at #{pick} — {team}'s GM press conference opener:",
+    regular: "What did {player}'s mom just yell from the living room?",
+    shocking: "{player}'s girlfriend on the split screen right now:",
+  },
+  /* pick 15 — TB  */ {
+    chalk: "Mel Kiper on {player} at #{pick} — one sentence:",
+    regular: "{player}'s first tweet after going #{pick} to {team}:",
+    shocking: "{player} at #{pick}?! First reply on X:",
+  },
+  /* pick 16 — NYJ (via IND) */ {
+    chalk: "Camera cuts to {player}'s living room. They knew. Describe the scene:",
+    regular: "{player} to {team} as a movie title:",
+    shocking: "{team}'s GM right now, one honest sentence:",
+  },
+  /* pick 17 — DET */ {
+    chalk: "{player}'s hug with Goodell — rate it 1-10 and describe:",
+    regular: "{player}'s leaked scouting report that {team} doesn't want you to see:",
+    shocking: "Other 31 GMs group chat after {player} at #{pick}:",
+  },
+  /* pick 18 — MIN */ {
+    chalk: "{player}'s first thought crossing the stage to {team}:",
+    regular: "{player}'s {team} nickname by Week 3:",
+    shocking: "ESPN cuts to {team}'s war room. Describe the scene:",
+  },
+  /* pick 19 — CAR */ {
+    chalk: "ESPN ticker for {player} to {team}:",
+    regular: "{team} subreddit, one sentence, right now:",
+    shocking: "Breaking news chyron for {player} to {team} at #{pick}:",
+  },
+  /* pick 20 — DAL (via GB) */ {
+    chalk: "{team} did exactly what the mocks said. Group chat text:",
+    regular: "{player} to {team} as a Yelp review:",
+    shocking: "{player} to {team} — steal of the draft or bust of the decade?",
+  },
+  /* pick 21 — PIT */ {
+    chalk: "Your face when {player}'s name was called for {team}:",
+    regular: "{player}'s Instagram caption tonight:",
+    shocking: "{team}'s owner's face as an emoji. Explain:",
+  },
+  /* pick 22 — LAC */ {
+    chalk: "Rate {player} to {team} as a meal. What did they order?",
+    regular: "Goodell's whisper handing {player} the {team} hat:",
+    shocking: "In 3 years, {team} fans will call this pick:",
+  },
+  /* pick 23 — PHI */ {
+    chalk: "Orlovsky draws {player} to {team} on the whiteboard. What's on it?",
+    regular: "{player} to {team} as a dating app bio:",
+    shocking: "{player} at #{pick}. Genius or chaos? One sentence:",
+  },
+  /* pick 24 — CLE (via JAX) */ {
+    chalk: "Kyle and Travis react to {player} at #{pick}. The Skodcast take:",
+    regular: "Orlovsky stands up at the ESPN desk. About {player} to {team} he yells:",
+    shocking: "Orlovsky runs out the back of the studio. His {player} at #{pick} take:",
+  },
+  /* pick 25 — CHI (Bears-specific prompt handled separately) */ {
+    chalk: "Which Ryan Poles are you right now?",
+    regular: "Which Ryan Poles are you right now?",
+    shocking: "Which Ryan Poles are you right now?",
+  },
+  /* pick 26 — BUF */ {
+    chalk: "WalterFootball had this mocked for months. His victory lap:",
+    regular: "WalterFootball's grade for {player} to {team}:",
+    shocking: "WalterFootball didn't have {player} in his top 50. Site update:",
+  },
+  /* pick 27 — SF  */ {
+    chalk: "{player} to {team}. One word reaction:",
+    regular: "Describe {player}'s Goodell handshake in three words:",
+    shocking: "How many of those high fives in {team}'s draft room were real?",
+  },
+  /* pick 28 — HOU */ {
+    chalk: "{player} at #{pick} — {team}'s GM press conference opener:",
+    regular: "What did {player}'s mom just yell from the living room?",
+    shocking: "{player}'s girlfriend on the split screen right now:",
+  },
+  /* pick 29 — KC (via LAR) */ {
+    chalk: "Mel Kiper on {player} at #{pick} — one sentence:",
+    regular: "{player}'s first tweet after going #{pick} to {team}:",
+    shocking: "{player} at #{pick}?! First reply on X:",
+  },
+  /* pick 30 — MIA (via DEN) */ {
+    chalk: "Camera cuts to {player}'s living room. They knew. Describe the scene:",
+    regular: "{player} to {team} as a movie title:",
+    shocking: "{team}'s GM right now, one honest sentence:",
+  },
+  /* pick 31 — NE  */ {
+    chalk: "{player}'s hug with Goodell — rate it 1-10 and describe:",
+    regular: "{player}'s leaked scouting report that {team} doesn't want you to see:",
+    shocking: "Other 31 GMs group chat after {player} at #{pick}:",
+  },
+  /* pick 32 — SEA */ {
+    chalk: "{player}'s first thought crossing the stage to {team}:",
+    regular: "{player}'s {team} nickname by Week 3:",
+    shocking: "ESPN cuts to {team}'s war room. Describe the scene:",
+  },
 ];
 
 /** Map chaos level to pick tag */
@@ -62,20 +180,22 @@ export function chaosLevelToTag(level: string): PickTag {
   return "regular"; // MILD
 }
 
-/** Get a random prompt for the given tag, excluding a specific index */
-export function getRandomPrompt(tag: PickTag, excludeIndex?: number): { text: string; index: number } {
-  const matching = ROAST_PROMPTS
-    .map((p, i) => ({ ...p, index: i }))
-    .filter((p) => p.tag === tag && p.index !== excludeIndex);
-  const pick = matching[Math.floor(Math.random() * matching.length)];
-  return { text: pick.text, index: pick.index };
+/** Get the assigned prompt for a specific pick and chaos level */
+export function getPromptForPick(
+  pick: number,
+  tag: PickTag,
+  ctx: { team: string; player: string; pick: number; position?: string },
+): string {
+  const prompts = PICK_PROMPTS[pick - 1];
+  if (!prompts) return `${ctx.player} to ${ctx.team}. React:`;
+  const template = prompts[tag];
+  return interpolatePrompt(template, ctx);
 }
 
 /** Get short team name from abbreviation (e.g., "CHI" → "Bears") */
 function getTeamName(abbrev: string): string {
   const full = TEAMS[abbrev]?.name;
   if (!full) return abbrev;
-  // "Chicago Bears" → "Bears", "New York Giants" → "Giants"
   const parts = full.split(" ");
   return parts[parts.length - 1];
 }

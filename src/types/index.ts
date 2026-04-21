@@ -119,6 +119,13 @@ export interface RoastAnswer {
   prompt: string;
 }
 
+/** Tallied roast result for voting reveal */
+export interface RoastResult {
+  answererName: string;
+  text: string;
+  voteCount: number;
+}
+
 /** App-level user session (stored in localStorage) */
 export interface UserSession {
   name: string;

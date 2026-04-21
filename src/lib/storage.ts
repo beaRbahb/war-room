@@ -181,6 +181,7 @@ export async function resetDraft(code: string): Promise<void> {
     remove(ref(db, `${roomPath(code)}/scores`)),
     remove(ref(db, `${roomPath(code)}/reactions`)),
     remove(ref(db, `${roomPath(code)}/roasts`)),
+    remove(ref(db, `${roomPath(code)}/roast_votes`)),
   ]);
   await update(ref(db, `${roomPath(code)}/config`), { status: "bracket" });
 }
@@ -402,6 +403,41 @@ export async function getRoastAnswersForPick(
   await waitForAuth();
   const snap = await get(ref(db, `${roomPath(code)}/roasts/pick${pickNum}`));
   return snap.exists() ? (snap.val() as Record<string, RoastAnswer>) : {};
+}
+
+// ── Roast Votes ──
+
+export async function submitRoastVote(
+  code: string,
+  pickNum: number,
+  voterName: string,
+  answererName: string,
+): Promise<void> {
+  await waitForAuth();
+  await set(
+    ref(db, `${roomPath(code)}/roast_votes/pick${pickNum}/${voterName}`),
+    answererName,
+  );
+}
+
+export function onRoastVotes(
+  code: string,
+  pickNum: number,
+  cb: (votes: Record<string, string>) => void,
+): Unsubscribe {
+  return deferredOnValue(
+    ref(db, `${roomPath(code)}/roast_votes/pick${pickNum}`),
+    (snap) => cb(snap.exists() ? (snap.val() as Record<string, string>) : {}),
+  );
+}
+
+export async function getRoastVotesForPick(
+  code: string,
+  pickNum: number,
+): Promise<Record<string, string>> {
+  await waitForAuth();
+  const snap = await get(ref(db, `${roomPath(code)}/roast_votes/pick${pickNum}`));
+  return snap.exists() ? (snap.val() as Record<string, string>) : {};
 }
 
 // ── Scores ──

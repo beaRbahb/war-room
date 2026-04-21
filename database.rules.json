@@ -46,6 +46,13 @@
             }
           }
         },
+        "roast_votes": {
+          "$pickKey": {
+            "$voterName": {
+              ".validate": "newData.isString() && newData.val().length <= 50"
+            }
+          }
+        },
         "scores": {
           "$userName": {
             ".validate": "newData.hasChildren(['bracketScore', 'liveScore'])"

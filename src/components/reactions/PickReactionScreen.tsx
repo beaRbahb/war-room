@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { calcChaosScore, type ChaosLevel } from "../../lib/chaos";
 import { PROSPECTS } from "../../data/prospects";
 import { TEAM_NEEDS } from "../../data/teamNeeds";
@@ -8,16 +8,31 @@ import { isBlockbusterTrade } from "../../data/blockbusterTrades";
 import { stopBlockbusterAudio } from "../bears/BlockbusterTradeOverlay";
 import { stopBearsAudio } from "../bears/BearsMode";
 import { getHeadshot } from "../../lib/headshots";
-import { submitReaction, onReactions, submitRoastAnswer } from "../../lib/storage";
-import { chaosLevelToTag, getRandomPrompt, interpolatePrompt } from "../../data/roastPrompts";
-import type { UserReaction, ReactionType } from "../../types";
+import {
+  submitReaction,
+  onReactions,
+  submitRoastAnswer,
+  getRoastAnswersForPick,
+  submitRoastVote,
+  getRoastVotesForPick,
+} from "../../lib/storage";
+import { chaosLevelToTag, getPromptForPick } from "../../data/roastPrompts";
+import { LEADERBOARD_FLASH_MS } from "../../data/scoring";
+import type { UserReaction, ReactionType, RoastAnswer, RoastResult } from "../../types";
 import {
   GRADE_LABELS,
-  GRADE_COLORS,
   type GradeType,
 } from "../../types";
+import RoastVoting from "./RoastVoting";
+import RoastResults from "./RoastResults";
 
 const ROAST_CHAR_LIMIT = 120;
+
+type ReactionPhase =
+  | { type: "grade" }
+  | { type: "leaderboard" }
+  | { type: "voting"; answers: Record<string, RoastAnswer> }
+  | { type: "results"; ranked: RoastResult[] };
 
 interface PickReactionScreenProps {
   slot: number;
@@ -28,6 +43,7 @@ interface PickReactionScreenProps {
   roomCode: string;
   userName: string;
   onComplete: () => void;
+  totalUsers?: number;
   /** Current user's rank (1-indexed) */
   userRank?: number;
   /** Name of the current leader */
@@ -78,28 +94,32 @@ function ordinal(n: number): string {
 }
 
 export default function PickReactionScreen({
-  slot, playerName, teamAbbrev, isBearsPick, priorPicks,
+  slot, playerName, teamAbbrev, priorPicks,
   roomCode, userName, onComplete, userRank, leaderName, leaderScore,
   scoreDelta, top3,
 }: PickReactionScreenProps) {
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [phase, setPhase] = useState<ReactionPhase>({ type: "grade" });
   const [selectedGrade, setSelectedGrade] = useState<ReactionType | null>(null);
   const [roastText, setRoastText] = useState("");
 
-  // If user already reacted (e.g., page refresh), mark as submitted
+  // Guards to prevent double-transitions
+  const submittedLocally = useRef(false);
+  const leaderboardAdvancedRef = useRef(false);
+  const votingCompletedRef = useRef(false);
+  const answersRef = useRef<Record<string, RoastAnswer>>({});
+
+  // If user already reacted before this mount (e.g., page refresh), skip straight out.
   useEffect(() => {
-    if (!submitted && reactions[userName]) {
-      setSubmitted(true);
-      setTimeout(onComplete, 600);
+    if (phase.type === "grade" && !submittedLocally.current && reactions[userName]) {
+      onComplete();
     }
-  }, [reactions, userName, submitted, onComplete]);
+  }, [reactions, userName, phase.type, onComplete]);
 
   const prospect = PROSPECTS.find((p) => p.name === playerName);
   const { level, tags } = calcChaosScore(slot, playerName, teamAbbrev, priorPicks);
   const espnProb = getPickProb(slot, playerName);
 
-  // Check if this player was the #1 most likely pick for this slot
   const slotProbs = PICK_PROBS[slot] ?? {};
   const topProb = Math.max(0, ...Object.values(slotProbs));
   const isTopExpected = espnProb > 0 && espnProb >= topProb;
@@ -112,31 +132,85 @@ export default function PickReactionScreen({
   const playerPosition = prospect?.position ?? bt?.position;
   const needDesc = getNeedDescription(playerPosition, teamAbbrev);
 
-  // Generate roast prompt (stable per mount)
+  // Deterministic roast prompt — same for every client on the same pick
   const roastPrompt = useMemo(() => {
-    if (isBearsPick) return "Which Ryan Poles are you right now?";
     const tag = chaosLevelToTag(level);
-    const { text } = getRandomPrompt(tag);
-    return interpolatePrompt(text, {
+    return getPromptForPick(slot, tag, {
       team: teamAbbrev,
       player: playerName,
       pick: slot,
       position: playerPosition,
     });
-  }, [isBearsPick, level, teamAbbrev, playerName, slot, playerPosition]);
+  }, [level, teamAbbrev, playerName, slot, playerPosition]);
 
-  // Listen for reactions (to show counts)
+  // Listen for reactions (to detect already-submitted on mount)
   useEffect(() => {
     return onReactions(roomCode, slot, setReactions);
   }, [roomCode, slot]);
 
+  /** Transition: leaderboard → voting (if 2+ answers) or onComplete */
+  const advanceFromLeaderboard = useCallback(async () => {
+    if (leaderboardAdvancedRef.current) return;
+    leaderboardAdvancedRef.current = true;
+
+    const answers = await getRoastAnswersForPick(roomCode, slot);
+    if (Object.keys(answers).length >= 2) {
+      answersRef.current = answers;
+      setPhase({ type: "voting", answers });
+    } else {
+      onComplete();
+    }
+  }, [roomCode, slot, onComplete]);
+
+  // ── Leaderboard auto-advance (3s) ──
+  useEffect(() => {
+    if (phase.type !== "leaderboard") return;
+    const timer = setTimeout(advanceFromLeaderboard, LEADERBOARD_FLASH_MS);
+    return () => clearTimeout(timer);
+  }, [phase.type, advanceFromLeaderboard]);
+
+  /** Transition: voting → results (if votes exist) or onComplete */
+  async function transitionToResults() {
+    if (votingCompletedRef.current) return;
+    votingCompletedRef.current = true;
+
+    const votes = await getRoastVotesForPick(roomCode, slot);
+    const voteValues = Object.values(votes);
+
+    // No votes at all → skip results
+    if (voteValues.length === 0) {
+      onComplete();
+      return;
+    }
+
+    // Tally votes per answerer
+    const counts: Record<string, number> = {};
+    for (const answerer of voteValues) {
+      counts[answerer] = (counts[answerer] ?? 0) + 1;
+    }
+
+    // Build sorted results (descending votes, alphabetical tiebreak)
+    const answers = answersRef.current;
+    const sorted: RoastResult[] = Object.entries(counts)
+      .map(([name, count]) => ({
+        answererName: name,
+        text: answers[name]?.text ?? "",
+        voteCount: count,
+      }))
+      .sort((a, b) => b.voteCount - a.voteCount || a.answererName.localeCompare(b.answererName))
+      .slice(0, 3);
+
+    // Reverse for reveal order: 3rd → 2nd → 1st
+    setPhase({ type: "results", ranked: [...sorted].reverse() });
+  }
+
+  // ── Grade submit handler ──
   async function handleSubmit() {
-    if (!selectedGrade || submitted) return;
+    if (!selectedGrade || phase.type !== "grade") return;
     stopBlockbusterAudio();
     stopBearsAudio();
 
     try {
-      // Submit reaction + roast together
       const promises: Promise<void>[] = [
         submitReaction(roomCode, slot, userName, {
           reaction: selectedGrade,
@@ -155,98 +229,33 @@ export default function PickReactionScreen({
       }
 
       await Promise.all(promises);
-      setSubmitted(true);
-      setTimeout(onComplete, 3000);
+      submittedLocally.current = true;
+      setPhase({ type: "leaderboard" });
     } catch {
-      // Firebase write failed — let user retry
       console.error("Failed to submit reaction");
     }
   }
 
+  // ── Voting callbacks ──
+  async function handleVoteSubmit(answererName: string) {
+    await submitRoastVote(roomCode, slot, userName, answererName);
+    // Brief delay lets other users' votes sync before tallying
+    await new Promise((r) => setTimeout(r, 500));
+    await transitionToResults();
+  }
+
+  async function handleVoteSkip() {
+    await transitionToResults();
+  }
+
   const hasPoints = scoreDelta && (scoreDelta.bracket > 0 || scoreDelta.live > 0);
+  const isGradePhase = phase.type === "grade";
 
   return (
-    <div className="fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto p-4 pb-80 animate-fade-in-up">
-      {submitted ? (
-        /* ── Leaderboard Flash (3s after submit) ── */
-        <div className="flex flex-col items-center justify-center flex-1 w-full max-w-[280px]">
-          {/* Big rank */}
-          <p className={`font-display text-[96px] leading-none ${userRank === 1 ? "text-amber" : "text-muted"}`}>
-            {userRank ? ordinal(userRank) : "—"}
-          </p>
-          <p className="font-condensed text-lg text-muted uppercase tracking-[4px] mb-7">
-            YOUR RANK
-          </p>
+    <div className={`fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto p-4 animate-fade-in-up ${isGradePhase ? "pb-80" : "pb-4"}`}>
 
-          {/* Score delta boxes */}
-          <div className="flex gap-4 w-full mb-3">
-            <div className={`flex-1 text-center py-3.5 rounded-lg border ${
-              scoreDelta && scoreDelta.bracket > 0
-                ? "bg-[#4a9eff]/10 border-[#4a9eff]/30"
-                : "bg-surface-elevated border-border"
-            }`}>
-              <p className={`font-mono text-[32px] font-bold leading-none ${
-                scoreDelta && scoreDelta.bracket > 0 ? "text-[#4a9eff]" : "text-muted"
-              }`}>
-                {scoreDelta && scoreDelta.bracket > 0 ? `+${scoreDelta.bracket}` : "--"}
-              </p>
-              <p className="font-condensed text-sm text-muted uppercase tracking-[2px] mt-1">BRACKET</p>
-            </div>
-            <div className={`flex-1 text-center py-3.5 rounded-lg border ${
-              scoreDelta && scoreDelta.live > 0
-                ? "bg-green/[0.08] border-green/25"
-                : "bg-surface-elevated border-border"
-            }`}>
-              <p className={`font-mono text-[32px] font-bold leading-none ${
-                scoreDelta && scoreDelta.live > 0 ? "text-green" : "text-muted"
-              }`}>
-                {scoreDelta && scoreDelta.live > 0 ? `+${scoreDelta.live}` : "--"}
-              </p>
-              <p className="font-condensed text-sm text-muted uppercase tracking-[2px] mt-1">LIVE</p>
-            </div>
-          </div>
-
-          {/* Movement text */}
-          {!hasPoints && (
-            <p className="font-condensed text-lg font-bold text-muted uppercase tracking-[2px] mb-7">
-              No points this pick
-            </p>
-          )}
-          {hasPoints && <div className="mb-7" />}
-
-          {/* Top 3 standings */}
-          {top3 && top3.length > 0 && (
-            <div className="w-full border border-border rounded-lg overflow-hidden">
-              {top3.map((entry, i) => {
-                const isYou = entry.name === userName;
-                return (
-                  <div
-                    key={entry.name}
-                    className={`flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 ${
-                      isYou ? "bg-amber/[0.06]" : ""
-                    }`}
-                  >
-                    <span className={`font-mono text-base font-bold w-7 text-center ${
-                      i === 0 ? "text-amber" : "text-muted"
-                    }`}>
-                      {i + 1}
-                    </span>
-                    <span className={`font-condensed text-lg font-bold flex-1 ${
-                      isYou ? "text-amber" : "text-white"
-                    }`}>
-                      {isYou ? "You" : entry.name}
-                    </span>
-                    <span className="font-mono text-lg font-bold text-amber">
-                      {entry.score}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        /* ── Pre-submit: Pick info + chaos breakdown ── */
+      {/* ── Grade phase: pick info + chaos breakdown ── */}
+      {phase.type === "grade" && (
         <>
           {/* Team + Pick header */}
           <div className="flex items-center gap-3 mb-4 mt-4">
@@ -346,10 +355,115 @@ export default function PickReactionScreen({
         </>
       )}
 
-      {/* Pinned bottom: Roast + Grade + Submit */}
-      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 pt-3.5 pb-4 z-[71]">
-        {/* Roast prompt + input */}
-        {!submitted && (
+      {/* ── Leaderboard flash (3s, dismissable) ── */}
+      {phase.type === "leaderboard" && (
+        <div className="flex flex-col items-center justify-center flex-1 w-full max-w-[280px] relative">
+          <button
+            onClick={advanceFromLeaderboard}
+            className="absolute top-0 right-0 text-muted hover:text-white text-xl leading-none px-2 py-1 transition-colors"
+            aria-label="Skip leaderboard"
+          >
+            ✕
+          </button>
+          {/* Big rank */}
+          <p className={`font-display text-[96px] leading-none ${userRank === 1 ? "text-amber" : "text-muted"}`}>
+            {userRank ? ordinal(userRank) : "—"}
+          </p>
+          <p className="font-condensed text-lg text-muted uppercase tracking-[4px] mb-7">
+            YOUR RANK
+          </p>
+
+          {/* Score delta boxes */}
+          <div className="flex gap-4 w-full mb-3">
+            <div className={`flex-1 text-center py-3.5 rounded-lg border ${
+              scoreDelta && scoreDelta.bracket > 0
+                ? "bg-[#4a9eff]/10 border-[#4a9eff]/30"
+                : "bg-surface-elevated border-border"
+            }`}>
+              <p className={`font-mono text-[32px] font-bold leading-none ${
+                scoreDelta && scoreDelta.bracket > 0 ? "text-[#4a9eff]" : "text-muted"
+              }`}>
+                {scoreDelta && scoreDelta.bracket > 0 ? `+${scoreDelta.bracket}` : "--"}
+              </p>
+              <p className="font-condensed text-sm text-muted uppercase tracking-[2px] mt-1">BRACKET</p>
+            </div>
+            <div className={`flex-1 text-center py-3.5 rounded-lg border ${
+              scoreDelta && scoreDelta.live > 0
+                ? "bg-green/[0.08] border-green/25"
+                : "bg-surface-elevated border-border"
+            }`}>
+              <p className={`font-mono text-[32px] font-bold leading-none ${
+                scoreDelta && scoreDelta.live > 0 ? "text-green" : "text-muted"
+              }`}>
+                {scoreDelta && scoreDelta.live > 0 ? `+${scoreDelta.live}` : "--"}
+              </p>
+              <p className="font-condensed text-sm text-muted uppercase tracking-[2px] mt-1">LIVE</p>
+            </div>
+          </div>
+
+          {/* Movement text */}
+          {!hasPoints && (
+            <p className="font-condensed text-lg font-bold text-muted uppercase tracking-[2px] mb-7">
+              No points this pick
+            </p>
+          )}
+          {hasPoints && <div className="mb-7" />}
+
+          {/* Top 3 standings */}
+          {top3 && top3.length > 0 && (
+            <div className="w-full border border-border rounded-lg overflow-hidden">
+              {top3.map((entry, i) => {
+                const isYou = entry.name === userName;
+                return (
+                  <div
+                    key={entry.name}
+                    className={`flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 ${
+                      isYou ? "bg-amber/[0.06]" : ""
+                    }`}
+                  >
+                    <span className={`font-mono text-base font-bold w-7 text-center ${
+                      i === 0 ? "text-amber" : "text-muted"
+                    }`}>
+                      {i + 1}
+                    </span>
+                    <span className={`font-condensed text-lg font-bold flex-1 ${
+                      isYou ? "text-amber" : "text-white"
+                    }`}>
+                      {isYou ? "You" : entry.name}
+                    </span>
+                    <span className="font-mono text-lg font-bold text-amber">
+                      {entry.score}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Voting phase ── */}
+      {phase.type === "voting" && (
+        <RoastVoting
+          answers={phase.answers}
+          userName={userName}
+          onVote={handleVoteSubmit}
+          onSkip={handleVoteSkip}
+        />
+      )}
+
+      {/* ── Results reveal ── */}
+      {phase.type === "results" && (
+        <RoastResults
+          ranked={phase.ranked}
+          onComplete={onComplete}
+        />
+      )}
+
+      {/* Pinned bottom: Roast + Grade + Submit (grade phase only) */}
+      {phase.type === "grade" && (
+        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 pt-3.5 pb-4 z-[71]">
+          {/* Roast prompt + input */}
           <div className="mb-3 max-w-sm mx-auto">
             <div className="flex items-baseline gap-2 mb-1.5">
               <span className="font-condensed text-sm text-amber uppercase tracking-wide font-bold">GM Roast</span>
@@ -381,39 +495,31 @@ export default function PickReactionScreen({
               </span>
             </div>
           </div>
-        )}
 
-        {/* Grade buttons (selectable, not submit) */}
-        <p className="font-condensed text-xs text-muted uppercase tracking-wider text-center mb-2">
-          GRADE THIS PICK
-        </p>
-        <div className="flex gap-1.5 justify-center max-w-sm mx-auto flex-wrap mb-2.5">
-          {GRADE_OPTIONS.map((opt) => {
-            const isSelected = selectedGrade === opt;
-            const isSubmittedSelection = submitted && reactions[userName]?.reaction === opt;
-            return (
-              <button
-                key={opt}
-                onClick={() => !submitted && setSelectedGrade(opt)}
-                disabled={submitted}
-                className={`flex-1 font-condensed text-xl font-bold uppercase py-2.5 rounded border transition-all ${
-                  isSubmittedSelection
-                    ? GRADE_COLORS[opt] + " border-current scale-105"
-                    : isSelected
+          {/* Grade buttons */}
+          <p className="font-condensed text-xs text-muted uppercase tracking-wider text-center mb-2">
+            GRADE THIS PICK
+          </p>
+          <div className="flex gap-1.5 justify-center max-w-sm mx-auto flex-wrap mb-2.5">
+            {GRADE_OPTIONS.map((opt) => {
+              const isSelected = selectedGrade === opt;
+              return (
+                <button
+                  key={opt}
+                  onClick={() => setSelectedGrade(opt)}
+                  className={`flex-1 font-condensed text-xl font-bold uppercase py-2.5 rounded border transition-all ${
+                    isSelected
                       ? "text-amber bg-amber/10 border-amber scale-105"
-                      : submitted
-                        ? "text-muted/30 bg-surface-elevated border-border/30 cursor-not-allowed"
-                        : "text-white bg-surface-elevated border-border-bright hover:border-white active:scale-95"
-                }`}
-              >
-                {GRADE_LABELS[opt]}
-              </button>
-            );
-          })}
-        </div>
+                      : "text-white bg-surface-elevated border-border-bright hover:border-white active:scale-95"
+                  }`}
+                >
+                  {GRADE_LABELS[opt]}
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Submit button */}
-        {!submitted && (
+          {/* Submit button */}
           <button
             onClick={handleSubmit}
             disabled={!selectedGrade}
@@ -425,8 +531,8 @@ export default function PickReactionScreen({
           >
             SUBMIT
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
