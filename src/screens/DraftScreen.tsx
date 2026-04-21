@@ -17,10 +17,7 @@ import PlayerSelectionPanel from "../components/draft/PlayerSelectionPanel";
 import ScoreboardModal from "../components/leaderboard/ScoreboardModal";
 import BearsMode from "../components/bears/BearsMode";
 import Confetti from "../components/bears/Confetti";
-import BearsBustOverlay from "../components/bears/BearsBustOverlay";
-import BearsIcedOverlay from "../components/bears/BearsIcedOverlay";
 import BlockbusterTradeOverlay from "../components/bears/BlockbusterTradeOverlay";
-import { getRandomBearsMoment, type BearsMoment } from "../data/bearsBusts";
 import BracketShareModal from "../components/draft/BracketShareModal";
 import RoomWelcome from "../components/draft/RoomWelcome";
 import RoomInterstitial from "../components/draft/RoomInterstitial";
@@ -81,11 +78,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
   // ── Team reassignment (commissioner admin tab) ──
   const [reassignPick, setReassignPick] = useState<number | null>(null);
-
-  // ── Bears history overlay (button-triggered, not pick-processed) ──
-  const [bearsMoment, setBearsMoment] = useState<BearsMoment | null>(null);
-  const [showStartButton, setShowStartButton] = useState(false);
-  const tripleTapRef = useRef<number[]>([]);
 
   // ── Room data hook (Firebase subs + derived state) ──
   const isPrimaryCommissioner = session?.isCommissioner ?? false;
@@ -315,7 +307,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   ) : null;
 
   return (
-    <div className="h-dvh bg-bg flex flex-col overflow-hidden">
+    <div className="h-dvh bg-bg flex flex-col overflow-clip">
       {/* Animation state machine overlays */}
       {cycle.animation?.type === "bears" && (
         <>
@@ -348,14 +340,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
           scoreDelta={cycle.animation.flashData.scoreDelta}
           top3={scoreFlash?.top3}
         />
-      )}
-
-      {/* Bears history overlays (button-triggered, not pick-processed) */}
-      {bearsMoment?.type === "bust" && (
-        <BearsBustOverlay bust={bearsMoment.data} onComplete={() => setBearsMoment(null)} />
-      )}
-      {bearsMoment?.type === "legend" && (
-        <BearsIcedOverlay legend={bearsMoment.data} onComplete={() => setBearsMoment(null)} />
       )}
 
       {/* Header */}
@@ -564,8 +548,11 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                         ? false
                         : null;
 
-                  const shouldScroll =
-                    isLive && pickNum === liveState?.currentPick;
+                  const shouldScroll = isLive && (
+                    liveState?.windowOpen
+                      ? pickNum === liveState.currentPick
+                      : pickNum === latestPick
+                  );
 
                   return (
                     <div key={slot.pick}>
@@ -725,13 +712,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
             className="bg-red/20 border border-red text-red font-condensed font-bold uppercase text-xs px-3 py-2 rounded shadow-lg hover:bg-red/30 transition-all"
           >
             RESET DRAFT
-          </button>
-          <button
-            onClick={() => setBearsMoment(getRandomBearsMoment())}
-            disabled={liveState.windowOpen || !!bearsMoment}
-            className="bg-bears-navy border border-bears-orange text-bears-orange font-condensed font-bold uppercase px-3 py-2 rounded text-xs shadow-lg hover:brightness-125 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            BEARS DRAFT HISTORY
           </button>
         </div>
       )}

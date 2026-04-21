@@ -49,17 +49,29 @@ export default function PickRecapCard({ roomCode, pickNum, reactions }: PickReca
 
   return (
     <div className="mx-0 mb-1 border border-border rounded-lg overflow-hidden animate-fade-in-up bg-surface">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-surface-elevated border-b border-border">
+      {/* Header (clickable to collapse/expand) */}
+      <button
+        onClick={() => setCollapsed((v) => !v)}
+        className="flex items-center justify-between w-full px-3.5 py-2.5 bg-surface-elevated border-b border-border text-left"
+      >
         <span className="font-condensed text-sm font-bold text-white uppercase tracking-wide">
           Pick #{pickNum} Recap
         </span>
-        <span className="font-mono text-xs text-muted">
-          {totalGraded} graded{totalRoasts > 0 && ` · ${totalRoasts} roast${totalRoasts !== 1 ? "s" : ""}`}
-        </span>
-      </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs text-muted">
+            {totalGraded} graded{totalRoasts > 0 && ` · ${totalRoasts} roast${totalRoasts !== 1 ? "s" : ""}`}
+          </span>
+          <svg
+            className={`w-4 h-4 text-muted transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
 
       {/* Body */}
+      {!collapsed && (
       <div className="px-3.5 py-3">
         {/* Split: big consensus grade left, bars right */}
         <div className="flex gap-3.5 pb-3.5 border-b border-border mb-3.5">
@@ -103,9 +115,9 @@ export default function PickRecapCard({ roomCode, pickNum, reactions }: PickReca
         </div>
 
         {/* Roast bubbles */}
-        {roastPrompt && totalRoasts > 0 && !collapsed && (
+        {roastPrompt && totalRoasts > 0 && (
           <>
-            <p className="font-condensed text-sm text-muted leading-snug mb-2.5">
+            <p className="font-condensed text-base text-muted leading-snug mb-2.5">
               {roastPrompt}
             </p>
             {roastEntries.map(([name, answer]) => (
@@ -120,16 +132,8 @@ export default function PickRecapCard({ roomCode, pickNum, reactions }: PickReca
           </>
         )}
 
-        {/* Collapse/expand toggle */}
-        {totalRoasts > 0 && (
-          <button
-            onClick={() => setCollapsed((v) => !v)}
-            className="font-condensed text-xs text-muted uppercase tracking-wide mt-2 hover:text-white transition-colors"
-          >
-            {collapsed ? `Show ${totalRoasts} roast${totalRoasts !== 1 ? "s" : ""}` : "Collapse"}
-          </button>
-        )}
       </div>
+      )}
     </div>
   );
 }
