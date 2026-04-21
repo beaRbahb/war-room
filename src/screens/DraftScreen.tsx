@@ -75,6 +75,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const [showScoreboard, setShowScoreboard] = useState(false);
 
   const startingDraft = useRef(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const tripleTapRef = useRef<number[]>([]);
+  const [showStartButton, setShowStartButton] = useState(false);
 
   // ── Team reassignment (commissioner admin tab) ──
   const [reassignPick, setReassignPick] = useState<number | null>(null);
@@ -344,7 +347,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-surface border-b border-border px-4 py-2 sm:py-3 flex items-center justify-between">
+      <header className="bg-surface border-b border-border px-4 py-2 sm:py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div>
             <h1 className="font-display text-2xl text-amber tracking-wide">
@@ -484,7 +487,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         {/* Main grid */}
-        <div className="flex-1 min-h-0 px-2 py-4 sm:p-4 pb-4 overflow-auto">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 px-2 py-4 sm:p-4 pb-4 overflow-auto">
           {/* ── Commissioner Admin Tab ── */}
           {commissionerTab === "admin" && isLive && liveState ? (
             <CommissionerDashboard
@@ -570,6 +573,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                         onToggleExpand={handleToggleExpand}
                         isPulsing={i === bracket.firstEmptyIndex && !userPick}
                         shouldScroll={shouldScroll}
+                        scrollContainerRef={scrollContainerRef}
                         onSubmit={rowState === "active" && isLive && cycle.currentGuess && !cycle.guessSubmitted ? handleLiveSubmit : undefined}
                         submitted={rowState === "active" && isLive ? cycle.guessSubmitted : undefined}
                         windowOpen={rowState === "active" && isLive ? liveState?.windowOpen : undefined}

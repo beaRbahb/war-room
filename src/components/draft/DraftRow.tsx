@@ -24,6 +24,8 @@ interface DraftRowProps {
   onToggleExpand: (pickNum: number) => void;
   /** Auto-scroll to this row when active */
   shouldScroll?: boolean;
+  /** Ref to the scroll container — used for explicit scrollTo instead of scrollIntoView */
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
   /** Live mode: submit guess callback (shown as inline button when guess selected but not submitted) */
   onSubmit?: () => void;
   /** Live mode: whether guess has been submitted */
@@ -55,6 +57,7 @@ export default memo(function DraftRow({
   expanded,
   onToggleExpand,
   shouldScroll,
+  scrollContainerRef,
   isPulsing,
   onSubmit,
   submitted,
@@ -66,15 +69,27 @@ export default memo(function DraftRow({
   const rowRef = useRef<HTMLDivElement>(null);
   const bears = isBearsPick(slot.abbrev);
 
-  // Auto-scroll: completed rows to top (so recap + next pick visible), active rows to center
+  // Auto-scroll using explicit container.scrollTo — immune to scrollIntoView's
+  // tendency to scroll ALL ancestors (viewport, overflow-hidden parents, etc.)
   useEffect(() => {
-    if (shouldScroll && (rowState === "active" || rowState === "completed") && rowRef.current) {
-      rowRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: rowState === "completed" ? "start" : "center",
-      });
+    if (!shouldScroll || (rowState !== "active" && rowState !== "completed")) return;
+    const row = rowRef.current;
+    const container = scrollContainerRef?.current;
+    if (!row || !container) return;
+
+    const rowRect = row.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    if (rowState === "completed") {
+      // Scroll completed row near the top so recap card + next pick are visible
+      const delta = rowRect.top - containerRect.top - 16;
+      container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
+    } else {
+      // Center active row in the scroll container
+      const delta = rowRect.top - containerRect.top - containerRect.height / 2 + rowRect.height / 2;
+      container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
     }
-  }, [shouldScroll, rowState]);
+  }, [shouldScroll, rowState, scrollContainerRef]);
 
   // Determine display player and stats
   const displayName = confirmedPick?.playerName ?? userPick;
@@ -103,7 +118,7 @@ export default memo(function DraftRow({
   const isExpandable = rowState === "completed" && confirmedPick;
 
   return (
-    <div ref={rowRef} className="scroll-mt-28">
+    <div ref={rowRef}>
       <button
         onClick={() => {
           if (isClickable) onClick(index);

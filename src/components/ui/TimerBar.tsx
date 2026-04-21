@@ -47,7 +47,7 @@ export default function TimerBar({
   // Trade mode
   if (liveState.tradeMode) {
     return (
-      <div className="sticky top-[57px] z-[9] bg-surface border-b border-amber px-4 py-2.5 flex items-center justify-between">
+      <div className="bg-surface border-b border-amber px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {currentSlot && (
             <img
@@ -76,7 +76,7 @@ export default function TimerBar({
   if (liveState.windowOpen) {
     return (
       <div
-        className={`sticky top-[57px] z-[9] border-b px-4 py-2.5 flex items-center justify-between ${
+        className={`border-b px-4 py-2.5 flex items-center justify-between ${
           isFlashing
             ? "bg-surface border-red animate-flash-red"
             : "bg-surface border-amber"
@@ -138,7 +138,7 @@ export default function TimerBar({
 
   // Window closed — waiting state
   return (
-    <div className="sticky top-[57px] z-[9] bg-surface border-b border-border px-4 py-2.5 flex items-center justify-between">
+    <div className="bg-surface border-b border-border px-4 py-2.5 flex items-center justify-between">
       <div className="flex items-center gap-3">
         {currentSlot && (
           <img
