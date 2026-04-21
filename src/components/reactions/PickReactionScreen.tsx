@@ -252,7 +252,7 @@ export default function PickReactionScreen({
   const isGradePhase = phase.type === "grade";
 
   return (
-    <div className={`fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto p-4 animate-fade-in-up ${isGradePhase ? "pb-80" : "pb-4"}`}>
+    <div className={`fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto p-4 animate-fade-in-up ${isGradePhase ? "pb-[400px]" : "pb-4"}`}>
 
       {/* ── Grade phase: pick info + chaos breakdown ── */}
       {phase.type === "grade" && (
@@ -343,15 +343,6 @@ export default function PickReactionScreen({
             </div>
           </div>
 
-          {/* Score flash — current standing */}
-          {userRank != null && leaderName && (
-            <p className="font-condensed text-sm text-muted text-center mb-4">
-              You're <span className="text-white font-bold">{ordinal(userRank)}</span>
-              {userRank === 1
-                ? ` (${leaderScore}pts)`
-                : <>{" · "}Leader: <span className="text-amber font-bold">{leaderName}</span> ({leaderScore}pts)</>}
-            </p>
-          )}
         </>
       )}
 
