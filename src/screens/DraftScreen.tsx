@@ -32,6 +32,7 @@ import BracketProgressStrip from "../components/draft/BracketProgressStrip";
 import PickRecapCard from "../components/draft/PickRecapCard";
 import DraftTakeover from "../components/draft/DraftTakeover";
 import ReassignTeamModal from "../components/commissioner/ReassignTeamModal";
+import CommissionerQuickStart from "../components/commissioner/CommissionerQuickStart";
 import ConnectionIndicator from "../components/ui/ConnectionIndicator";
 import { useVisibility } from "../hooks/useVisibility";
 import { useBracketPhase } from "../hooks/useBracketPhase";
@@ -66,6 +67,10 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   });
   const [showTakeover, setShowTakeover] = useState(false);
 
+  // ── Commissioner Quick Start ──
+  const quickStartKey = roomCode ? `warroom-quickstart-${roomCode}` : "";
+  const [showQuickStart, setShowQuickStart] = useState(false);
+
   // ── UI state ──
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [commissionerTab, setCommissionerTab] = useState<"picks" | "admin">("picks");
@@ -89,6 +94,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     backupCommissionerId, liveState, results, scores, brackets, users,
     allReactions, isLive, effectiveOrder, confirmedPicks, totalUsers,
   } = roomData;
+
+  // Derived early so the auto-show effect can include backup commissioners
+  const isCommissioner = isPrimaryCommissioner || session?.id === backupCommissionerId;
 
   // ── Bracket phase hook ──
   const bracket = useBracketPhase({ roomCode, session, isLive });
@@ -133,11 +141,16 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   }, [isLive, confirmedPicks.length, session?.name, scores]);
 
   // ── Commissioner defaults to admin tab when joining live ──
+  // Includes backup commissioners so they see the quick start guide when promoted mid-draft
   useEffect(() => {
-    if (session?.isCommissioner && isLive) {
+    if (isCommissioner && isLive) {
       setCommissionerTab("admin");
+      // Show quick start guide on first visit to admin tab during live
+      if (quickStartKey && !localStorage.getItem(quickStartKey)) {
+        setShowQuickStart(true);
+      }
     }
-  }, [isLive]); // eslint-disable-line react-hooks/exhaustive-deps -- only trigger on live transition, not session change
+  }, [isLive, isCommissioner]); // eslint-disable-line react-hooks/exhaustive-deps -- trigger on live transition or commissioner promotion
 
   // ── Visibility tracking (tab backgrounding) ──
   const { toast: visibilityToast, dismissToast } = useVisibility(
@@ -278,11 +291,12 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     recap.resetRecapState();
     setExpandedPick(null);
     setReassignPick(null);
-  }, [roomCode, roomData, cycle, recap]);
+    // Reset quick start so guide re-shows on next live session
+    if (quickStartKey) localStorage.removeItem(quickStartKey);
+  }, [roomCode, roomData, cycle, recap, quickStartKey]);
 
   if (!session || !roomCode) return null;
 
-  const isCommissioner = isPrimaryCommissioner || session.id === backupCommissionerId;
   const showCommissionerTabs = isCommissioner && isLive;
 
   // windowFinalizing: derived locally for DraftRow "Finalizing pick..." text
@@ -500,6 +514,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
               guessCount={cycle.guessCount}
               totalUsers={totalUsers}
               aboveBoardSlot={roomPulseElement}
+              onShowQuickStart={() => setShowQuickStart(true)}
             />
           ) : (
             <>
@@ -731,6 +746,16 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
         />
       )}
 
+
+      {/* Commissioner quick start guide */}
+      {showQuickStart && (
+        <CommissionerQuickStart
+          onDismiss={() => {
+            if (quickStartKey) localStorage.setItem(quickStartKey, "1");
+            setShowQuickStart(false);
+          }}
+        />
+      )}
 
       {/* Draft takeover overlay */}
       {showTakeover && (

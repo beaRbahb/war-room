@@ -21,6 +21,7 @@ interface CommissionerDashboardProps {
   isPrimaryCommissioner: boolean;
   guessCount: number;
   totalUsers: number;
+  onShowQuickStart?: () => void;
 }
 
 export default function CommissionerDashboard({
@@ -35,6 +36,7 @@ export default function CommissionerDashboard({
   guessCount,
   totalUsers,
   aboveBoardSlot,
+  onShowQuickStart,
 }: CommissionerDashboardProps) {
   // ── Finalize flow state ──
   const [pickSearch, setPickSearch] = useState("");
@@ -551,7 +553,19 @@ export default function CommissionerDashboard({
     <div className="flex flex-col lg:flex-row lg:gap-4">
       {/* Left column — Hero + Room Panel */}
       <div className="lg:w-[340px] lg:shrink-0">
-        {renderHeroCard()}
+        {/* Wrapper keeps ? button outside hero card's overflow-hidden */}
+        <div className="relative">
+          {renderHeroCard()}
+          {onShowQuickStart && (
+            <button
+              onClick={onShowQuickStart}
+              className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-surface border border-border-bright text-muted font-mono text-xs font-bold flex items-center justify-center hover:border-amber hover:text-amber transition-colors"
+              aria-label="Commissioner quick start guide"
+            >
+              ?
+            </button>
+          )}
+        </div>
         {renderRoomPanel()}
       </div>
 
