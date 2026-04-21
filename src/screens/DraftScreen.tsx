@@ -332,15 +332,11 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
           slot={cycle.animation.flashData.slot}
           playerName={cycle.animation.flashData.playerName}
           teamAbbrev={cycle.animation.flashData.teamAbbrev}
-          isBearsPick={cycle.animation.flashData.isBearsPick}
           priorPicks={cycle.animation.flashData.priorPicks}
           roomCode={roomCode}
           userName={session.name}
           onComplete={cycle.dismissAnimation}
-          totalUsers={totalUsers}
           userRank={scoreFlash?.userRank}
-          leaderName={scoreFlash?.leaderName}
-          leaderScore={scoreFlash?.leaderScore}
           scoreDelta={cycle.animation.flashData.scoreDelta}
           top3={scoreFlash?.top3}
         />

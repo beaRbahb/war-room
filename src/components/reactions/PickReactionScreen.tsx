@@ -38,29 +38,23 @@ interface PickReactionScreenProps {
   slot: number;
   playerName: string;
   teamAbbrev: string;
-  isBearsPick: boolean;
   priorPicks: { position: string }[];
   roomCode: string;
   userName: string;
   onComplete: () => void;
-  totalUsers?: number;
   /** Current user's rank (1-indexed) */
   userRank?: number;
-  /** Name of the current leader */
-  leaderName?: string;
-  /** Leader's total score */
-  leaderScore?: number;
   /** Score delta for this pick */
   scoreDelta?: { bracket: number; live: number };
   /** Top 3 standings */
   top3?: { name: string; score: number }[];
 }
 
-const LEVEL_COLORS: Record<ChaosLevel, { text: string; bg: string; border: string }> = {
-  CHALK: { text: "text-muted", bg: "bg-muted/15", border: "border-muted/30" },
-  MILD: { text: "text-amber", bg: "bg-amber/10", border: "border-amber/30" },
-  SPICY: { text: "text-bears-orange", bg: "bg-bears-orange/15", border: "border-bears-orange/30" },
-  CHAOS: { text: "text-red", bg: "bg-red/15", border: "border-red/30" },
+const LEVEL_COLORS: Record<ChaosLevel, { text: string; border: string }> = {
+  CHALK: { text: "text-muted", border: "border-muted/30" },
+  MILD: { text: "text-amber", border: "border-amber/30" },
+  SPICY: { text: "text-bears-orange", border: "border-bears-orange/30" },
+  CHAOS: { text: "text-red", border: "border-red/30" },
 };
 
 const GRADE_OPTIONS: GradeType[] = ["a-plus", "a", "b", "c", "d", "f"];
@@ -95,7 +89,7 @@ function ordinal(n: number): string {
 
 export default function PickReactionScreen({
   slot, playerName, teamAbbrev, priorPicks,
-  roomCode, userName, onComplete, userRank, leaderName, leaderScore,
+  roomCode, userName, onComplete, userRank,
   scoreDelta, top3,
 }: PickReactionScreenProps) {
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
@@ -127,7 +121,6 @@ export default function PickReactionScreen({
   const teamLogo = getTeamLogo(teamAbbrev);
   const colors = LEVEL_COLORS[level];
 
-  const rankDrift = prospect ? slot - prospect.rank : 0;
   const bt = isBlockbusterTrade(playerName);
   const playerPosition = prospect?.position ?? bt?.position;
   const needDesc = getNeedDescription(playerPosition, teamAbbrev);
@@ -251,99 +244,137 @@ export default function PickReactionScreen({
   const hasPoints = scoreDelta && (scoreDelta.bracket > 0 || scoreDelta.live > 0);
   const isGradePhase = phase.type === "grade";
 
+  /** Short need label for the stats strip */
+  const shortNeed = needDesc.startsWith("#")
+    ? needDesc.replace(/\s*\(.*\)/, "")
+    : needDesc.startsWith("Not") ? "No" : "—";
+  const needPosition = playerPosition ?? "";
+
   return (
-    <div className={`fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto p-4 animate-fade-in-up ${isGradePhase ? "pb-[400px]" : "pb-4"}`}>
+    <div className={`fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto animate-fade-in-up ${isGradePhase ? "pb-[220px]" : "p-4"}`}>
 
-      {/* ── Grade phase: pick info + chaos breakdown ── */}
+      {/* ── Grade phase: single card layout ── */}
       {phase.type === "grade" && (
-        <>
-          {/* Team + Pick header */}
-          <div className="flex items-center gap-3 mb-4 mt-4">
-            <img src={teamLogo} alt={teamAbbrev} className="w-10 h-10 object-contain" />
-            <div>
-              <p className="font-display text-2xl text-white tracking-wide">
-                PICK #{slot}
-              </p>
-              <p className="font-condensed text-sm text-muted uppercase">{teamAbbrev}</p>
+        <div className="w-full px-3 pt-2">
+          <div className="w-full bg-surface border border-border-bright rounded-xl overflow-hidden">
+            {/* Card header: team + pick */}
+            <div className="flex items-center gap-2.5 px-3.5 py-3 bg-surface-elevated border-b border-border">
+              <img src={teamLogo} alt={teamAbbrev} className="w-9 h-9 object-contain" />
+              <div className="flex-1">
+                <p className="font-display text-2xl text-white tracking-wide leading-none">
+                  PICK #{slot}
+                </p>
+                <p className="font-condensed text-sm text-muted uppercase">{teamAbbrev}</p>
+              </div>
             </div>
-          </div>
 
-          {/* Player */}
-          <div className="flex flex-col items-center mb-6">
-            {headshot && (
-              <img
-                src={headshot}
-                alt={playerName}
-                className="w-24 h-24 rounded-full object-cover border-2 border-border mb-3"
-              />
-            )}
-            <p className="font-display text-3xl sm:text-4xl text-white tracking-wide">
-              {playerName}
-            </p>
-            {prospect ? (
-              <p className="font-condensed text-sm text-muted uppercase mt-1">
-                {prospect.position} · {prospect.college}
-              </p>
-            ) : bt ? (
-              <p className="font-condensed text-sm text-bears-orange uppercase mt-1">
-                {bt.position} · TRADE from {bt.currentTeamAbbrev}
-              </p>
-            ) : null}
-          </div>
-
-          {/* Chaos description — skip if this was the top expected pick */}
-          {!isTopExpected && (
-            <div className="text-center mb-4">
-              <p className={`font-display text-2xl sm:text-3xl tracking-wider ${colors.text}`}>
-                {level === "MILD" ? "SLIGHT SURPRISE"
-                  : level === "SPICY" ? "BIG SURPRISE"
-                  : "NOBODY SAW THIS COMING"}
-              </p>
-              {tags.length > 0 && (
-                <div className="flex gap-2 justify-center mt-2 flex-wrap">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className={`font-condensed text-sm font-bold uppercase px-3 py-1 rounded border ${colors.text} ${colors.border}`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+            {/* Player row */}
+            <div className="flex gap-3.5 px-3.5 py-3.5 items-center">
+              {headshot ? (
+                <img
+                  src={headshot}
+                  alt={playerName}
+                  className="w-[68px] h-[68px] rounded-full object-cover border-2 border-border flex-shrink-0"
+                />
+              ) : (
+                <div className="w-[68px] h-[68px] rounded-full bg-bg border-2 border-border flex-shrink-0" />
               )}
-            </div>
-          )}
-
-          {/* Full breakdown */}
-          <div className={`rounded border ${colors.border} ${colors.bg} px-4 py-3 mb-6 w-full max-w-sm`}>
-            <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-              <span className="font-condensed text-muted uppercase text-xs">Odds</span>
-              <span className={`font-mono text-right ${espnProb === 0 ? "text-red" : espnProb >= 50 ? "text-green" : "text-white"}`}>
-                {espnProb > 0 ? `${espnProb}%` : "0%"}
-              </span>
-
-              <span className="font-condensed text-muted uppercase text-xs">Consensus</span>
-              <span className="font-mono text-right text-white">
-                {prospect ? `#${prospect.rank}` : "—"}
-                {prospect && (
-                  <span className={`ml-1 ${
-                    rankDrift > 3 ? "text-red" : rankDrift < -3 ? "text-green" : "text-muted"
-                  }`}>
-                    ({rankDrift > 0 ? `+${rankDrift}` : rankDrift < 0 ? `${rankDrift}` : "exact"})
-                  </span>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-[26px] text-white tracking-wide leading-tight truncate">
+                  {playerName}
+                </p>
+                {prospect ? (
+                  <p className="font-condensed text-[15px] text-muted uppercase mt-0.5">
+                    {prospect.position} · {prospect.college}
+                    {prospect.height ? ` · ${prospect.height}` : ""}
+                    {prospect.weight ? ` · ${prospect.weight} lbs` : ""}
+                  </p>
+                ) : bt ? (
+                  <p className="font-condensed text-[15px] text-bears-orange uppercase mt-0.5">
+                    {bt.position} · TRADE from {bt.currentTeamAbbrev}
+                  </p>
+                ) : null}
+                {prospect?.proComp && (
+                  <p className="font-condensed text-sm text-amber mt-0.5">
+                    Comp: {prospect.proComp}
+                  </p>
                 )}
-              </span>
+              </div>
+            </div>
 
-              <span className="font-condensed text-muted uppercase text-xs">Need</span>
-              <span className={`font-mono text-right text-xs ${
-                needDesc.startsWith("Not") ? "text-red" : needDesc.startsWith("#1") ? "text-green" : "text-white"
-              }`}>
-                {needDesc}
-              </span>
+            {/* Stats strip */}
+            <div className="flex border-t border-b border-border">
+              <div className="flex-1 text-center py-2.5 border-r border-border">
+                <p className="font-condensed text-[11px] text-muted uppercase tracking-wide">Odds</p>
+                <p className={`font-mono text-lg font-bold ${espnProb === 0 ? "text-red" : espnProb >= 50 ? "text-green" : "text-white"}`}>
+                  {espnProb > 0 ? `${espnProb}%` : "0%"}
+                </p>
+              </div>
+              <div className="flex-1 text-center py-2.5 border-r border-border">
+                <p className="font-condensed text-[11px] text-muted uppercase tracking-wide">Rank</p>
+                <p className="font-mono text-lg font-bold text-white">
+                  {prospect ? `#${prospect.rank}` : "—"}
+                </p>
+              </div>
+              <div className="flex-[1.3] text-center py-2.5">
+                <p className="font-condensed text-[11px] text-muted uppercase tracking-wide">Need</p>
+                <p className={`font-mono text-base font-bold ${
+                  needDesc.startsWith("Not") ? "text-red" : needDesc.startsWith("#1") ? "text-green" : "text-white"
+                }`}>
+                  {shortNeed}{needPosition ? ` (${needPosition})` : ""}
+                </p>
+              </div>
+            </div>
+
+            {/* Chaos tags — only if non-chalk */}
+            {!isTopExpected && (
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <p className={`font-display text-xl tracking-wider text-center ${colors.text}`}>
+                  {level === "MILD" ? "SLIGHT SURPRISE"
+                    : level === "SPICY" ? "BIG SURPRISE"
+                    : "NOBODY SAW THIS COMING"}
+                </p>
+                {tags.length > 0 && (
+                  <div className="flex gap-1.5 justify-center mt-1.5 flex-wrap">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className={`font-condensed text-xs font-bold uppercase px-2.5 py-0.5 rounded border ${colors.text} ${colors.border}`}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Grade buttons inside card */}
+            <div className="px-3.5 py-3">
+              <p className="font-condensed text-xs text-muted uppercase tracking-widest text-center mb-1.5">
+                GRADE THIS PICK
+              </p>
+              <div className="flex gap-1.5">
+                {GRADE_OPTIONS.map((opt) => {
+                  const isSelected = selectedGrade === opt;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => setSelectedGrade(opt)}
+                      className={`flex-1 font-condensed text-xl font-bold uppercase py-2.5 rounded-md border transition-all ${
+                        isSelected
+                          ? "text-amber bg-amber/10 border-amber scale-105"
+                          : "text-white bg-bg border-border-bright hover:border-white active:scale-95"
+                      }`}
+                    >
+                      {GRADE_LABELS[opt]}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-
-        </>
+        </div>
       )}
 
       {/* ── Leaderboard flash (3s, dismissable) ── */}
@@ -451,77 +482,56 @@ export default function PickReactionScreen({
         />
       )}
 
-      {/* Pinned bottom: Roast + Grade + Submit (grade phase only) */}
+      {/* Pinned bottom: Roast + Submit (grade phase only) */}
       {phase.type === "grade" && (
-        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 pt-3.5 pb-4 z-[71]">
-          {/* Roast prompt + input */}
-          <div className="mb-3 max-w-sm mx-auto">
-            <div className="flex items-baseline gap-2 mb-1.5">
-              <span className="font-condensed text-sm text-amber uppercase tracking-wide font-bold">GM Roast</span>
-              <span className="font-condensed text-xs text-muted">optional</span>
+        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 pt-2.5 pb-4 z-[71]">
+          <div className="max-w-sm mx-auto">
+            {/* Roast prompt + input */}
+            <div className="mb-2.5">
+              <div className="flex items-baseline gap-2 mb-1.5">
+                <span className="font-condensed text-[15px] text-amber uppercase tracking-wide font-bold">GM Roast</span>
+                <span className="font-condensed text-xs text-muted">optional</span>
+              </div>
+              <p className="font-condensed text-[17px] text-white leading-snug mb-2">
+                {roastPrompt}
+              </p>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={roastText}
+                  onChange={(e) => setRoastText(e.target.value.slice(0, ROAST_CHAR_LIMIT))}
+                  placeholder="Type your answer..."
+                  maxLength={ROAST_CHAR_LIMIT}
+                  autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-bwignore
+                  data-form-type="other"
+                  className={`w-full bg-bg border rounded-lg px-3.5 py-3 pr-14 text-white font-mono text-sm outline-none ${
+                    roastText ? "border-amber" : "border-border-bright"
+                  } focus:border-amber`}
+                />
+                <span className={`absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs ${
+                  roastText ? "text-amber" : "text-muted"
+                }`}>
+                  {roastText.length}/{ROAST_CHAR_LIMIT}
+                </span>
+              </div>
             </div>
-            <p className="font-condensed text-lg text-white leading-snug mb-2">
-              {roastPrompt}
-            </p>
-            <div className="relative">
-              <textarea
-                value={roastText}
-                onChange={(e) => setRoastText(e.target.value.slice(0, ROAST_CHAR_LIMIT))}
-                placeholder="Type your answer..."
-                maxLength={ROAST_CHAR_LIMIT}
-                rows={2}
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
-                data-bwignore
-                data-form-type="other"
-                className={`w-full bg-bg border rounded-lg px-3.5 py-2.5 pr-16 text-white font-mono text-sm outline-none resize-none ${
-                  roastText ? "border-amber" : "border-border-bright"
-                } focus:border-amber`}
-              />
-              <span className={`absolute right-3 bottom-2.5 font-mono text-xs ${
-                roastText ? "text-amber" : "text-muted"
-              }`}>
-                {roastText.length}/{ROAST_CHAR_LIMIT}
-              </span>
-            </div>
-          </div>
 
-          {/* Grade buttons */}
-          <p className="font-condensed text-xs text-muted uppercase tracking-wider text-center mb-2">
-            GRADE THIS PICK
-          </p>
-          <div className="flex gap-1.5 justify-center max-w-sm mx-auto flex-wrap mb-2.5">
-            {GRADE_OPTIONS.map((opt) => {
-              const isSelected = selectedGrade === opt;
-              return (
-                <button
-                  key={opt}
-                  onClick={() => setSelectedGrade(opt)}
-                  className={`flex-1 font-condensed text-xl font-bold uppercase py-2.5 rounded border transition-all ${
-                    isSelected
-                      ? "text-amber bg-amber/10 border-amber scale-105"
-                      : "text-white bg-surface-elevated border-border-bright hover:border-white active:scale-95"
-                  }`}
-                >
-                  {GRADE_LABELS[opt]}
-                </button>
-              );
-            })}
+            {/* Submit button */}
+            <button
+              onClick={handleSubmit}
+              disabled={!selectedGrade}
+              className={`w-full font-condensed text-[15px] font-bold uppercase tracking-widest py-3 rounded-lg transition-all ${
+                selectedGrade
+                  ? "bg-green text-bg cursor-pointer hover:brightness-110"
+                  : "bg-border text-muted cursor-not-allowed opacity-50"
+              }`}
+            >
+              SUBMIT
+            </button>
           </div>
-
-          {/* Submit button */}
-          <button
-            onClick={handleSubmit}
-            disabled={!selectedGrade}
-            className={`w-full max-w-sm mx-auto block font-condensed text-base font-bold uppercase tracking-wide py-3 rounded-lg transition-all ${
-              selectedGrade
-                ? "bg-green text-bg cursor-pointer hover:brightness-110"
-                : "bg-border text-muted cursor-not-allowed opacity-50"
-            }`}
-          >
-            SUBMIT
-          </button>
         </div>
       )}
     </div>
