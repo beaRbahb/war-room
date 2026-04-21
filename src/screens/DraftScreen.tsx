@@ -183,25 +183,30 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     if (!roomCode || !session || startingDraft.current) return;
     startingDraft.current = true;
 
-    // Auto-submit bracket if not already submitted
-    await bracket.autoSubmitBracket();
+    try {
+      // Auto-submit bracket if not already submitted
+      await bracket.autoSubmitBracket();
 
-    // Commissioner transitions to live
-    if (session.isCommissioner) {
-      await roomData.initLiveState();
+      // Commissioner transitions to live
+      if (session.isCommissioner) {
+        await roomData.initLiveState();
+      }
+
+      // Commissioner starts on admin tab
+      if (session.isCommissioner) {
+        setCommissionerTab("admin");
+      }
+
+      // Dismiss welcome screen and persist
+      setShowWelcome(false);
+      if (welcomeKey) localStorage.setItem(welcomeKey, "1");
+
+      // Show takeover
+      setShowTakeover(true);
+    } catch (err) {
+      console.error("[StartDraft] failed:", err);
+      startingDraft.current = false;
     }
-
-    // Commissioner starts on admin tab
-    if (session.isCommissioner) {
-      setCommissionerTab("admin");
-    }
-
-    // Dismiss welcome screen and persist
-    setShowWelcome(false);
-    if (welcomeKey) localStorage.setItem(welcomeKey, "1");
-
-    // Show takeover
-    setShowTakeover(true);
   }, [roomCode, session, bracket.autoSubmitBracket, roomData.initLiveState]); // eslint-disable-line react-hooks/exhaustive-deps -- welcomeKey, setters are stable
 
   /** Wraps cycle.handleLiveSelect + closes panel */

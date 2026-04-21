@@ -115,12 +115,16 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
     if (bracketSubmittedRef.current) return;
     const currentPicks = picksRef.current;
     const filledCount = currentPicks.filter(Boolean).length;
-    const bracket: UserBracket = {
-      userName: session.name,
-      picks: currentPicks.filter(Boolean) as BracketPick[],
-      submittedAt: new Date().toISOString(),
-    };
-    await saveBracket(roomCode, session.name, bracket);
+    // Only save to Firebase if there are picks — Firebase RTDB drops empty
+    // arrays, which breaks the validation rule requiring a `picks` child.
+    if (filledCount > 0) {
+      const bracket: UserBracket = {
+        userName: session.name,
+        picks: currentPicks.filter(Boolean) as BracketPick[],
+        submittedAt: new Date().toISOString(),
+      };
+      await saveBracket(roomCode, session.name, bracket);
+    }
     setBracketSubmitted(true);
     setBracketDirty(false);
     setAutoSubmitToast(`Bracket auto-submitted (${filledCount}/32 filled)`);
