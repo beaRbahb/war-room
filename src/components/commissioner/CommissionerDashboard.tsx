@@ -204,14 +204,14 @@ export default function CommissionerDashboard({
         className={`bg-surface-elevated rounded-lg border ${borderClass} overflow-hidden`}
       >
         {/* Split panel */}
-        <div className="flex flex-col sm:flex-row">
+        <div className="flex flex-row">
           {/* Left pane — team info */}
-          <div className="p-4 sm:w-1/2 sm:border-r sm:border-border flex items-center">
+          <div className="p-3 w-1/2 border-r border-border flex items-center justify-center">
             {renderTeamInfo()}
           </div>
 
           {/* Right pane — status/action */}
-          <div className="p-4 sm:w-1/2 flex flex-col justify-between min-h-[120px]">
+          <div className="p-3 w-1/2 flex flex-col items-center text-center justify-between min-h-[120px]">
             {isIdle && (
               <>
                 <div>
@@ -224,7 +224,7 @@ export default function CommissionerDashboard({
                 </div>
                 <button
                   onClick={handleOpenWindow}
-                  className="mt-3 w-full bg-green text-bg font-condensed font-bold uppercase text-sm py-2.5 rounded hover:brightness-110 transition-all"
+                  className="mt-3 w-full self-stretch bg-green text-bg font-condensed font-bold uppercase text-sm py-2.5 rounded hover:brightness-110 transition-all"
                 >
                   START GUESSES
                 </button>
@@ -247,7 +247,7 @@ export default function CommissionerDashboard({
                     0:{timeLeft.toString().padStart(2, "0")}
                   </p>
                 </div>
-                <div className="mt-2">
+                <div className="mt-2 w-full">
                   <p
                     className={`font-mono text-sm font-bold ${
                       allGuessesIn ? "text-green" : "text-amber"
@@ -267,7 +267,7 @@ export default function CommissionerDashboard({
                 </div>
                 <button
                   onClick={handleCloseWindow}
-                  className="mt-3 w-full bg-red text-white font-condensed font-bold uppercase text-sm py-2.5 rounded hover:brightness-110 transition-all"
+                  className="mt-3 w-full self-stretch bg-red text-white font-condensed font-bold uppercase text-sm py-2.5 rounded hover:brightness-110 transition-all"
                 >
                   CLOSE GUESSES
                 </button>

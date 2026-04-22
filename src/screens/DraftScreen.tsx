@@ -376,12 +376,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
               {session.name} — Room {roomCode}
             </p>
           </div>
-          {isCommissioner && isLive && (
-            <span className="flex items-center gap-1.5 ml-2 font-condensed text-xs text-amber uppercase tracking-wide border border-amber/30 bg-amber/5 px-2 py-0.5 rounded">
-              <span className="w-2 h-2 rounded-full bg-amber animate-pulse-glow" />
-              COMMISSIONER
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-3">
           {isLive && (
@@ -536,26 +530,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                 </>
               )}
 
-              {/* Room Pulse — picks tab */}
-              {roomPulseElement}
-
-              {/* Quiplash — picks tab only, during finalize dead time */}
-              {quiplash.phase && quiplash.prompt && (
-                <QuiplashPanel
-                  phase={quiplash.phase}
-                  prompt={quiplash.prompt}
-                  answers={quiplash.answers}
-                  votes={quiplash.votes}
-                  draftText={quiplash.draftText}
-                  setDraftText={quiplash.setDraftText}
-                  answerCount={quiplash.answerCount}
-                  totalUsers={quiplash.totalUsers}
-                  userName={session.name}
-                  onSubmitAnswer={quiplash.submitAnswer}
-                  onSubmitVote={quiplash.submitVote}
-                />
-              )}
-
               {/* Column headers */}
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 mb-1 border-b border-border">
                 <span className="w-8 shrink-0" />
@@ -595,8 +569,29 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                       : pickNum === latestPick
                   );
 
+                  // Inline Room Pulse + GM Roast just above the current active pick
+                  const showInlineWidgets = isLive && pickNum === liveState?.currentPick;
+
                   return (
                     <div key={slot.pick}>
+                      {showInlineWidgets && roomPulseElement}
+                      {showInlineWidgets && quiplash.phase && quiplash.prompt && (
+                        <div className="mb-2">
+                          <QuiplashPanel
+                            phase={quiplash.phase}
+                            prompt={quiplash.prompt}
+                            answers={quiplash.answers}
+                            votes={quiplash.votes}
+                            draftText={quiplash.draftText}
+                            setDraftText={quiplash.setDraftText}
+                            answerCount={quiplash.answerCount}
+                            totalUsers={quiplash.totalUsers}
+                            userName={session.name}
+                            onSubmitAnswer={quiplash.submitAnswer}
+                            onSubmitVote={quiplash.submitVote}
+                          />
+                        </div>
+                      )}
                       <DraftRow
                         slot={slot}
                         index={i}

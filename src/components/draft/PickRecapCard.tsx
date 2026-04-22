@@ -139,8 +139,8 @@ export default function PickRecapCard({
         <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Room Grade</span>
         <div className="flex gap-3.5 pb-3.5 border-b border-border mb-3.5">
           {/* Left: big grade */}
-          <div className="shrink-0 w-20 flex flex-col items-center justify-center py-3.5 bg-surface-elevated border border-border rounded-lg">
-            <span className="font-display text-5xl text-muted leading-none">
+          <div className="shrink-0 w-14 sm:w-20 flex flex-col items-center justify-center py-2.5 sm:py-3.5 bg-surface-elevated border border-border rounded-lg">
+            <span className="font-display text-3xl sm:text-5xl text-muted leading-none">
               {winnerGrade ? GRADE_LABELS[winnerGrade.grade] : "—"}
             </span>
           </div>

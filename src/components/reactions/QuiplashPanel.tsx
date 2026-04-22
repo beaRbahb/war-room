@@ -45,7 +45,7 @@ export default function QuiplashPanel({
         <div className="px-3.5 py-2.5 border-b border-border bg-surface-elevated">
           <div className="flex items-center justify-between">
             <span className="font-condensed text-sm font-bold text-amber uppercase tracking-wide">
-              QUIPLASH
+              GM ROAST
             </span>
             <span className="font-mono text-xs text-muted">
               {answerCount} of {totalUsers} answered
@@ -208,7 +208,7 @@ export default function QuiplashPanel({
       <div className="px-3.5 py-2.5 border-b border-border bg-surface-elevated">
         <div className="flex items-center justify-between">
           <span className="font-condensed text-sm font-bold text-amber uppercase tracking-wide">
-            QUIPLASH RESULTS
+            GM ROAST RESULTS
           </span>
           <span className="font-mono text-xs text-muted">
             Waiting for pick...
