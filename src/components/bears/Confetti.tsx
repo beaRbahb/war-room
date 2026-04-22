@@ -22,6 +22,8 @@ interface Piece {
   drift: number;
   speed: number;
   spin: number;
+  /** If set, render as a mini team logo instead of a colored shape */
+  logoUrl?: string;
 }
 
 const BEARS_COLORS = [
@@ -51,19 +53,25 @@ function getTeamColors(abbrev: string): string[] {
   return [color, color, color, color2, color2, "#FFFFFF"];
 }
 
-function generatePieces(heavy: boolean, colors: string[]): Piece[] {
+function generatePieces(heavy: boolean, colors: string[], logoUrl?: string): Piece[] {
   const count = heavy ? 2000 : 1000;
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    delay: Math.random() * (heavy ? 2.5 : 1.5),
-    width: (heavy ? 7 : 5) + Math.random() * (heavy ? 14 : 10),
-    height: (heavy ? 6 : 4) + Math.random() * (heavy ? 18 : 14),
-    color: colors[Math.floor(Math.random() * colors.length)],
-    drift: -40 + Math.random() * 80,
-    speed: 2 + Math.random() * 2.5,
-    spin: 360 + Math.random() * 720,
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    // ~8% of pieces become mini logos when a team logo is available
+    const isLogo = logoUrl && Math.random() < 0.08;
+    const size = isLogo ? 20 + Math.random() * 12 : undefined; // 20-32px logos
+    return {
+      id: i,
+      x: Math.random() * 100,
+      delay: Math.random() * (heavy ? 2.5 : 1.5),
+      width: size ?? (heavy ? 7 : 5) + Math.random() * (heavy ? 14 : 10),
+      height: size ?? (heavy ? 6 : 4) + Math.random() * (heavy ? 18 : 14),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      drift: -40 + Math.random() * 80,
+      speed: 2 + Math.random() * 2.5,
+      spin: isLogo ? 30 + Math.random() * 60 : 360 + Math.random() * 720, // less spin for logos
+      logoUrl: isLogo ? logoUrl : undefined,
+    };
+  });
 }
 
 /**
@@ -77,7 +85,8 @@ export default function Confetti({ duration, heavy = false, teamAbbrev, onComple
     const colors = teamAbbrev
       ? getTeamColors(teamAbbrev)
       : heavy ? BEARS_HEAVY_COLORS : BEARS_COLORS;
-    return generatePieces(heavy, colors);
+    const logoUrl = teamAbbrev ? TEAMS[teamAbbrev]?.logo : undefined;
+    return generatePieces(heavy, colors, logoUrl);
   });
 
   useEffect(() => {
@@ -104,15 +113,23 @@ export default function Confetti({ duration, heavy = false, teamAbbrev, onComple
             left: `${p.x}%`,
             width: `${p.width}px`,
             height: `${p.height}px`,
-            backgroundColor: p.color,
-            borderRadius: p.width > 10 ? "50%" : "2px",
+            backgroundColor: p.logoUrl ? "transparent" : p.color,
+            borderRadius: p.logoUrl ? 0 : p.width > 10 ? "50%" : "2px",
             opacity: 0,
             animation: `confetti-fall ${p.speed}s ease-in ${p.delay}s forwards`,
-            // CSS custom properties for per-piece drift and spin
             ["--confetti-drift" as string]: `${p.drift}px`,
             ["--confetti-spin" as string]: `${p.spin}deg`,
           }}
-        />
+        >
+          {p.logoUrl && (
+            <img
+              src={p.logoUrl}
+              alt=""
+              className="w-full h-full object-contain"
+              draggable={false}
+            />
+          )}
+        </div>
       ))}
     </div>
   );
