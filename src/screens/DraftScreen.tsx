@@ -24,7 +24,6 @@ import BracketShareModal from "../components/draft/BracketShareModal";
 import RoomWelcome from "../components/draft/RoomWelcome";
 import RoomInterstitial from "../components/draft/RoomInterstitial";
 import PickReactionScreen from "../components/reactions/PickReactionScreen";
-import RunningChaosMeter from "../components/chaos/RunningChaosMeter";
 import RecapOverlay from "../components/leaderboard/RecapOverlay";
 import BracketProgressStrip from "../components/draft/BracketProgressStrip";
 import PickRecapCard from "../components/draft/PickRecapCard";
@@ -438,11 +437,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
             </button>
           ))}
         </div>
-      )}
-
-      {/* Draft Vibe — sticky under header (live phase, 3+ picks, picks tab only) */}
-      {isLive && commissionerTab !== "admin" && (
-        <RunningChaosMeter confirmedPicks={confirmedPicks} />
       )}
 
 

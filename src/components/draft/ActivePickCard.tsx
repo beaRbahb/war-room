@@ -34,8 +34,6 @@ interface ActivePickCardProps {
     onSubmitVote: (answererName: string) => Promise<void>;
   } | null;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
-  /** Offset in px for sticky elements above the scroll area (header + draft vibe) */
-  stickyOffset?: number;
 }
 
 export default function ActivePickCard({
@@ -51,7 +49,6 @@ export default function ActivePickCard({
   userName,
   quiplash,
   scrollContainerRef,
-  stickyOffset = 0,
 }: ActivePickCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const { timeLeft, isWarning } = usePickTimer(
@@ -72,7 +69,7 @@ export default function ActivePickCard({
     const timer = setTimeout(() => {
       const cardRect = card.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
-      const delta = cardRect.top - containerRect.top - stickyOffset - 8;
+      const delta = cardRect.top - containerRect.top - 8;
       if (Math.abs(delta) > 4) {
         container.scrollTo({
           top: container.scrollTop + delta,
@@ -81,7 +78,7 @@ export default function ActivePickCard({
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [liveState.currentPick, scrollContainerRef, stickyOffset]);
+  }, [liveState.currentPick, scrollContainerRef]);
 
   // ── Trade mode ──
   if (liveState.tradeMode) {
