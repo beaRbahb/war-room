@@ -688,6 +688,18 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
               </div>
             </div>
           )}
+
+          {/* Support link */}
+          <div className="mt-8 flex justify-center">
+            <a
+              href="https://buymeacoffee.com/beardown5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-surface-elevated border border-border text-muted font-condensed font-bold uppercase text-xs px-3 py-1.5 rounded hover:text-white hover:border-amber transition-all"
+            >
+              SUPPORT
+            </a>
+          </div>
         </div>
 
         {/* Sidebar — consensus board (bracket phase only) */}
