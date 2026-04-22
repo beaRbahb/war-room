@@ -94,6 +94,12 @@ body {
 
 .animate-fade-in-up { animation: fade-in-up 0.3s ease-out; }
 
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up 0.3s ease-out; }
+
 /* ── Commissioner Dashboard ── */
 @keyframes countdown-pulse {
   0%, 100% { opacity: 1; }

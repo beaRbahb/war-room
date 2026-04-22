@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { onRoastAnswersForPick } from "../../lib/storage";
+import { onRoastAnswersForPick, onRoastVotes } from "../../lib/storage";
 import { GRADE_LABELS, type GradeType } from "../../types";
 import type { UserReaction, RoastAnswer } from "../../types";
 
@@ -12,14 +12,24 @@ interface PickRecapCardProps {
   roomCode: string;
   pickNum: number;
   reactions: Record<string, UserReaction>;
+  userName?: string;
+  userRank?: number;
+  scoreDelta?: { bracket: number; live: number };
 }
 
-export default function PickRecapCard({ roomCode, pickNum, reactions }: PickRecapCardProps) {
+export default function PickRecapCard({
+  roomCode, pickNum, reactions, userName, userRank, scoreDelta,
+}: PickRecapCardProps) {
   const [roastAnswers, setRoastAnswers] = useState<Record<string, RoastAnswer>>({});
+  const [votes, setVotes] = useState<Record<string, string>>({});
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     return onRoastAnswersForPick(roomCode, pickNum, setRoastAnswers);
+  }, [roomCode, pickNum]);
+
+  useEffect(() => {
+    return onRoastVotes(roomCode, pickNum, setVotes);
   }, [roomCode, pickNum]);
 
   // Count reactions by grade
@@ -44,6 +54,26 @@ export default function PickRecapCard({ roomCode, pickNum, reactions }: PickReca
 
   // Get roast prompt from any answer
   const roastPrompt = roastEntries.find(([, a]) => a.prompt)?.[1]?.prompt;
+
+  // Tally votes per answerer
+  const voteCounts: Record<string, number> = {};
+  for (const answerer of Object.values(votes)) {
+    voteCounts[answerer] = (voteCounts[answerer] ?? 0) + 1;
+  }
+
+  // Sort roast entries by vote count descending (winner first), then alphabetical
+  const sortedRoasts = [...roastEntries].sort(([nameA], [nameB]) => {
+    const countA = voteCounts[nameA] ?? 0;
+    const countB = voteCounts[nameB] ?? 0;
+    if (countB !== countA) return countB - countA;
+    return nameA.localeCompare(nameB);
+  });
+
+  const topVoteCount = sortedRoasts.length > 0
+    ? (voteCounts[sortedRoasts[0][0]] ?? 0)
+    : 0;
+
+  const hasScoreDelta = scoreDelta && (scoreDelta.bracket > 0 || scoreDelta.live > 0);
 
   if (totalGraded === 0) return null;
 
@@ -73,6 +103,36 @@ export default function PickRecapCard({ roomCode, pickNum, reactions }: PickReca
       {/* Body */}
       {!collapsed && (
       <div className="px-3.5 py-3">
+        {/* Score delta row */}
+        {(userRank || hasScoreDelta) && (
+          <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border">
+            {userRank && (
+              <div className="flex items-center gap-1.5">
+                <span className={`font-mono text-lg font-bold ${userRank === 1 ? "text-amber" : "text-white"}`}>
+                  #{userRank}
+                </span>
+                <span className="font-condensed text-xs text-muted uppercase">
+                  {userName ? "You" : "Rank"}
+                </span>
+              </div>
+            )}
+            {hasScoreDelta && (
+              <div className="flex gap-2 ml-auto">
+                {scoreDelta!.bracket > 0 && (
+                  <span className="font-mono text-sm font-bold text-[#4a9eff] bg-[#4a9eff]/10 border border-[#4a9eff]/30 px-2 py-0.5 rounded">
+                    +{scoreDelta!.bracket} bracket
+                  </span>
+                )}
+                {scoreDelta!.live > 0 && (
+                  <span className="font-mono text-sm font-bold text-green bg-green/[0.08] border border-green/25 px-2 py-0.5 rounded">
+                    +{scoreDelta!.live} live
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Split: big consensus grade left, bars right */}
         <div className="flex gap-3.5 pb-3.5 border-b border-border mb-3.5">
           {/* Left: big grade */}
@@ -114,21 +174,42 @@ export default function PickRecapCard({ roomCode, pickNum, reactions }: PickReca
           </div>
         </div>
 
-        {/* Roast bubbles */}
+        {/* Roast bubbles — sorted by vote count */}
         {roastPrompt && totalRoasts > 0 && (
           <>
             <p className="font-condensed text-base text-muted leading-snug mb-2.5">
               {roastPrompt}
             </p>
-            {roastEntries.map(([name, answer]) => (
-              <div
-                key={name}
-                className="bg-surface-elevated border border-border rounded-xl rounded-bl px-3.5 py-2.5 mb-2 last:mb-0"
-              >
-                <p className="font-condensed text-xs font-bold text-amber mb-0.5">{name}</p>
-                <p className="font-body text-sm text-white leading-snug">{answer.text}</p>
-              </div>
-            ))}
+            {sortedRoasts.map(([name, answer]) => {
+              const vc = voteCounts[name] ?? 0;
+              const isRoastWinner = vc > 0 && vc === topVoteCount;
+              return (
+                <div
+                  key={name}
+                  className={`rounded-xl rounded-bl px-3.5 py-2.5 mb-2 last:mb-0 ${
+                    isRoastWinner
+                      ? "bg-amber/10 border-2 border-amber"
+                      : "bg-surface-elevated border border-border"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className={`font-condensed text-xs font-bold ${isRoastWinner ? "text-amber" : "text-white"}`}>
+                      {name}
+                    </p>
+                    {vc > 0 && (
+                      <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        isRoastWinner
+                          ? "bg-amber/20 text-amber"
+                          : "bg-border text-muted"
+                      }`}>
+                        {vc} vote{vc !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-body text-sm text-white leading-snug">{answer.text}</p>
+                </div>
+              );
+            })}
           </>
         )}
 

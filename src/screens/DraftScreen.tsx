@@ -6,6 +6,7 @@ import {
   updateLiveState,
   clearGuesses,
   resetDraft,
+  getRoastVotesForPick,
 } from "../lib/storage";
 import { getSession } from "../lib/session";
 
@@ -22,6 +23,7 @@ import BracketShareModal from "../components/draft/BracketShareModal";
 import RoomWelcome from "../components/draft/RoomWelcome";
 import RoomInterstitial from "../components/draft/RoomInterstitial";
 import PickReactionScreen from "../components/reactions/PickReactionScreen";
+import RoastVoteSheet from "../components/reactions/RoastVoteSheet";
 import RunningChaosMeter from "../components/chaos/RunningChaosMeter";
 import RoomPulse from "../components/draft/RoomPulse";
 import RecapOverlay from "../components/leaderboard/RecapOverlay";
@@ -77,6 +79,8 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const startingDraft = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tripleTapRef = useRef<number[]>([]);
+  const [voteSheetPick, setVoteSheetPick] = useState<number | null>(null);
+  const votedPicksRef = useRef<Set<number>>(new Set());
   const [showStartButton, setShowStartButton] = useState(false);
 
   // ── Team reassignment (commissioner admin tab) ──
@@ -110,30 +114,48 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   // ── Recap hook (triggers at pick 32) ──
   const recap = useRecap({ roomCode, confirmedPicks, brackets, scores });
 
-  // ── Score flash for PickReactionScreen ──
-  const scoreFlash = useMemo(() => {
-    if (!isLive || confirmedPicks.length === 0 || !session) return null;
+  // ── Per-pick score delta + rank for PickRecapCard ──
+  // Stores the flashData.scoreDelta from the last animation (per-pick earnings, not cumulative)
+  const lastPickDeltaRef = useRef<{ bracket: number; live: number } | null>(null);
+
+  const userRank = useMemo(() => {
+    if (!isLive || confirmedPicks.length === 0 || !session) return undefined;
     const sorted = Object.entries(scores)
-      .map(([name, s]) => ({
-        name,
-        total: s.bracketScore + s.liveScore,
-        bracket: s.bracketScore,
-        live: s.liveScore,
-      }))
+      .map(([name, s]) => ({ name, total: s.bracketScore + s.liveScore }))
       .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
-    if (sorted.length === 0) return null;
+    if (sorted.length === 0) return undefined;
     const idx = sorted.findIndex((e) => e.name === session.name);
-    const me = sorted[idx];
-    return {
-      userRank: idx + 1,
-      leaderName: sorted[0].name,
-      leaderScore: sorted[0].total,
-      userBracket: me?.bracket ?? 0,
-      userLive: me?.live ?? 0,
-      userTotal: me?.total ?? 0,
-      top3: sorted.slice(0, 3).map((s) => ({ name: s.name, score: s.total })),
-    };
+    return idx >= 0 ? idx + 1 : undefined;
   }, [isLive, confirmedPicks.length, session?.name, scores]);
+
+  // ── Show roast vote sheet after grade overlay dismisses ──
+  const prevAnimationRef = useRef(cycle.animation);
+  useEffect(() => {
+    const prev = prevAnimationRef.current;
+    prevAnimationRef.current = cycle.animation;
+
+    // Detect transition: reaction → null (grade overlay dismissed)
+    if (prev?.type === "reaction" && !cycle.animation && session) {
+      const pickNum = prev.flashData.slot;
+
+      // Capture per-pick delta for recap card
+      lastPickDeltaRef.current = prev.flashData.scoreDelta;
+
+      // Skip if user already voted/skipped this pick
+      if (votedPicksRef.current.has(pickNum)) return;
+
+      // Check if user already voted (e.g., page refresh scenario)
+      getRoastVotesForPick(roomCode!, pickNum).then((existingVotes) => {
+        if (existingVotes[session.name]) {
+          votedPicksRef.current.add(pickNum);
+          return;
+        }
+        setVoteSheetPick(pickNum);
+      }).catch(() => {
+        setVoteSheetPick(pickNum);
+      });
+    }
+  }, [cycle.animation]); // eslint-disable-line react-hooks/exhaustive-deps -- only react to animation changes
 
   // ── Commissioner defaults to admin tab when joining live ──
   // Includes backup commissioners so they see the quick start guide when promoted mid-draft
@@ -168,6 +190,16 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const currentSlot = effectiveOrder.find(
     (s) => s.pick === (liveState?.currentPick || 1)
   );
+
+  // Derive vote sheet player name — if pick not found, clear stuck state
+  const voteSheetPlayerName = voteSheetPick !== null
+    ? confirmedPicks.find((p) => p.pick === voteSheetPick)?.playerName ?? null
+    : null;
+  useEffect(() => {
+    if (voteSheetPick !== null && !voteSheetPlayerName) {
+      setVoteSheetPick(null);
+    }
+  }, [voteSheetPick, voteSheetPlayerName]);
 
   // ── Row state helper ──
   const getRowState = useCallback((slotIndex: number): RowState => {
@@ -286,6 +318,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     recap.resetRecapState();
     setExpandedPick(null);
     setReassignPick(null);
+    setVoteSheetPick(null);
+    votedPicksRef.current.clear();
+    lastPickDeltaRef.current = null;
     // Reset quick start so guide re-shows on next live session
     if (quickStartKey) localStorage.removeItem(quickStartKey);
   }, [roomCode, roomData, cycle, recap, quickStartKey]);
@@ -336,9 +371,20 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
           roomCode={roomCode}
           userName={session.name}
           onComplete={cycle.dismissAnimation}
-          userRank={scoreFlash?.userRank}
-          scoreDelta={cycle.animation.flashData.scoreDelta}
-          top3={scoreFlash?.top3}
+        />
+      )}
+
+      {/* Roast vote bottom sheet — appears after grade overlay dismisses */}
+      {voteSheetPick !== null && voteSheetPlayerName && (
+        <RoastVoteSheet
+          roomCode={roomCode}
+          pickNum={voteSheetPick}
+          userName={session.name}
+          playerName={voteSheetPlayerName}
+          onDismiss={() => {
+            votedPicksRef.current.add(voteSheetPick);
+            setVoteSheetPick(null);
+          }}
         />
       )}
 
@@ -581,6 +627,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                           roomCode={roomCode}
                           pickNum={pickNum}
                           reactions={allReactions[`pick${pickNum}`] ?? {}}
+                          userName={session.name}
+                          userRank={userRank}
+                          scoreDelta={lastPickDeltaRef.current ?? undefined}
                         />
                       )}
                     </div>

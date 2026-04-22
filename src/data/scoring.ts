@@ -40,13 +40,3 @@ export const REVEAL_PAUSE_MS = 1500;
 /** Bracket lock time: April 24, 2026 at 8:00pm ET */
 export const BRACKET_LOCK_TIME = new Date("2026-04-24T20:00:00-04:00");
 
-/** Leaderboard flash after grade submit */
-export const LEADERBOARD_FLASH_MS = 3000;
-
-/** Roast voting timeout */
-export const VOTING_TIMEOUT_MS = 20000;
-
-/** Duration each spotlight stays visible during results reveal */
-export const SPOTLIGHT_DURATION_MS = 3000;
-
-
