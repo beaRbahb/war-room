@@ -627,7 +627,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                           roomCode={roomCode}
                           pickNum={pickNum}
                           reactions={allReactions[`pick${pickNum}`] ?? {}}
-                          userName={session.name}
                           userRank={userRank}
                           scoreDelta={lastPickDeltaRef.current ?? undefined}
                         />

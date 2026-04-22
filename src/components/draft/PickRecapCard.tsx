@@ -12,13 +12,12 @@ interface PickRecapCardProps {
   roomCode: string;
   pickNum: number;
   reactions: Record<string, UserReaction>;
-  userName?: string;
   userRank?: number;
   scoreDelta?: { bracket: number; live: number };
 }
 
 export default function PickRecapCard({
-  roomCode, pickNum, reactions, userName, userRank, scoreDelta,
+  roomCode, pickNum, reactions, userRank, scoreDelta,
 }: PickRecapCardProps) {
   const [roastAnswers, setRoastAnswers] = useState<Record<string, RoastAnswer>>({});
   const [votes, setVotes] = useState<Record<string, string>>({});
@@ -102,7 +101,8 @@ export default function PickRecapCard({
       {!collapsed && (
       <div className="px-3.5 py-3">
         {/* Score delta row */}
-        {(userRank || scoreDelta) && (
+        {(userRank || scoreDelta) && (<>
+          <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Leaderboard</span>
           <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border">
             {userRank && (
               <div className="flex items-center gap-1.5">
@@ -110,7 +110,7 @@ export default function PickRecapCard({
                   #{userRank}
                 </span>
                 <span className="font-condensed text-xs text-muted uppercase">
-                  {userName ? "overall" : "Rank"}
+                  overall
                 </span>
               </div>
             )}
@@ -133,17 +133,15 @@ export default function PickRecapCard({
               </div>
             )}
           </div>
-        )}
+        </>)}
 
         {/* Split: big consensus grade left, bars right */}
+        <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Room Grade</span>
         <div className="flex gap-3.5 pb-3.5 border-b border-border mb-3.5">
           {/* Left: big grade */}
           <div className="shrink-0 w-20 flex flex-col items-center justify-center py-3.5 bg-surface-elevated border border-border rounded-lg">
             <span className="font-display text-5xl text-muted leading-none">
               {winnerGrade ? GRADE_LABELS[winnerGrade.grade] : "—"}
-            </span>
-            <span className="font-condensed text-[11px] text-muted uppercase tracking-[1px] mt-1">
-              ROOM GRADE
             </span>
           </div>
 
@@ -175,6 +173,7 @@ export default function PickRecapCard({
         {/* Roast bubbles — sorted by vote count */}
         {roastPrompt && totalRoasts > 0 && (
           <>
+            <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Roasts</span>
             <p className="font-condensed text-base text-muted leading-snug mb-2.5">
               {roastPrompt}
             </p>
