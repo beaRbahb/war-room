@@ -185,7 +185,6 @@ function renderFormation(canvas: HTMLCanvasElement) {
  */
 export default function RoomWelcome({ roomCode, isCommissioner, playerCount, onDismiss }: RoomWelcomeProps) {
   const [copied, setCopied] = useState(false);
-  const [draftSoon] = useState(() => BRACKET_LOCK_TIME.getTime() - Date.now() <= 30 * 60 * 1000);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const shareUrl = `${window.location.origin}/join/${roomCode}`;
@@ -372,21 +371,12 @@ export default function RoomWelcome({ roomCode, isCommissioner, playerCount, onD
               Unlike a mock draft that falls apart after pick 3 — here you guess each selection live as it happens. The board updates in real time. 32 picks, 32 chances to be right.
             </p>
 
-            {draftSoon ? (
-              <button
-                onClick={onDismiss}
-                className="w-full mt-auto bg-green text-bg font-condensed font-bold uppercase tracking-wide text-xs py-2.5 rounded-md hover:brightness-110 transition-all"
-              >
-                ENTER THE DRAFT
-              </button>
-            ) : (
-              <button
-                disabled
-                className="w-full mt-auto bg-bg text-muted font-condensed font-bold uppercase tracking-wide text-xs border border-border py-2.5 rounded-md cursor-not-allowed opacity-45"
-              >
-                AVAILABLE DRAFT NIGHT
-              </button>
-            )}
+            <button
+              disabled
+              className="w-full mt-auto bg-bg text-muted font-condensed font-bold uppercase tracking-wide text-xs border border-border py-2.5 rounded-md cursor-not-allowed opacity-45"
+            >
+              AVAILABLE DRAFT NIGHT
+            </button>
           </div>
         </div>
       </div>
