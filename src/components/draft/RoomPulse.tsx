@@ -116,7 +116,7 @@ export default function RoomPulse({
               <div className="w-7 h-7 rounded-full bg-surface-elevated border border-border shrink-0" />
             )}
 
-            {/* Player name — wrap on mobile, single line on desktop */}
+            {/* Player name */}
             <div className="w-24 sm:w-32 shrink-0 sm:truncate">
               <span
                 className={`font-mono text-xs font-bold leading-tight ${
