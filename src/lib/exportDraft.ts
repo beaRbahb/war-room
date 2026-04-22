@@ -52,18 +52,13 @@ export function downloadJSON(data: DraftExportJSON): void {
 
 /**
  * Capture a DOM element as a PNG and trigger share (mobile) or download (desktop).
- * html2canvas is dynamically imported to keep it off the main bundle.
+ * modern-screenshot is dynamically imported to keep it off the main bundle.
  */
 export async function captureAndShareCard(element: HTMLElement, filename: string): Promise<void> {
-  const { default: html2canvas } = await import("html2canvas");
-  const canvas = await html2canvas(element, {
+  const { domToBlob } = await import("modern-screenshot");
+  const blob = await domToBlob(element, {
     scale: 2,
     backgroundColor: "#0a0a0a",
-    useCORS: true,
-  });
-
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Canvas to blob failed"))), "image/png");
   });
 
   const file = new File([blob], `${filename}.png`, { type: "image/png" });
