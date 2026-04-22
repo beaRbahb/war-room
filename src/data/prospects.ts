@@ -254,6 +254,7 @@ export const PROSPECTS: Prospect[] = [
   {
     rank: 40, name: "Chase Bisontis", position: "IOL", college: "Texas A&M",
     height: "6'5\"", weight: 315, age: 21,
+    proComp: "Mark Glowinski",
     note: "Tough, well-schooled guard with heavy hands and plus core strength. Consistent strain and stickiness to sustain blocks. Short arms cause occasional lunging in pass pro.",
   },
   {
@@ -262,7 +263,12 @@ export const PROSPECTS: Prospect[] = [
     proComp: "Kevin Dotson",
     note: "First-team All-American. Ultra-durable plug-and-play starter. Broad build with long arms and huge hands. Immediate run-blocking upgrade, older rookie.",
   },
-  { rank: 42, name: "Brandon Cisse", position: "CB", college: "South Carolina" },
+  {
+    rank: 42, name: "Brandon Cisse", position: "CB", college: "South Carolina",
+    height: "5'11\"", weight: 189, age: 22,
+    proComp: "Cam Smith",
+    note: "Walk-on turned draft pick. Elite run support, explosive athlete, 41\" vert. Scheme-versatile but route recognition needs work. Upside bet.",
+  },
   {
     rank: 43, name: "Malachi Lawrence", position: "EDGE", college: "UCF",
     height: "6'4\"", weight: 253, age: 24,
@@ -293,7 +299,12 @@ export const PROSPECTS: Prospect[] = [
     proComp: "Dee Ford",
     note: "Twitched-up speed rusher with explosive take-off and bend to dip under tackles. Gets engulfed by big blockers but dangerous on the move. Injury history (missed games in 3 seasons).",
   },
-  { rank: 48, name: "Anthony Hill Jr.", position: "LB", college: "Texas" },
+  {
+    rank: 48, name: "Anthony Hill Jr.", position: "LB", college: "Texas",
+    height: "6'2\"", weight: 238, age: 22,
+    proComp: "Bobby Wagner",
+    note: "Three-down LB with 17 career sacks and 8 FFs. Butkus Award finalist. Elite blitzer, plus cover talent, sideline-to-sideline range. Instant-impact Mike or Will.",
+  },
   { rank: 49, name: "Lee Hunter", position: "DL", college: "Texas Tech" },
   {
     rank: 50, name: "Gabe Jacas", position: "EDGE", college: "Illinois",
@@ -301,7 +312,12 @@ export const PROSPECTS: Prospect[] = [
     proComp: "Matthew Judon",
     note: "Well-built with tremendous play strength, can play hand-down end or stand-up edge. Bull-rush specialist with force and leg drive. More steak than sizzle — long career as NFL starter.",
   },
-  { rank: 51, name: "Eli Stowers", position: "TE", college: "Vanderbilt" },
+  {
+    rank: 51, name: "Eli Stowers", position: "TE", college: "Vanderbilt",
+    height: "6'4\"", weight: 239, age: 23,
+    proComp: "Kyle Pitts lite",
+    note: "Mackey Award winner. QB convert with elite athleticism — 45.5\" vert, 4.51 40. Natural hands, dangerous YAC. Run blocking needs work. Pass-catching F tight end.",
+  },
   { rank: 52, name: "D'angelo Ponds", position: "CB", college: "Indiana" },
   { rank: 53, name: "Chris Bell", position: "WR", college: "Louisville" },
   {
