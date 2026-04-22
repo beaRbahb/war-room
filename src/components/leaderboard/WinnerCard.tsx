@@ -9,8 +9,6 @@ interface WinnerCardProps {
   persona?: PersonaType;
   roomCode: string;
   cardRef: RefObject<HTMLDivElement | null>;
-  onShare: () => void;
-  isSharing: boolean;
 }
 
 /** Auto-scale name class based on character length. */
@@ -20,12 +18,6 @@ function nameClass(name: string): string {
   return "text-[32px] tracking-tight";
 }
 
-const SHARE_ICON = (
-  <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 mr-1 fill-current inline-block align-[-1px]">
-    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" />
-  </svg>
-);
-
 /** Draft Card — trading card style winner card for bracket or live category. */
 export default function WinnerCard({
   stats,
@@ -33,8 +25,6 @@ export default function WinnerCard({
   persona,
   roomCode,
   cardRef,
-  onShare,
-  isSharing,
 }: WinnerCardProps) {
   const isBracket = category === "bracket";
   const categoryLabel = isBracket ? "Pre-Draft Bracket" : "Live Picks";
@@ -49,13 +39,12 @@ export default function WinnerCard({
 
   const personaMeta = persona ? PERSONA_META[persona] : null;
   const personaColors = persona ? PERSONA_COLORS[persona] : null;
-  // Extract the text color from persona colors for the tag
   const personaTextColor = personaColors?.split(" ")[0] ?? "";
 
   return (
     <div
       ref={cardRef}
-      className="w-[400px] shrink-0 rounded-2xl border-2 border-amber overflow-hidden relative"
+      className="w-full rounded-2xl border-2 border-amber overflow-hidden relative"
       style={{ background: "linear-gradient(165deg, #1a1400 0%, #0a0a0a 40%, #0a0a0a 70%, #1a0f00 100%)" }}
     >
       {/* Top glow overlay */}
@@ -139,14 +128,7 @@ export default function WinnerCard({
       {/* Footer */}
       <div className="flex items-center justify-between px-4 py-2.5 border-t border-amber/10">
         <span className="font-mono text-[11px] text-amber/40 tracking-[2px]">Room: {roomCode}</span>
-        <button
-          onClick={onShare}
-          disabled={isSharing}
-          className="font-condensed text-[11px] font-bold uppercase tracking-wider text-muted border border-border rounded px-2.5 py-1 hover:text-amber hover:border-amber/40 transition-all disabled:opacity-50"
-        >
-          {SHARE_ICON}
-          {isSharing ? "SHARING..." : "SHARE"}
-        </button>
+        <span className="font-display text-xs text-muted tracking-widest">WAR ROOM</span>
       </div>
     </div>
   );

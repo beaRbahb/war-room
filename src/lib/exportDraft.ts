@@ -51,38 +51,33 @@ export function downloadJSON(data: DraftExportJSON): void {
 }
 
 /**
- * Capture a DOM element as a PNG and trigger share (mobile) or download (desktop).
- * modern-screenshot is dynamically imported to keep it off the main bundle.
+ * Capture a DOM element as a PNG image.
+ * Tries clipboard copy first (requires HTTPS); falls back to PNG download.
+ * Returns "copied" or "saved" so the caller can show appropriate feedback.
  */
-export async function captureAndShareCard(element: HTMLElement, filename: string): Promise<void> {
-  const { domToBlob } = await import("modern-screenshot");
-  const blob = await domToBlob(element, {
-    scale: 2,
-    backgroundColor: "#0a0a0a",
-  });
-
-  const file = new File([blob], `${filename}.png`, { type: "image/png" });
-
-  // Mobile: use native share sheet if available
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file] });
-    } catch (err) {
-      // User cancelled share — not an error
-      if (err instanceof Error && err.name === "AbortError") return;
-      throw err;
-    }
-    return;
+export async function copyCardImage(element: HTMLElement): Promise<"copied" | "saved"> {
+  // Try clipboard (needs secure context — HTTPS or localhost)
+  if (navigator.clipboard?.write && window.isSecureContext) {
+    const blobPromise = import("modern-screenshot").then(({ domToBlob }) =>
+      domToBlob(element, { scale: 2, backgroundColor: "#0a0a0a" })
+    );
+    await navigator.clipboard.write([
+      new ClipboardItem({ "image/png": blobPromise }),
+    ]);
+    return "copied";
   }
 
-  // Desktop fallback: download the PNG
+  // Fallback: download as PNG
+  const { domToBlob } = await import("modern-screenshot");
+  const blob = await domToBlob(element, { scale: 2, backgroundColor: "#0a0a0a" });
   const url = URL.createObjectURL(blob);
   try {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filename}.png`;
+    a.download = "war-room-recap.png";
     a.click();
   } finally {
     URL.revokeObjectURL(url);
   }
+  return "saved";
 }

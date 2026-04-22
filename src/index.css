@@ -94,6 +94,10 @@ body {
 
 .animate-fade-in-up { animation: fade-in-up 0.3s ease-out; }
 
+/* Scrollbar hide for swipe carousel */
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
 @keyframes slide-up {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
