@@ -79,7 +79,7 @@ export default function PickRecapCard({
         className="flex items-center justify-between w-full px-3.5 py-2.5 bg-surface-elevated border-b border-border text-left"
       >
         <span className="font-condensed text-sm font-bold text-white uppercase tracking-wide">
-          Pick #{pickNum} Recap
+          Recap
         </span>
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs text-muted">
@@ -99,7 +99,7 @@ export default function PickRecapCard({
       <div className="px-3.5 py-3">
         {/* Score delta row */}
         {(userRank || scoreDelta) && (<>
-          <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Leaderboard</span>
+          <span className="block font-condensed text-base text-white uppercase tracking-wide mb-1.5">Leaderboard</span>
           <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border">
             {userRank && (
               <div className="flex items-center gap-1.5">
@@ -133,7 +133,7 @@ export default function PickRecapCard({
         </>)}
 
         {/* Split: big consensus grade left, bars right */}
-        <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Room Grade</span>
+        <span className="block font-condensed text-base text-white uppercase tracking-wide mb-2.5">Room Grade</span>
         <div className="flex gap-3.5 pb-3.5 border-b border-border mb-3.5">
           {/* Left: big grade */}
           <div className="shrink-0 w-9 flex flex-col items-center justify-center py-2 bg-surface-elevated border border-border rounded-lg">
@@ -172,7 +172,7 @@ export default function PickRecapCard({
           const [winnerName, winnerAnswer] = sortedRoasts[0];
           return (
             <>
-              <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Best Roast</span>
+              <span className="block font-condensed text-base text-white uppercase tracking-wide mb-2.5">Best Roast</span>
               <div className="rounded-lg px-3.5 py-2.5 bg-amber/5 border border-amber/15">
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="font-condensed text-xs font-bold text-white">{winnerName}</p>

@@ -59,13 +59,15 @@ export default function ActivePickCard({
   const windowFinalizing = !liveState.windowOpen && !!liveState.windowOpenedAt;
   const logo = getTeamLogo(slot.abbrev);
 
-  // Auto-scroll to top of scroll area when pick changes
+  // Auto-scroll to active card when window opens (not on pick advance,
+  // so the user sees the recap of the just-confirmed pick first)
   useEffect(() => {
+    if (!liveState.windowOpen) return;
     const card = cardRef.current;
     const container = scrollContainerRef.current;
     if (!card || !container) return;
 
-    // Small delay to let DOM settle after pick advance
+    // Small delay to let DOM settle after window opens
     const timer = setTimeout(() => {
       const cardRect = card.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
@@ -78,7 +80,7 @@ export default function ActivePickCard({
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [liveState.currentPick, scrollContainerRef]);
+  }, [liveState.windowOpen, scrollContainerRef]);
 
   // ── Trade mode ──
   if (liveState.tradeMode) {
