@@ -185,7 +185,8 @@ export default function CommissionerDashboard({
         <p className="font-display text-xl text-white leading-tight">
           {teamName}
         </p>
-        <span className="inline-block font-mono text-[15px] font-bold text-bg bg-amber px-2 py-0.5 rounded leading-tight">
+        <div className="w-8 h-px bg-amber mt-1 mb-1" />
+        <span className="inline-block font-mono text-[15px] font-bold text-white leading-tight">
           PICK {liveState.currentPick}
         </span>
       </div>
