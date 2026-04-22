@@ -136,14 +136,14 @@ describe("calcLiveScore", () => {
   it("scores correct guess in Chalk tier at 3 points", () => {
     const confirmed = [pick(1, "A")];
     const guesses = { pick1: { TestUser: "A" } };
-    const result = calcLiveScore("TestUser", confirmed, guesses, new Set());
+    const result = calcLiveScore("TestUser", confirmed, guesses);
     expect(result).toEqual({ score: 3, hits: 1 });
   });
 
   it("scores correct guess in Crystal Ball tier at 10 points", () => {
     const confirmed = [pick(30, "A")];
     const guesses = { pick30: { TestUser: "A" } };
-    const result = calcLiveScore("TestUser", confirmed, guesses, new Set());
+    const result = calcLiveScore("TestUser", confirmed, guesses);
     expect(result).toEqual({ score: 10, hits: 1 });
   });
 
@@ -153,7 +153,7 @@ describe("calcLiveScore", () => {
       pick1: { TestUser: "A" },
       pick20: { TestUser: "B" },
     };
-    const result = calcLiveScore("TestUser", confirmed, guesses, new Set());
+    const result = calcLiveScore("TestUser", confirmed, guesses);
     // pick 1 (Chalk, 3pts) + pick 20 (Deep Cut, 7pts) = 10
     expect(result).toEqual({ score: 10, hits: 2 });
   });
@@ -161,36 +161,38 @@ describe("calcLiveScore", () => {
   it("does not score incorrect guesses", () => {
     const confirmed = [pick(1, "A")];
     const guesses = { pick1: { TestUser: "WRONG" } };
-    const result = calcLiveScore("TestUser", confirmed, guesses, new Set());
+    const result = calcLiveScore("TestUser", confirmed, guesses);
     expect(result).toEqual({ score: 0, hits: 0 });
   });
 
-  it("doubles tiered points for Bears double picks", () => {
-    const confirmed = [pick(25, "A")];
+  it("doubles tiered points for Bears picks", () => {
+    const bearsPick: ConfirmedPick = { ...pick(25, "A"), isBearsPick: true };
+    const confirmed = [bearsPick];
     const guesses = { pick25: { TestUser: "A" } };
-    const result = calcLiveScore("TestUser", confirmed, guesses, new Set([25]));
+    const result = calcLiveScore("TestUser", confirmed, guesses);
     // pick 25 (Crystal Ball, 10pts × 2 = 20)
     expect(result).toEqual({ score: 20, hits: 1 });
   });
 
-  it("doubles Chalk tier for Bears double picks", () => {
-    const confirmed = [pick(5, "A")];
+  it("doubles Chalk tier for Bears picks", () => {
+    const bearsPick: ConfirmedPick = { ...pick(5, "A"), isBearsPick: true };
+    const confirmed = [bearsPick];
     const guesses = { pick5: { TestUser: "A" } };
-    const result = calcLiveScore("TestUser", confirmed, guesses, new Set([5]));
+    const result = calcLiveScore("TestUser", confirmed, guesses);
     // pick 5 (Chalk, 3pts × 2 = 6)
     expect(result).toEqual({ score: 6, hits: 1 });
   });
 
   it("handles missing guesses gracefully", () => {
     const confirmed = [pick(1, "A")];
-    const result = calcLiveScore("TestUser", confirmed, {}, new Set());
+    const result = calcLiveScore("TestUser", confirmed, {});
     expect(result).toEqual({ score: 0, hits: 0 });
   });
 
   it("only counts the named user's guesses", () => {
     const confirmed = [pick(1, "A")];
     const guesses = { pick1: { OtherUser: "A" } };
-    const result = calcLiveScore("TestUser", confirmed, guesses, new Set());
+    const result = calcLiveScore("TestUser", confirmed, guesses);
     expect(result).toEqual({ score: 0, hits: 0 });
   });
 });

@@ -77,13 +77,12 @@ export function getBracketHitsForPick(
 
 /**
  * Calculate live score for a user based on all confirmed picks and their guesses.
- * Points scale by pick tier. Bears double = 2x the tiered value.
+ * Points scale by pick tier. Bears picks = 2x the tiered value (derived from pick data).
  */
 export function calcLiveScore(
   userName: string,
   confirmedPicks: ConfirmedPick[],
   allGuesses: Record<string, Record<string, string>>,
-  bearsDoublePicks: Set<number>,
 ): { score: number; hits: number } {
   let score = 0;
   let hits = 0;
@@ -99,7 +98,7 @@ export function calcLiveScore(
     if (correct) {
       hits++;
       const tier = getTierScoring(pick.pick);
-      score += bearsDoublePicks.has(pick.pick)
+      score += pick.isBearsPick
         ? tier.liveCorrect * 2
         : tier.liveCorrect;
     }

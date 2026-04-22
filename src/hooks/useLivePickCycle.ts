@@ -197,7 +197,6 @@ export function useLivePickCycle({
   const [animation, setAnimation] = useState<AnimationState>(null);
 
   const processedPicks = useRef<Set<number>>(new Set());
-  const bearsDoublePicks = useRef<Set<number>>(new Set());
   /** True once we've seen confirmedPicks empty — proves we're not a late joiner */
   const sawEmptyRef = useRef(false);
 
@@ -244,7 +243,6 @@ export function useLivePickCycle({
         user.name,
         picks,
         guessData,
-        bearsDoublePicks.current,
       );
       updateScores(code, user.name, {
         bracketScore: bracketResult.score,
@@ -274,10 +272,6 @@ export function useLivePickCycle({
       confirmedPicks.forEach((p) => processedPicks.current.add(p.pick));
     } else {
       processedPicks.current.add(latest.pick);
-    }
-
-    if (liveState?.bearsDoubleActive) {
-      bearsDoublePicks.current.add(latest.pick);
     }
 
     const priorPicks = confirmedPicks
@@ -317,7 +311,7 @@ export function useLivePickCycle({
         bracketDelta = exact ? tier.bracketExact : partial ? tier.bracketPartial : 0;
       }
       let liveDelta = guesses[userName] === latest.playerName ? tier.liveCorrect : 0;
-      if (liveDelta > 0 && liveState?.bearsDoubleActive) liveDelta *= 2;
+      if (liveDelta > 0 && latest.isBearsPick) liveDelta *= 2;
 
       const flashData: ChaosFlashData = {
         slot: latest.pick,
@@ -368,7 +362,6 @@ export function useLivePickCycle({
     setAllGuesses({});
     setAnimation(null);
     processedPicks.current = new Set();
-    bearsDoublePicks.current = new Set();
     sawEmptyRef.current = false;
   }, []);
 
@@ -386,7 +379,6 @@ export function useLivePickCycle({
     animation,
     advanceToReaction,
     dismissAnimation,
-    bearsDoublePicks,
     // Room Pulse
     roomPulseData,
   };

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { DRAFT_ORDER, isBearsPick } from "../../data/draftOrder";
 import { PROSPECTS } from "../../data/prospects";
 import { BLOCKBUSTER_TRADES } from "../../data/blockbusterTrades";
-import { updateLiveState, confirmPick } from "../../lib/storage";
+import { updateLiveState, confirmPickAndAdvance } from "../../lib/storage";
 import type { LiveState, ConfirmedPick } from "../../types";
 
 interface CommissionerControlsProps {
@@ -99,13 +99,10 @@ export default function CommissionerControls({
         isBearsPick: isBearsPick(teamAbbrev || ""),
       };
 
-      await confirmPick(roomCode, pick);
-
-      await updateLiveState(roomCode, {
+      await confirmPickAndAdvance(roomCode, pick, {
         currentPick: liveState.currentPick + 1,
         windowOpen: false,
         windowOpenedAt: null,
-        bearsDoubleActive: false,
         tradeMode: false,
       });
 

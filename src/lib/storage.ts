@@ -272,17 +272,6 @@ export async function getGuessCount(
 
 // ── Results (confirmed picks) ──
 
-export async function confirmPick(
-  code: string,
-  pick: ConfirmedPick
-): Promise<void> {
-  await waitForAuth();
-  await set(
-    ref(db, `${roomPath(code)}/results/pick${pick.pick}`),
-    pick
-  );
-}
-
 /** Atomic: confirm pick + advance live state in a single Firebase write */
 export async function confirmPickAndAdvance(
   code: string,

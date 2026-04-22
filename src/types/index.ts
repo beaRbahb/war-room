@@ -27,7 +27,6 @@ export interface LiveState {
   windowOpenedAt: string | null;
   teamOnClock: string; // team abbreviation
   tradeMode: boolean;
-  bearsDoubleActive: boolean;
   trubiskyActive?: boolean;
   /** Pick overrides — maps pick number to new team abbrev (e.g. { "25": "NYG" }) */
   overrides?: Record<string, string>;

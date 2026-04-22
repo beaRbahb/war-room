@@ -5,6 +5,8 @@ import { BLOCKBUSTER_TRADES } from "../../data/blockbusterTrades";
 import { GUESS_WINDOW_SECONDS, FLASH_WARNING_SECONDS } from "../../data/scoring";
 import { getTeamLogo } from "../../data/teams";
 import { updateLiveState, confirmPickAndAdvance, removeUser, setBackupCommissioner } from "../../lib/storage";
+import { useESPNPoll } from "../../hooks/useESPNPoll";
+import { resolveESPNName } from "../../lib/espn";
 import type { LiveState, ConfirmedPick, RoomUser } from "../../types";
 import type { DraftSlot } from "../../data/draftOrder";
 
@@ -38,6 +40,9 @@ export default function CommissionerDashboard({
   aboveBoardSlot,
   onShowQuickStart,
 }: CommissionerDashboardProps) {
+  // ── ESPN auto-fill ──
+  const { suggestion: espnSuggestion, clearSuggestion: clearESPN } = useESPNPoll(true, liveState.currentPick);
+
   // ── Finalize flow state ──
   const [pickSearch, setPickSearch] = useState("");
   const [selectedOfficialPick, setSelectedOfficialPick] = useState("");
@@ -162,7 +167,6 @@ export default function CommissionerDashboard({
         currentPick: liveState.currentPick + 1,
         windowOpen: false,
         windowOpenedAt: null,
-        bearsDoubleActive: false,
         tradeMode: false,
       });
 
@@ -296,6 +300,29 @@ export default function CommissionerDashboard({
         {/* Finalize zone — below the split panel */}
         {isFinalize && (
           <div className="border-t border-border p-4">
+            {/* ESPN suggestion banner */}
+            {espnSuggestion && espnSuggestion.overall === liveState.currentPick && (() => {
+              const matched = resolveESPNName(espnSuggestion.playerName);
+              return (
+                <div className="bg-amber/5 border border-amber/30 rounded px-3 py-2 mb-2 flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs text-amber truncate">
+                    ESPN: <span className="text-white font-bold">{espnSuggestion.playerName}</span> to {espnSuggestion.teamAbbrev}
+                    {!matched && <span className="text-red ml-1">(no match)</span>}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSelectedOfficialPick(espnSuggestion.playerName);
+                      setPickSearch(espnSuggestion.playerName);
+                      clearESPN();
+                    }}
+                    disabled={!matched}
+                    className="shrink-0 bg-amber text-bg font-condensed font-bold uppercase text-xs px-3 py-1 rounded hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    LOAD
+                  </button>
+                </div>
+              );
+            })()}
             <input
               type="text"
               value={pickSearch}

@@ -118,7 +118,6 @@ export function useRoomData({
       windowOpenedAt: null,
       teamOnClock: DRAFT_ORDER[0]?.abbrev || "??",
       tradeMode: false,
-      bearsDoubleActive: false,
     });
     await updateRoomStatus(roomCode, "live");
   }, [roomCode]);
