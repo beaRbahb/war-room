@@ -48,6 +48,7 @@ interface UseLivePickCycleParams {
   roomCode: string | undefined;
   session: UserSession | null;
   isLive: boolean;
+  resultsLoaded: boolean;
   liveState: LiveState | null;
   confirmedPicks: ConfirmedPick[];
   users: Record<string, RoomUser>;
@@ -63,6 +64,7 @@ export function useLivePickCycle({
   roomCode,
   session,
   isLive,
+  resultsLoaded,
   liveState,
   confirmedPicks,
   users,
@@ -256,7 +258,7 @@ export function useLivePickCycle({
 
   // ── Watch for new picks: animation + scoring ──
   useEffect(() => {
-    if (!roomCode || !session || !isLive) return;
+    if (!roomCode || !session || !isLive || !resultsLoaded) return;
     if (confirmedPicks.length === 0) {
       sawEmptyRef.current = true;
       return;
@@ -326,7 +328,7 @@ export function useLivePickCycle({
       computeScores(roomCode, confirmedPicks, fullGuessMap);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + stable callbacks used intentionally
-  }, [confirmedPicks, roomCode, session?.name, isLive]);
+  }, [confirmedPicks, roomCode, session?.name, isLive, resultsLoaded]);
 
   // ═══════════════════════════════════════
   // ROOM PULSE (derived from existing state)

@@ -50,6 +50,7 @@ export function useRoomData({
   const [brackets, setBrackets] = useState<Record<string, UserBracket>>({});
   const [users, setUsers] = useState<Record<string, RoomUser>>({});
   const [allReactions, setAllReactions] = useState<Record<string, Record<string, UserReaction>>>({});
+  const [resultsLoaded, setResultsLoaded] = useState(false);
 
   // ── Derived values ──
   const isLive = roomStatus === "live" || roomStatus === "done";
@@ -100,7 +101,10 @@ export function useRoomData({
     if (!roomCode || !isLive) return;
     const unsubs = [
       onLiveState(roomCode, setLiveStateLocal),
-      onResults(roomCode, setResults),
+      onResults(roomCode, (data) => {
+        setResults(data);
+        setResultsLoaded(true);
+      }),
       onScores(roomCode, setScores),
       onBrackets(roomCode, setBrackets),
       onAllReactions(roomCode, setAllReactions),
@@ -143,6 +147,7 @@ export function useRoomData({
     effectiveOrder,
     confirmedPicks,
     totalUsers,
+    resultsLoaded,
     initLiveState,
     resetRoomData,
   };

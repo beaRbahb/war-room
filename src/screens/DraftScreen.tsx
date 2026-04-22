@@ -90,7 +90,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const roomData = useRoomData({ roomCode, navigate, session, initialStatus });
   const {
     backupCommissionerId, liveState, results, scores, brackets, users,
-    allReactions, isLive, effectiveOrder, confirmedPicks, totalUsers,
+    allReactions, isLive, effectiveOrder, confirmedPicks, totalUsers, resultsLoaded,
   } = roomData;
 
   // Derived early so the auto-show effect can include backup commissioners
@@ -107,6 +107,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     roomCode,
     session,
     isLive,
+    resultsLoaded,
     liveState,
     confirmedPicks,
     users,
