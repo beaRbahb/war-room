@@ -7,6 +7,7 @@ import {
   onGuesses,
   submitGuess,
   getGuessesForPick,
+  getAllGuesses,
 } from "../lib/storage";
 import { calcBracketScore, calcLiveScore } from "../lib/scoring";
 import {
@@ -230,12 +231,11 @@ export function useLivePickCycle({
     }
   }
 
-  /** Calculate and write scores for all users (uses refs for latest state) */
+  /** Calculate and write scores for all users */
   function computeScores(
     code: string,
     picks: ConfirmedPick[],
-    pickGuessKey: string,
-    guesses: Record<string, string>,
+    guessData: AllGuesses,
   ) {
     const allUsers = Object.values(usersRef.current);
     allUsers.forEach((user: RoomUser) => {
@@ -243,7 +243,7 @@ export function useLivePickCycle({
       const live = calcLiveScore(
         user.name,
         picks,
-        { ...allGuessesRef.current, [pickGuessKey]: guesses },
+        guessData,
         bearsDoublePicks.current,
       );
       updateScores(code, user.name, {
@@ -290,7 +290,22 @@ export function useLivePickCycle({
     const userName = session.name;
 
     (async () => {
-      const guesses = await getGuessesForPick(roomCode, latest.pick);
+      let guesses: Record<string, string>;
+      let fullGuessMap: AllGuesses;
+
+      if (isLateJoin) {
+        // Late join / refresh: fetch ALL guesses so scoring has complete data
+        fullGuessMap = await getAllGuesses(roomCode);
+        guesses = fullGuessMap[pickGuessKey] ?? {};
+        // Hydrate React state for future renders (Room Pulse, getUserGuess, etc.)
+        Object.entries(fullGuessMap).forEach(([key, val]) =>
+          updateGuessesForPick(key, val)
+        );
+      } else {
+        // Normal path: only fetch this pick's guesses, merge with existing ref
+        guesses = await getGuessesForPick(roomCode, latest.pick);
+        fullGuessMap = { ...allGuessesRef.current, [pickGuessKey]: guesses };
+      }
 
       // Compute score delta for this pick (no refs needed — uses data in scope)
       const tier = getTierScoring(latest.pick);
@@ -314,7 +329,7 @@ export function useLivePickCycle({
       };
       updateGuessesForPick(pickGuessKey, guesses);
       if (!isLateJoin) triggerAnimation(latest, flashData, guesses, userName);
-      computeScores(roomCode, confirmedPicks, pickGuessKey, guesses);
+      computeScores(roomCode, confirmedPicks, fullGuessMap);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refs + stable callbacks used intentionally
   }, [confirmedPicks, roomCode, session?.name, isLive]);
