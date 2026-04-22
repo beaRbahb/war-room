@@ -12,6 +12,8 @@ interface RoomPulseProps {
   pickNumber: number;
   /** Total users in the room */
   totalUsers: number;
+  /** Compact mode: no headshots, column headers, footer, percentage text */
+  compact?: boolean;
 }
 
 interface GuessTally {
@@ -33,6 +35,7 @@ export default function RoomPulse({
   userName,
   pickNumber,
   totalUsers,
+  compact,
 }: RoomPulseProps) {
   const chalk = getExpectedPlayer(pickNumber);
   const guessers = Object.keys(pickGuesses);
@@ -71,6 +74,46 @@ export default function RoomPulse({
   const roomAgreesWithChalk = tallies[0]?.isChalk;
   const visible = tallies.slice(0, MAX_VISIBLE);
   const hiddenCount = tallies.length - visible.length;
+
+  if (compact) {
+    return (
+      <div className="px-3 py-2 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="font-display text-sm text-amber tracking-wide">ROOM PULSE</span>
+          <span className="font-mono text-xs text-muted">{guessCount}/{totalUsers} guessed</span>
+        </div>
+        {visible.map((tally) => (
+          <div key={tally.playerName} className="flex items-center gap-2">
+            <span className={`font-mono text-xs font-bold w-[90px] shrink-0 truncate ${
+              tally.isUserPick ? "text-amber" : "text-white"
+            }`}>
+              {tally.playerName}
+            </span>
+            <div className="flex-1 h-4 bg-surface-elevated rounded overflow-hidden">
+              <div
+                className={`h-full rounded ${tally.isUserPick ? "bg-amber/25" : "bg-border-bright"}`}
+                style={{ width: `${tally.pct}%` }}
+              />
+            </div>
+            <span className="font-mono text-[10px] text-muted w-3.5 text-right shrink-0">{tally.count}</span>
+            <div className="flex gap-1 w-14 shrink-0 justify-end">
+              {tally.isChalk && (
+                <span className="font-mono text-[10px] text-white/70 bg-white/5 border border-white/20 px-1 rounded">CHALK</span>
+              )}
+              {tally.isUserPick && (
+                <span className="font-mono text-[10px] text-amber bg-amber/10 border border-amber/30 px-1 rounded">YOU</span>
+              )}
+            </div>
+          </div>
+        ))}
+        {hiddenCount > 0 && (
+          <p className="font-mono text-xs text-muted text-center pt-0.5">
+            +{hiddenCount} more pick{hiddenCount !== 1 ? "s" : ""}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-surface border border-border rounded-lg overflow-hidden animate-fade-in-up">

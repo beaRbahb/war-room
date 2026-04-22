@@ -26,18 +26,12 @@ interface DraftRowProps {
   shouldScroll?: boolean;
   /** Ref to the scroll container — used for explicit scrollTo instead of scrollIntoView */
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
-  /** Live mode: submit guess callback (shown as inline button when guess selected but not submitted) */
-  onSubmit?: () => void;
-  /** Live mode: whether guess has been submitted */
-  submitted?: boolean;
-  /** Live mode: whether the pick window is open */
-  windowOpen?: boolean;
-  /** Live mode: window was opened then closed, commissioner is finalizing */
-  windowFinalizing?: boolean;
   /** Pulse animation for first empty bracket slot */
   isPulsing?: boolean;
   /** User's locked-in reaction for completed rows */
   userGrade?: ReactionType | null;
+  /** Visual attachment: rounded top + elevated bg when recap card is below */
+  hasRecap?: boolean;
   /** Children for expanded content (reactions) */
   children?: React.ReactNode;
 }
@@ -59,62 +53,44 @@ export default memo(function DraftRow({
   shouldScroll,
   scrollContainerRef,
   isPulsing,
-  onSubmit,
-  submitted,
-  windowOpen,
-  windowFinalizing,
   userGrade,
+  hasRecap,
   children,
 }: DraftRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const bears = isBearsPick(slot.abbrev);
 
-  // Auto-scroll using explicit container.scrollTo — immune to scrollIntoView's
-  // tendency to scroll ALL ancestors (viewport, overflow-hidden parents, etc.)
+  // Auto-scroll completed rows near the top so recap card + next pick are visible
   useEffect(() => {
-    if (!shouldScroll || (rowState !== "active" && rowState !== "completed")) return;
+    if (!shouldScroll || rowState !== "completed") return;
     const row = rowRef.current;
     const container = scrollContainerRef?.current;
     if (!row || !container) return;
 
     const rowRect = row.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
-
-    if (rowState === "completed") {
-      // Scroll completed row near the top so recap card + next pick are visible
-      const delta = rowRect.top - containerRect.top - 16;
-      container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
-    } else {
-      // Center active row in the scroll container
-      const delta = rowRect.top - containerRect.top - containerRect.height / 2 + rowRect.height / 2;
-      container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
-    }
+    const delta = rowRect.top - containerRect.top - 16;
+    container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
   }, [shouldScroll, rowState, scrollContainerRef]);
 
   // Determine display player and stats
   const displayName = confirmedPick?.playerName ?? userPick;
   const prospect = displayName ? getProspect(displayName) : null;
-  // Row background — pulsing slot uses subtle hint, active uses full amber
-  const rowBg =
-    rowState === "active"
-      ? "bg-amber/5"
-      : isPulsing
-        ? "bg-white/[0.02]"
-        : bears
-          ? "bg-bears-navy/15"
-          : index % 2 === 0
-            ? "bg-surface"
-            : "bg-surface-elevated/50";
+  const rowBg = hasRecap
+    ? ""
+    : isPulsing
+      ? "bg-white/[0.02]"
+      : bears
+        ? "bg-bears-navy/15"
+        : index % 2 === 0
+          ? "bg-surface"
+          : "bg-surface-elevated/50";
 
-  // Row border — pulsing uses dimmed amber, active uses full amber
-  const borderClass =
-    rowState === "active"
-      ? "border-amber animate-pulse-border"
-      : isPulsing
-        ? "border-amber/40 animate-pulse-border"
-        : "border-border hover:border-border-bright";
+  const borderClass = isPulsing
+    ? "border-amber/40 animate-pulse-border"
+    : "border-border hover:border-border-bright";
 
-  const isClickable = rowState === "editable" || rowState === "active";
+  const isClickable = rowState === "editable";
   const isExpandable = rowState === "completed" && confirmedPick;
 
   return (
@@ -125,9 +101,11 @@ export default memo(function DraftRow({
           if (isExpandable) onToggleExpand(slot.pick);
         }}
         disabled={rowState === "locked"}
-        className={`w-full flex items-center gap-1.5 sm:gap-2 ${rowBg} border rounded pl-1 pr-2 sm:px-3 h-14 sm:h-12 text-left transition-colors ${borderClass} ${
+        className={`w-full flex items-center gap-1.5 sm:gap-2 ${rowBg} border pl-1 pr-2 sm:px-3 h-14 sm:h-12 text-left transition-colors ${borderClass} ${
           rowState === "locked" ? "opacity-40 cursor-not-allowed" : ""
-        } ${bears && !isPulsing && rowState !== "active" ? "border-l-2 border-l-bears-orange" : ""}`}
+        } ${bears && !isPulsing ? "border-l-2 border-l-bears-orange" : ""} ${
+          hasRecap ? "rounded-t-[10px] rounded-b-none mx-2 bg-surface-elevated border-border border-b-0" : "rounded"
+        }`}
       >
         {/* Pick number */}
         <span
@@ -176,32 +154,9 @@ export default memo(function DraftRow({
                 </span>
               ) : null}
             </div>
-          ) : rowState === "active" && displayName && prospect ? (
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm text-white truncate">
-                {prospect.name}
-              </span>
-              {submitted && (
-                <span className="hidden sm:inline font-condensed text-xs text-green uppercase shrink-0">locked in</span>
-              )}
-            </div>
           ) : displayName && prospect ? (
             <span className="font-condensed font-bold text-sm text-white truncate block">
               {prospect.name}
-            </span>
-          ) : rowState === "active" && windowOpen ? (
-            <span className="font-mono text-sm text-amber animate-pulse">
-              Tap to pick →
-            </span>
-          ) : rowState === "active" && windowFinalizing ? (
-            <span className="font-mono text-sm text-muted">
-              <span className="sm:hidden">Finalizing pick...</span>
-              <span className="hidden sm:inline">— Finalizing pick —</span>
-            </span>
-          ) : rowState === "active" ? (
-            <span className="font-mono text-sm text-muted">
-              <span className="sm:hidden">Pick #{slot.pick} coming up</span>
-              <span className="hidden sm:inline">— Pick #{slot.pick} coming up —</span>
             </span>
           ) : rowState === "locked" ? (
             <span className="font-mono text-sm text-muted">—</span>
@@ -232,16 +187,6 @@ export default memo(function DraftRow({
           )}
         </span>
       </button>
-
-      {/* Mobile full-width submit button */}
-      {rowState === "active" && onSubmit && !submitted && displayName && (
-        <button
-          onClick={onSubmit}
-          className="sm:hidden w-full h-10 bg-green text-bg font-condensed font-bold uppercase text-sm rounded mt-1 hover:brightness-110 transition-all animate-pulse"
-        >
-          SUBMIT
-        </button>
-      )}
 
       {/* Expanded reaction area */}
       {expanded && children && (

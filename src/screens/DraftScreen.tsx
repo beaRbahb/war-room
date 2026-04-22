@@ -13,7 +13,7 @@ import { getSession } from "../lib/session";
 
 import DraftRow from "../components/draft/DraftRow";
 import type { RowState } from "../components/draft/DraftRow";
-import TimerBar from "../components/ui/TimerBar";
+import ActivePickCard from "../components/draft/ActivePickCard";
 import CommissionerDashboard from "../components/commissioner/CommissionerDashboard";
 import PlayerSelectionPanel from "../components/draft/PlayerSelectionPanel";
 import ScoreboardModal from "../components/leaderboard/ScoreboardModal";
@@ -24,9 +24,7 @@ import BracketShareModal from "../components/draft/BracketShareModal";
 import RoomWelcome from "../components/draft/RoomWelcome";
 import RoomInterstitial from "../components/draft/RoomInterstitial";
 import PickReactionScreen from "../components/reactions/PickReactionScreen";
-import QuiplashPanel from "../components/reactions/QuiplashPanel";
 import RunningChaosMeter from "../components/chaos/RunningChaosMeter";
-import RoomPulse from "../components/draft/RoomPulse";
 import RecapOverlay from "../components/leaderboard/RecapOverlay";
 import BracketProgressStrip from "../components/draft/BracketProgressStrip";
 import PickRecapCard from "../components/draft/PickRecapCard";
@@ -169,11 +167,11 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     liveState?.currentPick ?? null
   );
 
-  // ── Reset activeSlot when pick advances (needs to stay in orchestrator) ──
+  // ── Reset UI when pick advances ──
   useEffect(() => {
     if (!liveState) return;
-    // When the hook detects pick advance, also clear activeSlot in the orchestrator
     setActiveSlot(null);
+    setExpandedPick(null); // auto-collapse previous recap
   }, [liveState?.currentPick]); // eslint-disable-line react-hooks/exhaustive-deps -- only react to pick changes
 
   // ── Derived data ──
@@ -181,10 +179,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const latestPick = confirmedPicks.length > 0
     ? confirmedPicks[confirmedPicks.length - 1].pick
     : null;
-
-  const currentSlot = effectiveOrder.find(
-    (s) => s.pick === (liveState?.currentPick || 1)
-  );
 
   // ── Row state helper ──
   const getRowState = useCallback((slotIndex: number): RowState => {
@@ -320,21 +314,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
   const showCommissionerTabs = isCommissioner && isLive;
 
-  // windowFinalizing: derived locally for DraftRow "Finalizing pick..." text
-  const windowFinalizing = isLive && !!liveState && !liveState.windowOpen && !!liveState.windowOpenedAt;
-
-  // Room Pulse element — reused in both commissioner admin and picks tab
-  const roomPulseElement = cycle.roomPulseData ? (
-    <div className="mb-3">
-      <RoomPulse
-        pickGuesses={cycle.roomPulseData.guesses}
-        userName={session.name}
-        pickNumber={cycle.roomPulseData.pickNumber}
-        totalUsers={totalUsers}
-      />
-    </div>
-  ) : null;
-
   return (
     <div className="h-dvh bg-bg flex flex-col overflow-clip">
       {/* Animation state machine overlays */}
@@ -448,7 +427,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
             <button
               key={tab}
               onClick={() => setCommissionerTab(tab)}
-              className={`font-condensed text-base uppercase py-3.5 text-center border-b-[3px] transition-colors ${
+              className={`font-condensed text-base uppercase py-2 text-center border-b-[3px] transition-colors ${
                 commissionerTab === tab
                   ? "border-amber text-amber font-bold"
                   : "border-transparent text-muted hover:text-white"
@@ -460,21 +439,8 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
         </div>
       )}
 
-      {/* Timer bar (live phase) — hidden on commissioner admin tab (hero card has its own) */}
-      {isLive && liveState && commissionerTab !== "admin" && (
-        <TimerBar
-          liveState={liveState}
-          currentSlot={currentSlot}
-          userGuess={cycle.currentGuess}
-          submitted={cycle.guessSubmitted}
-          onSubmit={handleLiveSubmit}
-          guessCount={cycle.guessCount}
-          totalUsers={totalUsers}
-        />
-      )}
-
-      {/* Running chaos meter — pinned below timer bar */}
-      {isLive && confirmedPicks.length > 0 && commissionerTab !== "admin" && (
+      {/* Draft Vibe — sticky under header (live phase, 3+ picks, picks tab only) */}
+      {isLive && commissionerTab !== "admin" && (
         <RunningChaosMeter confirmedPicks={confirmedPicks} />
       )}
 
@@ -515,7 +481,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
               isPrimaryCommissioner={isPrimaryCommissioner}
               guessCount={cycle.guessCount}
               totalUsers={totalUsers}
-              aboveBoardSlot={roomPulseElement}
               onShowQuickStart={() => setShowQuickStart(true)}
             />
           ) : (
@@ -547,13 +512,42 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                   const rowState = getRowState(i);
                   const pickNum = i + 1;
 
-                  // Determine user pick for this row
-                  let userPick: string | null = null;
-                  if (isLive) {
-                    userPick = getUserGuess(pickNum);
-                  } else {
-                    userPick = bracket.picks[i]?.playerName ?? null;
+                  // Active pick → render ActivePickCard
+                  if (rowState === "active" && isLive && liveState) {
+                    return (
+                      <ActivePickCard
+                        key={slot.pick}
+                        slot={slot}
+                        liveState={liveState}
+                        userGuess={cycle.currentGuess}
+                        submitted={cycle.guessSubmitted}
+                        guessCount={cycle.guessCount}
+                        totalUsers={totalUsers}
+                        onClick={() => handleRowClick(i)}
+                        onSubmit={handleLiveSubmit}
+                        roomPulseData={cycle.roomPulseData}
+                        userName={session.name}
+                        quiplash={quiplash.phase && quiplash.prompt ? {
+                          phase: quiplash.phase,
+                          prompt: quiplash.prompt,
+                          answers: quiplash.answers,
+                          votes: quiplash.votes,
+                          draftText: quiplash.draftText,
+                          setDraftText: quiplash.setDraftText,
+                          answerCount: quiplash.answerCount,
+                          totalUsers: quiplash.totalUsers,
+                          onSubmitAnswer: quiplash.submitAnswer,
+                          onSubmitVote: quiplash.submitVote,
+                        } : null}
+                        scrollContainerRef={scrollContainerRef}
+                      />
+                    );
                   }
+
+                  // Completed / locked / editable → DraftRow
+                  const userPick = isLive
+                    ? getUserGuess(pickNum)
+                    : bracket.picks[i]?.playerName ?? null;
 
                   const confirmed = results[`pick${pickNum}`] ?? null;
                   const isCorrect =
@@ -563,35 +557,12 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                         ? false
                         : null;
 
-                  const shouldScroll = isLive && (
-                    liveState?.windowOpen
-                      ? pickNum === liveState.currentPick
-                      : pickNum === latestPick
-                  );
-
-                  // Inline Room Pulse + GM Roast just above the current active pick
-                  const showInlineWidgets = isLive && pickNum === liveState?.currentPick;
+                  const isLatestConfirmed = pickNum === latestPick;
+                  const showRecap = isLatestConfirmed && !cycle.animation;
+                  const shouldScroll = isLive && rowState === "completed" && isLatestConfirmed;
 
                   return (
                     <div key={slot.pick}>
-                      {showInlineWidgets && roomPulseElement}
-                      {showInlineWidgets && quiplash.phase && quiplash.prompt && (
-                        <div className="mb-2">
-                          <QuiplashPanel
-                            phase={quiplash.phase}
-                            prompt={quiplash.prompt}
-                            answers={quiplash.answers}
-                            votes={quiplash.votes}
-                            draftText={quiplash.draftText}
-                            setDraftText={quiplash.setDraftText}
-                            answerCount={quiplash.answerCount}
-                            totalUsers={quiplash.totalUsers}
-                            userName={session.name}
-                            onSubmitAnswer={quiplash.submitAnswer}
-                            onSubmitVote={quiplash.submitVote}
-                          />
-                        </div>
-                      )}
                       <DraftRow
                         slot={slot}
                         index={i}
@@ -606,12 +577,9 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
                         isPulsing={i === bracket.firstEmptyIndex && !userPick}
                         shouldScroll={shouldScroll}
                         scrollContainerRef={scrollContainerRef}
-                        onSubmit={rowState === "active" && isLive && cycle.currentGuess && !cycle.guessSubmitted ? handleLiveSubmit : undefined}
-                        submitted={rowState === "active" && isLive ? cycle.guessSubmitted : undefined}
-                        windowOpen={rowState === "active" && isLive ? liveState?.windowOpen : undefined}
-                        windowFinalizing={rowState === "active" && windowFinalizing}
+                        hasRecap={showRecap}
                       />
-                      {pickNum === latestPick && !cycle.animation && (
+                      {showRecap && (
                         <PickRecapCard
                           roomCode={roomCode}
                           pickNum={pickNum}

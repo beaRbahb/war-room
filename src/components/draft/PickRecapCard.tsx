@@ -51,9 +51,6 @@ export default function PickRecapCard({
   const winnerGrade = gradeCounts[0];
   const maxCount = winnerGrade?.count ?? 0;
 
-  // Get roast prompt from any answer
-  const roastPrompt = roastEntries.find(([, a]) => a.prompt)?.[1]?.prompt;
-
   // Tally votes per answerer
   const voteCounts: Record<string, number> = {};
   for (const answerer of Object.values(votes)) {
@@ -75,7 +72,7 @@ export default function PickRecapCard({
   if (totalGraded === 0) return null;
 
   return (
-    <div className="mx-0 mb-1 border border-border rounded-lg overflow-hidden animate-fade-in-up bg-surface">
+    <div className="mx-2 -mt-px border border-border rounded-b-[10px] rounded-t-none overflow-hidden animate-fade-in-up bg-surface">
       {/* Header (clickable to collapse/expand) */}
       <button
         onClick={() => setCollapsed((v) => !v)}
@@ -139,8 +136,8 @@ export default function PickRecapCard({
         <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Room Grade</span>
         <div className="flex gap-3.5 pb-3.5 border-b border-border mb-3.5">
           {/* Left: big grade */}
-          <div className="shrink-0 w-14 sm:w-20 flex flex-col items-center justify-center py-2.5 sm:py-3.5 bg-surface-elevated border border-border rounded-lg">
-            <span className="font-display text-3xl sm:text-5xl text-muted leading-none">
+          <div className="shrink-0 w-9 flex flex-col items-center justify-center py-2 bg-surface-elevated border border-border rounded-lg">
+            <span className="font-display text-2xl text-muted leading-none">
               {winnerGrade ? GRADE_LABELS[winnerGrade.grade] : "—"}
             </span>
           </div>
@@ -170,41 +167,24 @@ export default function PickRecapCard({
           </div>
         </div>
 
-        {/* Roast bubbles — sorted by vote count */}
-        {roastPrompt && totalRoasts > 0 && (
-          <>
-            <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Roasts</span>
-            <p className="font-condensed text-base text-muted leading-snug mb-2.5">
-              {roastPrompt}
-            </p>
-            {sortedRoasts.map(([name, answer]) => {
-              const vc = voteCounts[name] ?? 0;
-              const isRoastWinner = vc > 0 && vc === topVoteCount;
-              return (
-                <div
-                  key={name}
-                  className="rounded-xl rounded-bl px-3.5 py-2.5 mb-2 last:mb-0 bg-surface-elevated border border-border"
-                >
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="font-condensed text-xs font-bold text-white">
-                      {name}
-                    </p>
-                    {vc > 0 && (
-                      <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        isRoastWinner
-                          ? "bg-amber/20 text-amber"
-                          : "bg-border text-muted"
-                      }`}>
-                        {vc} vote{vc !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </div>
-                  <p className="font-body text-sm text-white leading-snug">{answer.text}</p>
+        {/* Best roast — winner only */}
+        {sortedRoasts.length > 0 && topVoteCount > 0 && (() => {
+          const [winnerName, winnerAnswer] = sortedRoasts[0];
+          return (
+            <>
+              <span className="block font-condensed text-sm text-white uppercase tracking-wide mb-1.5">Best Roast</span>
+              <div className="rounded-lg px-3.5 py-2.5 bg-amber/5 border border-amber/15">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="font-condensed text-xs font-bold text-white">{winnerName}</p>
+                  <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber/20 text-amber">
+                    {topVoteCount} vote{topVoteCount !== 1 ? "s" : ""}
+                  </span>
                 </div>
-              );
-            })}
-          </>
-        )}
+                <p className="font-body text-sm text-white leading-snug">{winnerAnswer.text}</p>
+              </div>
+            </>
+          );
+        })()}
 
       </div>
       )}

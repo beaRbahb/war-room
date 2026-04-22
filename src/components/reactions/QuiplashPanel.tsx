@@ -16,6 +16,8 @@ interface QuiplashPanelProps {
   userName: string;
   onSubmitAnswer: () => Promise<void>;
   onSubmitVote: (answererName: string) => Promise<void>;
+  /** Compact mode: no outer card wrapper (inline inside ActivePickCard) */
+  compact?: boolean;
 }
 
 export default function QuiplashPanel({
@@ -30,6 +32,7 @@ export default function QuiplashPanel({
   userName,
   onSubmitAnswer,
   onSubmitVote,
+  compact,
 }: QuiplashPanelProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -41,8 +44,8 @@ export default function QuiplashPanel({
     const userSubmitted = !!answers[userName];
 
     return (
-      <div className="mb-3 bg-surface border border-border rounded-lg overflow-hidden">
-        <div className="px-3.5 py-2.5 border-b border-border bg-surface-elevated">
+      <div className={compact ? "" : "mb-3 bg-surface border border-border rounded-lg overflow-hidden"}>
+        <div className={`px-3.5 py-2.5 ${compact ? "" : "border-b border-border bg-surface-elevated"}`}>
           <div className="flex items-center justify-between">
             <span className="font-condensed text-sm font-bold text-amber uppercase tracking-wide">
               GM ROAST
@@ -124,8 +127,8 @@ export default function QuiplashPanel({
     }
 
     return (
-      <div className="mb-3 bg-surface border border-border rounded-lg overflow-hidden">
-        <div className="px-3.5 py-2.5 border-b border-border bg-surface-elevated">
+      <div className={compact ? "" : "mb-3 bg-surface border border-border rounded-lg overflow-hidden"}>
+        <div className={`px-3.5 py-2.5 ${compact ? "" : "border-b border-border bg-surface-elevated"}`}>
           <div className="flex items-center justify-between">
             <span className="font-condensed text-sm font-bold text-amber uppercase tracking-wide">
               VOTE FOR THE BEST
@@ -204,8 +207,8 @@ export default function QuiplashPanel({
   });
 
   return (
-    <div className="mb-3 bg-surface border border-border rounded-lg overflow-hidden">
-      <div className="px-3.5 py-2.5 border-b border-border bg-surface-elevated">
+    <div className={compact ? "" : "mb-3 bg-surface border border-border rounded-lg overflow-hidden"}>
+      <div className={`px-3.5 py-2.5 ${compact ? "" : "border-b border-border bg-surface-elevated"}`}>
         <div className="flex items-center justify-between">
           <span className="font-condensed text-sm font-bold text-amber uppercase tracking-wide">
             GM ROAST RESULTS
