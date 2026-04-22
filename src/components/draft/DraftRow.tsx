@@ -4,7 +4,7 @@ import { PROSPECTS } from "../../data/prospects";
 import { getTeamLogo, getTeamAbbrev } from "../../data/teams";
 import type { DraftSlot } from "../../data/draftOrder";
 import type { ConfirmedPick, ReactionType } from "../../types";
-import { GRADE_LABELS, GRADE_COLORS } from "../../types";
+import { GRADE_LABELS } from "../../types";
 
 export type RowState = "editable" | "active" | "completed" | "locked";
 
@@ -219,12 +219,7 @@ export default memo(function DraftRow({
         <span className="hidden md:block font-mono text-xs text-muted w-12 text-right shrink-0">
           {prospect ? `#${prospect.rank}` : ""}
         </span>
-        <span className={`hidden md:block font-condensed text-sm font-bold uppercase w-12 text-right shrink-0 ${
-          userGrade
-            ? ((GRADE_COLORS as Record<string, string>)[userGrade]
-              ?? "text-muted").replace(/bg-\S+/g, "").replace(/border-\S+/g, "").trim()
-            : "text-muted"
-        }`}>
+        <span className="hidden md:block font-condensed text-sm font-bold uppercase w-12 text-right shrink-0 text-muted">
           {userGrade
             ? ((GRADE_LABELS as Record<string, string>)[userGrade] ?? userGrade)
             : rowState === "completed" ? "—" : ""}

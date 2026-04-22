@@ -73,8 +73,6 @@ export default function PickRecapCard({
     ? (voteCounts[sortedRoasts[0][0]] ?? 0)
     : 0;
 
-  const hasScoreDelta = scoreDelta && (scoreDelta.bracket > 0 || scoreDelta.live > 0);
-
   if (totalGraded === 0) return null;
 
   return (
@@ -104,7 +102,7 @@ export default function PickRecapCard({
       {!collapsed && (
       <div className="px-3.5 py-3">
         {/* Score delta row */}
-        {(userRank || hasScoreDelta) && (
+        {(userRank || scoreDelta) && (
           <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border">
             {userRank && (
               <div className="flex items-center gap-1.5">
@@ -112,22 +110,26 @@ export default function PickRecapCard({
                   #{userRank}
                 </span>
                 <span className="font-condensed text-xs text-muted uppercase">
-                  {userName ? "You" : "Rank"}
+                  {userName ? "overall" : "Rank"}
                 </span>
               </div>
             )}
-            {hasScoreDelta && (
+            {scoreDelta && (
               <div className="flex gap-2 ml-auto">
-                {scoreDelta!.bracket > 0 && (
-                  <span className="font-mono text-sm font-bold text-[#4a9eff] bg-[#4a9eff]/10 border border-[#4a9eff]/30 px-2 py-0.5 rounded">
-                    +{scoreDelta!.bracket} bracket
-                  </span>
-                )}
-                {scoreDelta!.live > 0 && (
-                  <span className="font-mono text-sm font-bold text-green bg-green/[0.08] border border-green/25 px-2 py-0.5 rounded">
-                    +{scoreDelta!.live} live
-                  </span>
-                )}
+                <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded ${
+                  scoreDelta.bracket > 0
+                    ? "text-[#4a9eff] bg-[#4a9eff]/10 border border-[#4a9eff]/30"
+                    : "text-muted bg-surface-elevated border border-border"
+                }`}>
+                  +{scoreDelta.bracket} bracket
+                </span>
+                <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded ${
+                  scoreDelta.live > 0
+                    ? "text-green bg-green/[0.08] border border-green/25"
+                    : "text-muted bg-surface-elevated border border-border"
+                }`}>
+                  +{scoreDelta.live} live
+                </span>
               </div>
             )}
           </div>
@@ -137,7 +139,7 @@ export default function PickRecapCard({
         <div className="flex gap-3.5 pb-3.5 border-b border-border mb-3.5">
           {/* Left: big grade */}
           <div className="shrink-0 w-20 flex flex-col items-center justify-center py-3.5 bg-surface-elevated border border-border rounded-lg">
-            <span className="font-display text-5xl text-amber leading-none">
+            <span className="font-display text-5xl text-muted leading-none">
               {winnerGrade ? GRADE_LABELS[winnerGrade.grade] : "—"}
             </span>
             <span className="font-condensed text-[11px] text-muted uppercase tracking-[1px] mt-1">
@@ -152,20 +154,16 @@ export default function PickRecapCard({
               const widthPct = maxCount > 0 ? Math.max(8, (count / maxCount) * 100) : 0;
               return (
                 <div key={grade} className="flex items-center gap-1.5">
-                  <span className={`font-condensed text-sm font-bold w-6 text-right ${
-                    isWinner ? "text-amber" : "text-white"
-                  }`}>
+                  <span className="font-condensed text-sm font-bold w-6 text-right text-muted">
                     {GRADE_LABELS[grade]}
                   </span>
                   <div className="flex-1 h-5 bg-bg rounded overflow-hidden">
                     <div
-                      className={`h-full rounded ${isWinner ? "bg-amber" : "bg-border-bright"}`}
+                      className={`h-full rounded ${isWinner ? "bg-border-bright" : "bg-border"}`}
                       style={{ width: `${widthPct}%` }}
                     />
                   </div>
-                  <span className={`font-mono text-xs w-4 ${
-                    isWinner ? "text-amber" : "text-muted"
-                  }`}>
+                  <span className="font-mono text-xs w-4 text-muted">
                     {count}
                   </span>
                 </div>
@@ -186,14 +184,10 @@ export default function PickRecapCard({
               return (
                 <div
                   key={name}
-                  className={`rounded-xl rounded-bl px-3.5 py-2.5 mb-2 last:mb-0 ${
-                    isRoastWinner
-                      ? "bg-amber/10 border-2 border-amber"
-                      : "bg-surface-elevated border border-border"
-                  }`}
+                  className="rounded-xl rounded-bl px-3.5 py-2.5 mb-2 last:mb-0 bg-surface-elevated border border-border"
                 >
                   <div className="flex items-center gap-2 mb-0.5">
-                    <p className={`font-condensed text-xs font-bold ${isRoastWinner ? "text-amber" : "text-white"}`}>
+                    <p className="font-condensed text-xs font-bold text-white">
                       {name}
                     </p>
                     {vc > 0 && (
