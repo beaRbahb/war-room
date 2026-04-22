@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getAllGuesses } from "../lib/storage";
 import { assignPersonas, type PersonaType } from "../lib/personas";
 import {
@@ -33,6 +33,7 @@ export function useRecap({
 }: UseRecapParams) {
   const [personas, setPersonas] = useState<Record<string, PersonaType>>({});
   const [showRecap, setShowRecap] = useState(false);
+  const hasAutoShown = useRef(false);
   const [recapData, setRecapData] = useState<{
     users: UserRecapStats[];
     room: RoomRecapStats;
@@ -74,6 +75,10 @@ export function useRecap({
         : null;
 
       setRecapData({ users: userRecaps, room: roomRecap, entries: sortedEntries, bracketWinner, liveWinner });
+      if (!hasAutoShown.current) {
+        hasAutoShown.current = true;
+        setShowRecap(true);
+      }
     }
     compute();
   }, [roomCode, confirmedPicks, brackets, scores]);

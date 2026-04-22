@@ -416,12 +416,12 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
               LEADERBOARD
             </button>
           )}
-          {isLive && confirmedPicks.length >= 32 && recap.recapData && (
+          {isLive && confirmedPicks.length >= 32 && recap.recapData && !recap.showRecap && (
             <button
               onClick={() => recap.setShowRecap(true)}
-              className="font-display text-lg tracking-wider text-amber border-2 border-amber bg-transparent px-4 py-1 rounded-lg hover:bg-amber/10 transition-all"
+              className="bg-surface-elevated border border-border text-muted font-condensed font-bold uppercase text-xs px-3 py-1.5 rounded hover:text-white hover:border-amber transition-all"
             >
-              🏆 VIEW RESULTS
+              RESULTS
             </button>
           )}
         </div>
@@ -531,7 +531,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         {/* Main grid */}
-        <div ref={scrollContainerRef} className="flex-1 min-h-0 px-2 py-4 sm:p-4 pb-4 overflow-auto">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 px-2 py-4 sm:p-4 pb-20 sm:pb-4 overflow-auto">
           {/* ── Commissioner Admin Tab ── */}
           {commissionerTab === "admin" && isLive && liveState ? (
             <CommissionerDashboard
