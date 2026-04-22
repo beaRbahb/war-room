@@ -327,7 +327,7 @@ export default function CommissionerDashboard({
               placeholder="Search player..."
               className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-sm focus:border-amber focus:outline-none mb-2"
             />
-            <div className="max-h-48 overflow-auto space-y-0.5">
+            {!selectedOfficialPick && <div className="max-h-48 overflow-auto space-y-0.5">
               {filteredPlayers.slice(0, 20).map((p) => (
                 <button
                   key={p.name}
@@ -381,7 +381,7 @@ export default function CommissionerDashboard({
                   ))}
                 </>
               )}
-            </div>
+            </div>}
 
             <button
               onClick={handleConfirmPick}
