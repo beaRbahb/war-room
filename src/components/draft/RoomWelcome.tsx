@@ -8,7 +8,7 @@ interface RoomWelcomeProps {
   onDismiss: () => void;
 }
 
-/** Format draft date: "April 24 · 8:00 PM ET" */
+/** Format draft date: "April 23 · 8:00 PM ET" */
 function formatDraftDate(d: Date): string {
   const month = d.toLocaleDateString("en-US", { month: "long", timeZone: "America/New_York" });
   const day = d.toLocaleDateString("en-US", { day: "numeric", timeZone: "America/New_York" });
