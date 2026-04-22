@@ -405,6 +405,24 @@ export async function getRoastAnswersForPick(
   return snap.exists() ? (snap.val() as Record<string, RoastAnswer>) : {};
 }
 
+/** Clear all roast answers for a pick (used on trade reassignment) */
+export async function clearRoastsForPick(
+  code: string,
+  pickNum: number,
+): Promise<void> {
+  await waitForAuth();
+  await remove(ref(db, `${roomPath(code)}/roasts/pick${pickNum}`));
+}
+
+/** Clear all roast votes for a pick (used on trade reassignment) */
+export async function clearRoastVotesForPick(
+  code: string,
+  pickNum: number,
+): Promise<void> {
+  await waitForAuth();
+  await remove(ref(db, `${roomPath(code)}/roast_votes/pick${pickNum}`));
+}
+
 // ── Roast Votes ──
 
 export async function submitRoastVote(

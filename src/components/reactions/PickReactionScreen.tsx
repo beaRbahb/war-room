@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { calcChaosScore, type ChaosLevel } from "../../lib/chaos";
 import { PROSPECTS } from "../../data/prospects";
 import { TEAM_NEEDS } from "../../data/teamNeeds";
@@ -11,16 +11,12 @@ import { getHeadshot } from "../../lib/headshots";
 import {
   submitReaction,
   onReactions,
-  submitRoastAnswer,
 } from "../../lib/storage";
-import { chaosLevelToTag, getPromptForPick } from "../../data/roastPrompts";
 import type { UserReaction, ReactionType } from "../../types";
 import {
   GRADE_LABELS,
   type GradeType,
 } from "../../types";
-
-const ROAST_CHAR_LIMIT = 120;
 
 interface PickReactionScreenProps {
   slot: number;
@@ -68,7 +64,6 @@ export default function PickReactionScreen({
 }: PickReactionScreenProps) {
   const [reactions, setReactions] = useState<Record<string, UserReaction>>({});
   const [selectedGrade, setSelectedGrade] = useState<ReactionType | null>(null);
-  const [roastText, setRoastText] = useState("");
 
   // Guard to prevent double-submit race with onReactions listener
   const submittedLocally = useRef(false);
@@ -76,7 +71,7 @@ export default function PickReactionScreen({
   // If user already reacted before this mount (e.g., page refresh), skip straight out.
   useEffect(() => {
     if (!submittedLocally.current && reactions[userName]) {
-      console.log("[Roast] already-reacted guard fired — dismissing");
+      console.log("[Grade] already-reacted guard fired — dismissing");
       onComplete();
     }
   }, [reactions, userName, onComplete]);
@@ -96,17 +91,6 @@ export default function PickReactionScreen({
   const playerPosition = prospect?.position ?? bt?.position;
   const needDesc = getNeedDescription(playerPosition, teamAbbrev);
 
-  // Deterministic roast prompt — same for every client on the same pick
-  const roastPrompt = useMemo(() => {
-    const tag = chaosLevelToTag(level);
-    return getPromptForPick(slot, tag, {
-      team: teamAbbrev,
-      player: playerName,
-      pick: slot,
-      position: playerPosition,
-    });
-  }, [level, teamAbbrev, playerName, slot, playerPosition]);
-
   // Listen for reactions (to detect already-submitted on mount)
   useEffect(() => {
     return onReactions(roomCode, slot, setReactions);
@@ -120,24 +104,10 @@ export default function PickReactionScreen({
     stopBearsAudio();
 
     try {
-      const promises: Promise<void>[] = [
-        submitReaction(roomCode, slot, userName, {
-          reaction: selectedGrade,
-          bearsTierCompId: null,
-        }),
-      ];
-
-      if (roastText.trim()) {
-        promises.push(
-          submitRoastAnswer(roomCode, slot, userName, {
-            text: roastText.trim(),
-            submittedAt: new Date().toISOString(),
-            prompt: roastPrompt,
-          }),
-        );
-      }
-
-      await Promise.all(promises);
+      await submitReaction(roomCode, slot, userName, {
+        reaction: selectedGrade,
+        bearsTierCompId: null,
+      });
     } catch {
       console.error("Failed to submit reaction");
     }
@@ -151,7 +121,7 @@ export default function PickReactionScreen({
   const needPosition = playerPosition ?? "";
 
   return (
-    <div className="fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto animate-fade-in-up pb-[220px]">
+    <div className="fixed inset-0 z-[70] bg-bg/95 flex flex-col items-center justify-start overflow-y-auto animate-fade-in-up pb-6">
 
       {/* ── Grade phase: single card layout ── */}
       <div className="w-full px-3 pt-2">
@@ -271,58 +241,20 @@ export default function PickReactionScreen({
                 );
               })}
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Pinned bottom: Roast + Submit */}
-      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 pt-2.5 pb-4 z-[71]">
-        <div className="max-w-sm mx-auto">
-          {/* Roast prompt + input */}
-          <div className="mb-2.5">
-            <div className="flex items-baseline gap-2 mb-1.5">
-              <span className="font-condensed text-[15px] text-amber uppercase tracking-wide font-bold">GM Roast</span>
-              <span className="font-condensed text-xs text-muted">optional</span>
-            </div>
-            <p className="font-condensed text-[17px] text-white leading-snug mb-2">
-              {roastPrompt}
-            </p>
-            <div className="relative">
-              <input
-                type="text"
-                value={roastText}
-                onChange={(e) => setRoastText(e.target.value.slice(0, ROAST_CHAR_LIMIT))}
-                placeholder="Type your answer..."
-                maxLength={ROAST_CHAR_LIMIT}
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
-                data-bwignore
-                data-form-type="other"
-                className={`w-full bg-bg border rounded-lg px-3.5 py-3 pr-14 text-white font-mono text-sm outline-none ${
-                  roastText ? "border-amber" : "border-border-bright"
-                } focus:border-amber`}
-              />
-              <span className={`absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs ${
-                roastText ? "text-amber" : "text-muted"
-              }`}>
-                {roastText.length}/{ROAST_CHAR_LIMIT}
-              </span>
-            </div>
+            {/* Submit button */}
+            <button
+              onClick={handleSubmit}
+              disabled={!selectedGrade}
+              className={`w-full mt-3 font-condensed text-[15px] font-bold uppercase tracking-widest py-3 rounded-lg transition-all ${
+                selectedGrade
+                  ? "bg-green text-bg cursor-pointer hover:brightness-110"
+                  : "bg-border text-muted cursor-not-allowed opacity-50"
+              }`}
+            >
+              SUBMIT
+            </button>
           </div>
-
-          {/* Submit button */}
-          <button
-            onClick={handleSubmit}
-            disabled={!selectedGrade}
-            className={`w-full font-condensed text-[15px] font-bold uppercase tracking-widest py-3 rounded-lg transition-all ${
-              selectedGrade
-                ? "bg-green text-bg cursor-pointer hover:brightness-110"
-                : "bg-border text-muted cursor-not-allowed opacity-50"
-            }`}
-          >
-            SUBMIT
-          </button>
         </div>
       </div>
     </div>

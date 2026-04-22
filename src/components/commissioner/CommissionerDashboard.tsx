@@ -173,6 +173,37 @@ export default function CommissionerDashboard({
     }
   }
 
+  /** Confirm pick AND immediately open the next guess window (atomic) */
+  async function handleConfirmAndOpenNext() {
+    if (!selectedOfficialPick || confirming) return;
+    setConfirming(true);
+
+    try {
+      const pick: ConfirmedPick = {
+        pick: liveState.currentPick,
+        playerName: selectedOfficialPick,
+        teamAbbrev: teamAbbrev,
+        confirmedAt: new Date().toISOString(),
+        isBearsPick: isBearsPick(teamAbbrev),
+      };
+
+      await confirmPickAndAdvance(roomCode, pick, {
+        currentPick: liveState.currentPick + 1,
+        windowOpen: true,
+        windowOpenedAt: new Date().toISOString(),
+        bearsDoubleActive: false,
+        tradeMode: false,
+      });
+
+      setSelectedOfficialPick("");
+      setPickSearch("");
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  const isLastPick = liveState.currentPick >= 32;
+
   // ── Hero Card Left Pane (team info) ──
   function renderTeamInfo() {
     return (
@@ -359,15 +390,43 @@ export default function CommissionerDashboard({
               )}
             </div>
 
+            {/* CONFIRM & OPEN NEXT — primary action (hidden on pick 32) */}
+            {!isLastPick && (
+              <button
+                onClick={handleConfirmAndOpenNext}
+                disabled={!selectedOfficialPick || confirming}
+                className={`mt-3 w-full ${
+                  selectedOfficialPick
+                    ? isBlockbusterSelected
+                      ? "bg-bears-orange text-white hover:brightness-110"
+                      : "bg-green text-bg hover:brightness-110"
+                    : "bg-amber/20 text-amber border border-amber animate-pulse-border cursor-not-allowed"
+                } font-condensed font-bold uppercase text-sm py-2.5 rounded transition-all disabled:opacity-50`}
+              >
+                {confirming
+                  ? "CONFIRMING..."
+                  : selectedOfficialPick
+                    ? isBlockbusterSelected
+                      ? `TRADE & OPEN NEXT: ${selectedOfficialPick}`
+                      : `CONFIRM & OPEN NEXT: ${selectedOfficialPick}`
+                    : "SELECT A PLAYER TO CONFIRM"}
+              </button>
+            )}
+
+            {/* CONFIRM PICK — secondary action (opens next in idle state) */}
             <button
               onClick={handleConfirmPick}
               disabled={!selectedOfficialPick || confirming}
-              className={`mt-3 w-full ${
+              className={`${isLastPick ? "mt-3" : "mt-2"} w-full ${
                 selectedOfficialPick
-                  ? isBlockbusterSelected
-                    ? "bg-bears-orange text-white hover:brightness-110"
-                    : "bg-green text-bg hover:brightness-110"
-                  : "bg-amber/20 text-amber border border-amber animate-pulse-border cursor-not-allowed"
+                  ? isLastPick
+                    ? isBlockbusterSelected
+                      ? "bg-bears-orange text-white hover:brightness-110"
+                      : "bg-green text-bg hover:brightness-110"
+                    : "bg-surface-elevated border border-border text-muted hover:text-white hover:border-white/50"
+                  : isLastPick
+                    ? "bg-amber/20 text-amber border border-amber animate-pulse-border cursor-not-allowed"
+                    : "bg-surface-elevated border border-border text-muted/50 cursor-not-allowed"
               } font-condensed font-bold uppercase text-sm py-2.5 rounded transition-all disabled:opacity-50`}
             >
               {confirming
@@ -376,7 +435,9 @@ export default function CommissionerDashboard({
                   ? isBlockbusterSelected
                     ? `TRADE: ${selectedOfficialPick}`
                     : `CONFIRM PICK: ${selectedOfficialPick}`
-                  : "SELECT A PLAYER TO CONFIRM"}
+                  : isLastPick
+                    ? "SELECT A PLAYER TO CONFIRM"
+                    : "CONFIRM ONLY (NO AUTO-OPEN)"}
             </button>
           </div>
         )}
