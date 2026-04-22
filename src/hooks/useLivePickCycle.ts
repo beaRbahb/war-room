@@ -98,11 +98,10 @@ export function useLivePickCycle({
   const prevGuessResetRef = useRef<string | null>(null);
 
   // ── Track guess count (real-time listener) ──
+  // Only listen while window is open; count persists through finalize phase
+  // and resets when the pick advances (see pick-advance effect below)
   useEffect(() => {
-    if (!roomCode || !liveState?.windowOpen) {
-      setGuessCount(0);
-      return;
-    }
+    if (!roomCode || !liveState?.windowOpen) return;
     return onGuesses(roomCode, liveState.currentPick, (guesses) => {
       setGuessCount(Object.keys(guesses).length);
       updateGuessesForPick(`pick${liveState.currentPick}`, guesses);
@@ -115,6 +114,7 @@ export function useLivePickCycle({
     if (liveState.currentPick !== prevPickRef.current) {
       setCurrentGuess(null);
       setGuessSubmitted(false);
+      setGuessCount(0);
       prevPickRef.current = liveState.currentPick;
     }
   }, [liveState?.currentPick]); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally only react to pick changes

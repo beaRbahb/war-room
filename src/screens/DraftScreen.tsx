@@ -260,6 +260,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     await cycle.handleLiveSubmit();
     if (session?.isCommissioner) {
       setCommissionerTab("admin");
+      scrollContainerRef.current?.scrollTo({ top: 0 });
     }
   }, [cycle, session?.isCommissioner]);
 
