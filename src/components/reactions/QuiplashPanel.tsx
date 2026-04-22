@@ -47,16 +47,16 @@ export default function QuiplashPanel({
       <div className={compact ? "" : "mb-3 bg-surface border border-border rounded-lg overflow-hidden"}>
         <div className={`px-3.5 py-2.5 ${compact ? "" : "border-b border-border bg-surface-elevated"}`}>
           <div className="flex items-center justify-between">
-            <span className="font-condensed text-sm font-bold text-amber uppercase tracking-wide">
+            <span className="font-condensed text-base font-bold text-white uppercase tracking-wide">
               GM ROAST
             </span>
-            <span className="font-mono text-xs text-muted">
+            <span className="font-mono text-sm text-muted">
               {answerCount} of {totalUsers} answered
             </span>
           </div>
         </div>
-        <div className="px-3.5 py-3">
-          <p className="font-condensed text-[15px] text-white leading-snug mb-2.5">
+        <div className="px-3.5 py-2">
+          <p className="font-condensed text-base text-white leading-snug mb-3">
             {prompt}
           </p>
           {userSubmitted ? (
@@ -130,10 +130,10 @@ export default function QuiplashPanel({
       <div className={compact ? "" : "mb-3 bg-surface border border-border rounded-lg overflow-hidden"}>
         <div className={`px-3.5 py-2.5 ${compact ? "" : "border-b border-border bg-surface-elevated"}`}>
           <div className="flex items-center justify-between">
-            <span className="font-condensed text-sm font-bold text-amber uppercase tracking-wide">
+            <span className="font-condensed text-base font-bold text-white uppercase tracking-wide">
               VOTE FOR THE BEST
             </span>
-            <span className="font-mono text-xs text-muted">
+            <span className="font-mono text-sm text-muted">
               {answerCount} answers
             </span>
           </div>
@@ -210,16 +210,16 @@ export default function QuiplashPanel({
     <div className={compact ? "" : "mb-3 bg-surface border border-border rounded-lg overflow-hidden"}>
       <div className={`px-3.5 py-2.5 ${compact ? "" : "border-b border-border bg-surface-elevated"}`}>
         <div className="flex items-center justify-between">
-          <span className="font-condensed text-sm font-bold text-amber uppercase tracking-wide">
+          <span className="font-condensed text-base font-bold text-white uppercase tracking-wide">
             GM ROAST RESULTS
           </span>
-          <span className="font-mono text-xs text-muted">
+          <span className="font-mono text-sm text-muted">
             Waiting for pick...
           </span>
         </div>
       </div>
       <div className="px-3.5 py-3">
-        <p className="font-condensed text-sm text-muted leading-snug mb-2.5">
+        <p className="font-condensed text-base text-muted leading-snug mb-2.5">
           {prompt}
         </p>
         <div className="space-y-2">

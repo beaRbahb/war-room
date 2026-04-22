@@ -72,7 +72,7 @@ export default function PickRecapCard({
   if (totalGraded === 0) return null;
 
   return (
-    <div className="mx-2 -mt-px border border-border rounded-b-[10px] rounded-t-none overflow-hidden animate-fade-in-up bg-surface">
+    <div className="-mt-px border border-border rounded-b-[10px] rounded-t-none overflow-hidden animate-fade-in-up bg-surface">
       {/* Header (clickable to collapse/expand) */}
       <button
         onClick={() => setCollapsed((v) => !v)}

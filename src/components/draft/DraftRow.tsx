@@ -104,7 +104,7 @@ export default memo(function DraftRow({
         className={`w-full flex items-center gap-1.5 sm:gap-2 ${rowBg} border pl-1 pr-2 sm:px-3 h-14 sm:h-12 text-left transition-colors ${borderClass} ${
           rowState === "locked" ? "opacity-40 cursor-not-allowed" : ""
         } ${bears && !isPulsing ? "border-l-2 border-l-bears-orange" : ""} ${
-          hasRecap ? "rounded-t-[10px] rounded-b-none mx-2 bg-surface-elevated border-border border-b-0" : "rounded"
+          hasRecap ? "rounded-b-none bg-surface-elevated border-border border-b-0" : "rounded"
         }`}
       >
         {/* Pick number */}
@@ -124,7 +124,7 @@ export default memo(function DraftRow({
             className="w-8 h-8 object-contain shrink-0"
           />
           <div>
-            <span className="font-condensed text-base text-white uppercase block">
+            <span className="font-condensed text-sm text-white uppercase block">
               {slot.abbrev}
             </span>
             {slot.fromTeam && (

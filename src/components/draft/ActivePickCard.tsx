@@ -83,7 +83,7 @@ export default function ActivePickCard({
   // ── Trade mode ──
   if (liveState.tradeMode) {
     return (
-      <div ref={cardRef} className="mx-2 my-1.5 border-[1.5px] border-amber rounded-[10px] bg-surface overflow-hidden">
+      <div ref={cardRef} className="my-1.5 border-[1.5px] border-amber rounded-[10px] bg-surface overflow-hidden">
         <div className="flex items-center gap-2.5 px-3 py-2.5">
           {logo && <img src={logo} alt={slot.abbrev} className="w-8 h-8 object-contain shrink-0" />}
           <div className="flex-1 min-w-0">
@@ -101,13 +101,11 @@ export default function ActivePickCard({
   // ── Card border color ──
   const borderColor = isWarning
     ? "border-red animate-flash-red"
-    : windowFinalizing
-      ? "border-border-bright"
-      : "border-amber";
+    : "border-amber";
 
   return (
     <div ref={cardRef}>
-      <div className={`mx-2 my-1.5 border-[1.5px] ${borderColor} rounded-[10px] bg-surface overflow-hidden`}>
+      <div className={`my-1.5 border-[1.5px] ${borderColor} rounded-[10px] bg-surface overflow-hidden`}>
         {/* Pick bar */}
         <button
           onClick={liveState.windowOpen && !submitted ? onClick : undefined}
@@ -124,7 +122,7 @@ export default function ActivePickCard({
                 <div className={`font-mono text-[22px] font-bold leading-none ${isWarning ? "text-red" : "text-amber"}`}>
                   0:{timeLeft.toString().padStart(2, "0")}
                 </div>
-                <span className="font-mono text-[10px] text-muted block mt-0.5">
+                <span className="font-mono text-xs text-muted block mt-0.5">
                   {guessCount}/{totalUsers} in
                 </span>
               </>
@@ -206,7 +204,7 @@ export default function ActivePickCard({
 
       {/* Submit button — OUTSIDE card, only when guess selected but not submitted */}
       {liveState.windowOpen && userGuess && !submitted && (
-        <div className="px-2 mt-1">
+        <div className="mt-1">
           <button
             onClick={onSubmit}
             className="w-full h-11 bg-green text-bg font-condensed font-bold uppercase text-[15px] tracking-wide border-none rounded-lg hover:brightness-110 transition-all"

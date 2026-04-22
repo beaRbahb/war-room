@@ -77,31 +77,33 @@ export default function RoomPulse({
 
   if (compact) {
     return (
-      <div className="px-3 py-2 space-y-1.5">
+      <div className="px-3 py-2 space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="font-display text-sm text-amber tracking-wide">ROOM PULSE</span>
-          <span className="font-mono text-xs text-muted">{guessCount}/{totalUsers} guessed</span>
+          <span className="font-condensed text-base font-bold text-white uppercase tracking-wide">ROOM PULSE</span>
+          <span className="font-mono text-sm text-muted">{guessCount}/{totalUsers} guessed</span>
         </div>
         {visible.map((tally) => (
           <div key={tally.playerName} className="flex items-center gap-2">
-            <span className={`font-mono text-xs font-bold w-[90px] shrink-0 truncate ${
+            <span className={`font-mono text-xs font-bold shrink-0 ${
               tally.isUserPick ? "text-amber" : "text-white"
             }`}>
               {tally.playerName}
             </span>
-            <div className="flex-1 h-4 bg-surface-elevated rounded overflow-hidden">
+            <div className="flex-1 h-5 bg-surface-elevated rounded overflow-hidden relative">
               <div
                 className={`h-full rounded ${tally.isUserPick ? "bg-amber/25" : "bg-border-bright"}`}
                 style={{ width: `${tally.pct}%` }}
               />
+              <span className="absolute inset-0 flex items-center justify-end pr-2 font-mono text-[10px] text-white/70">
+                {tally.count}
+              </span>
             </div>
-            <span className="font-mono text-[10px] text-muted w-3.5 text-right shrink-0">{tally.count}</span>
-            <div className="flex gap-1 w-14 shrink-0 justify-end">
+            <div className="flex gap-1 shrink-0">
               {tally.isChalk && (
-                <span className="font-mono text-[10px] text-white/70 bg-white/5 border border-white/20 px-1 rounded">CHALK</span>
+                <span className="font-mono text-[10px] text-white/70 bg-white/5 border border-white/20 px-1.5 rounded">CHALK</span>
               )}
               {tally.isUserPick && (
-                <span className="font-mono text-[10px] text-amber bg-amber/10 border border-amber/30 px-1 rounded">YOU</span>
+                <span className="font-mono text-[10px] text-amber bg-amber/10 border border-amber/30 px-1.5 rounded">YOU</span>
               )}
             </div>
           </div>
