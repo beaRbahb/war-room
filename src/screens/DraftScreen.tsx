@@ -426,7 +426,10 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
           {(["picks", "admin"] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => setCommissionerTab(tab)}
+              onClick={() => {
+                setCommissionerTab(tab);
+                if (tab === "admin") scrollContainerRef.current?.scrollTo(0, 0);
+              }}
               className={`font-condensed text-base uppercase py-2 text-center border-b-[3px] transition-colors ${
                 commissionerTab === tab
                   ? "border-amber text-amber font-bold"
