@@ -82,6 +82,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tripleTapRef = useRef<number[]>([]);
   const [showStartButton, setShowStartButton] = useState(false);
+  const handleStartDraftRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   // ── Team reassignment (commissioner admin tab) ──
   const [reassignPick, setReassignPick] = useState<number | null>(null);
@@ -98,7 +99,10 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const isCommissioner = isPrimaryCommissioner || session?.id === backupCommissionerId;
 
   // ── Bracket phase hook ──
-  const bracket = useBracketPhase({ roomCode, session, isLive });
+  const onLockout = useCallback(() => {
+    handleStartDraftRef.current();
+  }, []);
+  const bracket = useBracketPhase({ roomCode, session, isLive, onLockout });
 
   // ── Live pick cycle hook (guesses, animations, scoring, Room Pulse, recap) ──
   const cycle = useLivePickCycle({
@@ -199,7 +203,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     return cycle.getUserGuess(pickNum);
   }
 
-  // ── Draft countdown expired ──
+  // ── Draft start (auto-triggered by countdown or manual triple-tap) ──
   const handleStartDraft = useCallback(async () => {
     if (!roomCode || !session || startingDraft.current) return;
     startingDraft.current = true;
@@ -208,13 +212,11 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
       // Auto-submit bracket if not already submitted
       await bracket.autoSubmitBracket();
 
-      // Commissioner transitions to live
-      if (session.isCommissioner) {
-        await roomData.initLiveState();
-      }
+      // Any client can write initial live state — idempotent (all write same data)
+      await roomData.initLiveState();
 
       // Commissioner starts on admin tab
-      if (session.isCommissioner) {
+      if (isCommissioner) {
         setCommissionerTab("admin");
       }
 
@@ -228,7 +230,10 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
       console.error("[StartDraft] failed:", err);
       startingDraft.current = false;
     }
-  }, [roomCode, session, bracket.autoSubmitBracket, roomData.initLiveState]); // eslint-disable-line react-hooks/exhaustive-deps -- welcomeKey, setters are stable
+  }, [roomCode, session, isCommissioner, bracket.autoSubmitBracket, roomData.initLiveState]); // eslint-disable-line react-hooks/exhaustive-deps -- welcomeKey, setters are stable
+
+  // Keep ref in sync so the stable onLockout callback can call the latest version
+  useEffect(() => { handleStartDraftRef.current = handleStartDraft; }, [handleStartDraft]);
 
   /** Wraps cycle.handleLiveSelect + closes panel */
   function handleLiveSelect(playerName: string) {

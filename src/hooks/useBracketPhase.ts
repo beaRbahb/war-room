@@ -7,6 +7,8 @@ interface UseBracketPhaseParams {
   roomCode: string | undefined;
   session: UserSession | null;
   isLive: boolean;
+  /** Fired once when the countdown hits zero */
+  onLockout?: () => void;
 }
 
 /**
@@ -15,7 +17,7 @@ interface UseBracketPhaseParams {
  *
  * Handlers do NOT close the panel — the orchestrator wraps them with setActiveSlot(null).
  */
-export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhaseParams) {
+export function useBracketPhase({ roomCode, session, isLive, onLockout }: UseBracketPhaseParams) {
   const [picks, setPicks] = useState<(BracketPick | null)[]>(Array(32).fill(null));
   const [bracketLocked, setBracketLocked] = useState(false);
   const [bracketSubmitted, setBracketSubmitted] = useState(false);
@@ -52,6 +54,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
   }, [roomCode, session?.name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Countdown timer (runs while not live) ──
+  const lockoutFiredRef = useRef(false);
   useEffect(() => {
     if (isLive) return;
     function tick() {
@@ -59,6 +62,11 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
       if (diff <= 0) {
         setBracketLocked(true);
         setCountdown("LOCKED");
+        // Fire onLockout exactly once — triggers auto-start
+        if (!lockoutFiredRef.current) {
+          lockoutFiredRef.current = true;
+          onLockout?.();
+        }
         return;
       }
       const d = Math.floor(diff / 86400000);
@@ -70,7 +78,7 @@ export function useBracketPhase({ roomCode, session, isLive }: UseBracketPhasePa
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [isLive]);
+  }, [isLive, onLockout]);
 
   // ── Handlers ──
 
