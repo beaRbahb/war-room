@@ -38,7 +38,7 @@ export default function ScoreboardModal({ scores, totalPicks, onClose }: Scorebo
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
-          <p className="font-display text-lg text-amber tracking-wide">SCOREBOARD</p>
+          <p className="font-display text-lg text-amber tracking-wide">LEADERBOARD</p>
           <button
             onClick={onClose}
             className="text-muted hover:text-white text-xl leading-none px-2"

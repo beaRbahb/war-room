@@ -413,7 +413,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
               onClick={() => setShowScoreboard(true)}
               className="bg-surface-elevated border border-border text-muted font-condensed font-bold uppercase text-xs px-3 py-1.5 rounded hover:text-white hover:border-amber transition-all"
             >
-              SCOREBOARD
+              LEADERBOARD
             </button>
           )}
           {isLive && confirmedPicks.length >= 32 && recap.recapData && (
