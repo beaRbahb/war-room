@@ -21,7 +21,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("[War Room] Uncaught error:", error, info.componentStack);
+    console.error("[OnTheClock] Uncaught error:", error, info.componentStack);
   }
 
   render() {

@@ -33,7 +33,7 @@ export default function BracketShareModal({ roomCode, onClose }: BracketShareMod
 
   async function handleShare() {
     const shareData = {
-      title: "Join my War Room draft!",
+      title: "Join my OnTheClock draft!",
       url: shareUrl,
     };
 

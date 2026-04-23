@@ -79,13 +79,13 @@ function attemptSignIn(
       if (attempt < MAX_RETRIES - 1) {
         const delay = BASE_DELAY_MS * Math.pow(2, attempt);
         console.warn(
-          `[War Room] Auth attempt ${attempt + 1}/${MAX_RETRIES} failed, retrying in ${delay}ms`,
+          `[OnTheClock] Auth attempt ${attempt + 1}/${MAX_RETRIES} failed, retrying in ${delay}ms`,
           err,
         );
         setAuthError("Connecting to server...");
         setTimeout(() => attemptSignIn(attempt + 1, resolve, reject), delay);
       } else {
-        console.error("[War Room] Auth failed after all retries", err);
+        console.error("[OnTheClock] Auth failed after all retries", err);
         setAuthError("Unable to connect. Check your internet and refresh.");
         reject(new Error("Firebase auth failed after retries"));
       }

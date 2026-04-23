@@ -43,7 +43,7 @@ export function downloadJSON(data: DraftExportJSON): void {
   try {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `war-room-${sanitizeFilename(data.meta.roomCode)}-results.json`;
+    a.download = `ontheclock-${sanitizeFilename(data.meta.roomCode)}-results.json`;
     a.click();
   } finally {
     URL.revokeObjectURL(url);
@@ -74,7 +74,7 @@ export async function copyCardImage(element: HTMLElement): Promise<"copied" | "s
   try {
     const a = document.createElement("a");
     a.href = url;
-    a.download = "war-room-recap.png";
+    a.download = "ontheclock-recap.png";
     a.click();
   } finally {
     URL.revokeObjectURL(url);

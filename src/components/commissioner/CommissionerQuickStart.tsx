@@ -23,8 +23,8 @@ export default function CommissionerQuickStart({ onDismiss }: CommissionerQuickS
       <div className="w-full max-w-[1060px] mx-auto py-8 md:py-12 md:min-h-full md:flex md:flex-col md:justify-center">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="font-display text-4xl sm:text-5xl text-amber tracking-wide war-room-title mb-2">
-            WAR ROOM
+          <h1 className="font-display text-4xl sm:text-5xl text-amber tracking-wide otc-title mb-2">
+            ON THE CLOCK
           </h1>
           <p className="font-condensed text-sm text-muted uppercase tracking-widest">
             Commissioner Quick Start

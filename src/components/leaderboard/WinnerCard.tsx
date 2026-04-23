@@ -53,7 +53,7 @@ export default function WinnerCard({
       {/* Top section */}
       <div className="relative text-center px-5 pt-6 pb-4">
         <div className="inline-block font-display text-sm tracking-[4px] text-amber border border-amber/30 px-4 py-1 rounded mb-2">
-          WAR ROOM 2026
+          ON THE CLOCK 2026
         </div>
         <p className="font-condensed text-xs font-bold uppercase tracking-[3px] text-muted mb-1.5">
           {categoryLabel}
@@ -128,7 +128,7 @@ export default function WinnerCard({
       {/* Footer */}
       <div className="flex items-center justify-between px-4 py-2.5 border-t border-amber/10">
         <span className="font-mono text-[11px] text-amber/40 tracking-[2px]">Room: {roomCode}</span>
-        <span className="font-display text-xs text-muted tracking-widest">WAR ROOM</span>
+        <span className="font-display text-xs text-muted tracking-widest">ON THE CLOCK</span>
       </div>
     </div>
   );

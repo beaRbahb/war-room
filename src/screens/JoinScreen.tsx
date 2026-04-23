@@ -139,8 +139,8 @@ export default function JoinScreen() {
 
       {/* Title — sits in the canvas area, pushed to bottom of flex-1 zone */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-end pb-5 sm:pb-8 min-h-[200px]">
-        <h1 className="font-display text-5xl sm:text-8xl tracking-wider text-amber mb-1 sm:mb-2 war-room-title">
-          WAR ROOM
+        <h1 className="font-display text-5xl sm:text-8xl tracking-wider text-amber mb-1 sm:mb-2 otc-title">
+          ON THE CLOCK
         </h1>
         <p className="font-condensed text-base sm:text-lg text-muted tracking-wide uppercase">
           NFL Draft Companion

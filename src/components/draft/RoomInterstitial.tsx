@@ -9,7 +9,7 @@ interface RoomInterstitialProps {
 
 /**
  * Full-screen interstitial with Tecmo play animation.
- * Shows "CREATING YOUR WAR ROOM..." or "JOINING WAR ROOM..."
+ * Shows "CREATING Your room..." or "JOINING Room..."
  * Lets one full Tecmo play run (~8.5s loop), then fades out into the lobby.
  */
 export default function RoomInterstitial({ mode, onFadeStart, onComplete }: RoomInterstitialProps) {
@@ -43,11 +43,11 @@ export default function RoomInterstitial({ mode, onFadeStart, onComplete }: Room
 
       {/* Text overlay — top of screen */}
       <div className="relative z-10 text-center opacity-0" style={{ animation: "fade-in-up 0.6s ease-out 0.3s forwards" }}>
-        <h1 className="font-display text-4xl sm:text-6xl text-amber tracking-wider war-room-title mb-3">
+        <h1 className="font-display text-4xl sm:text-6xl text-amber tracking-wider otc-title mb-3">
           {mode === "creating" ? "CREATING" : "JOINING"}
         </h1>
         <p className="font-condensed text-sm sm:text-base text-muted uppercase tracking-[0.2em]">
-          {mode === "creating" ? "Your War Room..." : "War Room..."}
+          {mode === "creating" ? "Your room..." : "Room..."}
         </p>
       </div>
     </div>

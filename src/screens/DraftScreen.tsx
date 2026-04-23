@@ -55,7 +55,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only: clear location state once
 
-  const welcomeKey = roomCode ? `warroom-welcomed-${roomCode}` : "";
+  const welcomeKey = roomCode ? `otc-welcomed-${roomCode}` : "";
   const [showInterstitial, setShowInterstitial] = useState(justCreated || justJoined);
   const [interstitialFading, setInterstitialFading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -66,7 +66,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
   const [showTakeover, setShowTakeover] = useState(false);
 
   // ── Commissioner Quick Start ──
-  const quickStartKey = roomCode ? `warroom-quickstart-${roomCode}` : "";
+  const quickStartKey = roomCode ? `otc-quickstart-${roomCode}` : "";
   const [showQuickStart, setShowQuickStart] = useState(false);
 
   // ── UI state ──
@@ -349,7 +349,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
         <div className="flex items-center gap-2">
           <div>
             <h1 className="font-display text-2xl text-amber tracking-wide">
-              {isLive ? "WAR ROOM" : "PRE-DRAFT BRACKET"}
+              {isLive ? "ON THE CLOCK" : "PRE-DRAFT BRACKET"}
             </h1>
             <p className="font-mono text-xs text-muted">
               {session.name} — Room {roomCode}

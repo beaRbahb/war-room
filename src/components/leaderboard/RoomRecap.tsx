@@ -17,7 +17,7 @@ export default function RoomRecap({ stats, entries, roomCode, cardRef }: RoomRec
       {/* Header */}
       <div className="text-center mb-4">
         <p className="font-display text-sm text-muted tracking-widest">
-          WAR ROOM 2026
+          ON THE CLOCK 2026
         </p>
         <p className="font-mono text-xs text-muted">{roomCode}</p>
         <p className="font-display text-3xl text-amber tracking-wide mt-2">
@@ -102,7 +102,7 @@ export default function RoomRecap({ stats, entries, roomCode, cardRef }: RoomRec
       {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-border">
         <span className="font-mono text-[11px] text-amber/40 tracking-[2px]">Room: {roomCode}</span>
-        <span className="font-display text-xs text-muted tracking-widest">WAR ROOM</span>
+        <span className="font-display text-xs text-muted tracking-widest">ON THE CLOCK</span>
       </div>
     </div>
   );

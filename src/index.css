@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ── War Room Design System: Bloomberg Terminal × Tecmo Bowl ── */
+/* ── OnTheClock Design System: Bloomberg Terminal × Tecmo Bowl ── */
 @theme {
   --color-bg: #0a0a0a;
   --color-surface: #111111;
@@ -150,7 +150,7 @@ body {
   97% { opacity: 1; }
 }
 
-.war-room-title {
+.otc-title {
   text-shadow:
     0 0 10px rgba(245, 166, 35, 0.6),
     0 0 30px rgba(245, 166, 35, 0.3),

@@ -1,9 +1,9 @@
-# War Room
+# OnTheClock
 
 **Turn draft night into a competition.**
 
 <!-- Replace with a screenshot or GIF of the draft screen -->
-<!-- ![War Room Draft Screen](docs/screenshot.png) -->
+<!-- ![OnTheClock Draft Screen](docs/screenshot.png) -->
 
 Create a room, share the code, and see who actually knows what they're talking about on draft night.
 

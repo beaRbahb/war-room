@@ -201,7 +201,7 @@ export default function RoomWelcome({ roomCode, isCommissioner, playerCount, onD
 
   async function handleShare() {
     const shareData = {
-      title: "Join my War Room draft!",
+      title: "Join my OnTheClock draft!",
       text: `Predict Round 1 of the NFL Draft. Room code: ${roomCode}`,
       url: shareUrl,
     };
@@ -224,8 +224,8 @@ export default function RoomWelcome({ roomCode, isCommissioner, playerCount, onD
       <div className="w-full max-w-[1060px] mx-auto py-8 md:py-12 md:min-h-full md:flex md:flex-col md:justify-center">
         {/* Header */}
         <div className="text-center mb-4">
-          <h1 className="font-display text-4xl sm:text-5xl text-amber tracking-wide war-room-title mb-2">
-            WAR ROOM
+          <h1 className="font-display text-4xl sm:text-5xl text-amber tracking-wide otc-title mb-2">
+            ON THE CLOCK
           </h1>
           <p className="font-condensed text-sm text-muted uppercase tracking-widest">
             {isCommissioner ? "Your room is ready" : "You're in"}

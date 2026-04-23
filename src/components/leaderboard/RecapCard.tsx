@@ -18,7 +18,7 @@ export default function RecapCard({ stats, persona, roomCode }: RecapCardProps) 
       {/* Header */}
       <div className="text-center mb-4">
         <p className="font-display text-sm text-muted tracking-widest">
-          WAR ROOM 2026
+          ON THE CLOCK 2026
         </p>
         <p className="font-mono text-xs text-muted">{roomCode}</p>
       </div>
@@ -135,7 +135,7 @@ export default function RecapCard({ stats, persona, roomCode }: RecapCardProps) 
 
       {/* Footer */}
       <div className="text-center pt-2 border-t border-border">
-        <p className="font-display text-xs text-muted tracking-widest">WAR ROOM</p>
+        <p className="font-display text-xs text-muted tracking-widest">ON THE CLOCK</p>
       </div>
     </div>
   );
