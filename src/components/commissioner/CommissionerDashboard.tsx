@@ -22,6 +22,7 @@ interface CommissionerDashboardProps {
   guessCount: number;
   totalUsers: number;
   onShowQuickStart?: () => void;
+  onTrade?: () => void;
 }
 
 export default function CommissionerDashboard({
@@ -36,6 +37,7 @@ export default function CommissionerDashboard({
   guessCount,
   totalUsers,
   onShowQuickStart,
+  onTrade,
 }: CommissionerDashboardProps) {
   // ── ESPN auto-fill ──
   const { suggestion: espnSuggestion, clearSuggestion: clearESPN } = useESPNPoll(true, liveState.currentPick);
@@ -175,6 +177,9 @@ export default function CommissionerDashboard({
   }
 
   // ── Hero Card Left Pane (team info) ──
+  const originalAbbrev = DRAFT_ORDER[liveState.currentPick - 1]?.abbrev;
+  const isTraded = teamAbbrev !== originalAbbrev;
+
   function renderTeamInfo() {
     return (
       <div className="flex flex-col items-center text-center gap-1">
@@ -190,6 +195,19 @@ export default function CommissionerDashboard({
         <span className="inline-block font-mono text-[15px] font-bold text-white leading-tight">
           PICK {liveState.currentPick}
         </span>
+        {isTraded && (
+          <span className="font-condensed text-[11px] text-muted uppercase tracking-wide">
+            via {originalAbbrev}
+          </span>
+        )}
+        {onTrade && (
+          <button
+            onClick={onTrade}
+            className="font-condensed font-bold uppercase text-[11px] tracking-wide text-amber bg-transparent border border-amber/40 rounded px-3 py-0.5 mt-1 hover:bg-amber/10 hover:border-amber transition-all"
+          >
+            TRADE
+          </button>
+        )}
       </div>
     );
   }

@@ -283,11 +283,16 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
     await updateLiveState(roomCode, {
       overrides: currentOverrides,
-      ...(isCurrentPick && liveState.windowOpen
-        ? { windowOpenedAt: new Date().toISOString() }
+      ...(isCurrentPick
+        ? {
+            // Auto-open guess window with fresh timer after trade
+            windowOpen: true,
+            windowOpenedAt: new Date().toISOString(),
+            teamOnClock: newAbbrev,
+            // Signal all clients to reset their guess state
+            guessResetAt: new Date().toISOString(),
+          }
         : {}),
-      // Signal all clients to reset their guess state for this pick
-      ...(isCurrentPick ? { guessResetAt: new Date().toISOString() } : {}),
     });
 
     setReassignPick(null);
@@ -479,6 +484,7 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
               guessCount={cycle.guessCount}
               totalUsers={totalUsers}
               onShowQuickStart={() => setShowQuickStart(true)}
+              onTrade={() => setReassignPick(liveState.currentPick)}
             />
           ) : (
             <>
