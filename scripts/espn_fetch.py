@@ -33,8 +33,8 @@ for player in players:
             parts = line.split(",")
             if len(parts) >= 12:
                 pick, prob, team = int(parts[1]), float(parts[3]), parts[9]
-                pick_probs[pick] = prob
-                team_probs[team] = round(team_probs.get(team, 0) + prob, 4)
+                pick_probs[pick] = round(prob * 100, 1)
+                team_probs[team] = round(team_probs.get(team, 0) + prob * 100, 1)
     results[player] = {
         "team_probabilities": dict(sorted(team_probs.items(), key=lambda x: x[1], reverse=True)),
         "pick_probabilities": pick_probs
