@@ -10,7 +10,7 @@ interface QuiplashPrompt {
 }
 
 const TEAM_PROMPTS: QuiplashPrompt[] = [
-  /* pick  1 — LV  */ { slot: 1,  team: "LV",  prompt: "Mark Davis's haircut reacted to Tom Brady's input on the Raiders pick by ___" },
+  /* pick  1 — LV  */ { slot: 1,  team: "LV",  prompt: "Fernando Mendoza's first linkedin post is: \"___\"" },
   /* pick  2 — NYJ */ { slot: 2,  team: "NYJ", prompt: "Aaron Glenn's pitch to the new Jets pick: \"Year 2 under me will be different because ___\"" },
   /* pick  3 — ARI */ { slot: 3,  team: "ARI", prompt: "Michael Bidwill welcomed the new Cardinals pick by showing him the team's ___, which hasn't been upgraded since ___" },
   /* pick  4 — TEN */ { slot: 4,  team: "TEN", prompt: "The new Titans pick tried on the Oilers-throwback jersey and asked \"___\"" },
