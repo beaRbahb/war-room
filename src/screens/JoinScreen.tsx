@@ -133,90 +133,121 @@ export default function JoinScreen() {
   }
 
   return (
-    <div className="relative min-h-dvh flex flex-col items-center justify-end pb-6 sm:justify-center sm:pb-0 px-4 bg-bg scanlines">
+    <div className="relative min-h-dvh flex flex-col items-center bg-bg scanlines">
       {/* Tecmo Bowl background animation */}
       <TecmoCanvas />
 
-      {/* Title */}
-      <h1 className="relative z-10 font-display text-5xl sm:text-8xl tracking-wider text-amber mb-1 sm:mb-2 war-room-title">
-        WAR ROOM
-      </h1>
-      <p className="relative z-10 font-condensed text-base sm:text-lg text-muted tracking-wide mb-4 sm:mb-10 uppercase">
-        NFL Draft Companion
-      </p>
-
-      {/* Auth error banner */}
-      {authError && (
-        <p className="relative z-10 w-full max-w-sm bg-red/10 border border-red text-red font-condensed text-sm uppercase tracking-wide text-center py-2 rounded mb-2">
-          {authError}
+      {/* Title — sits in the canvas area, pushed to bottom of flex-1 zone */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-end pb-5 sm:pb-8 min-h-[200px]">
+        <h1 className="font-display text-5xl sm:text-8xl tracking-wider text-amber mb-1 sm:mb-2 war-room-title">
+          WAR ROOM
+        </h1>
+        <p className="font-condensed text-base sm:text-lg text-muted tracking-wide uppercase">
+          NFL Draft Companion
         </p>
-      )}
-
-      {/* Kicked banner */}
-      {kicked && (
-        <p className="relative z-10 w-full max-w-sm bg-red/10 border border-red text-red font-condensed text-sm uppercase tracking-wide text-center py-2 rounded mb-2">
-          You were removed from the room
-        </p>
-      )}
-
-      {/* Card */}
-      <div className="relative z-10 w-full max-w-sm bg-surface border border-border rounded-lg p-5 sm:p-6 space-y-3 sm:space-y-4">
-        {/* Name */}
-        <div>
-          <label className="block font-condensed text-sm text-white uppercase tracking-wide mb-1">
-            Name
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder=""
-            maxLength={20}
-            autoComplete="off"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bwignore
-            data-form-type="other"
-            className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-xs focus:border-amber focus:outline-none"
-          />
-        </div>
-
-        {/* Room code */}
-        <div>
-          <label className="block font-condensed text-sm text-white uppercase tracking-wide mb-1">
-            Room Code
-          </label>
-          <input
-            type="text"
-            value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").toUpperCase())}
-            placeholder=""
-            maxLength={20}
-            autoComplete="off"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bwignore
-            data-form-type="other"
-            className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-xs uppercase tracking-widest focus:border-amber focus:outline-none"
-          />
-          <p className="font-mono text-[10px] text-muted mt-1">Letters and numbers only</p>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <p className="text-red text-sm font-condensed">{error}</p>
-        )}
-
-        {/* Single join button */}
-        <button
-          onClick={handleJoin}
-          disabled={loading}
-          className="w-full bg-amber text-bg font-condensed font-bold uppercase tracking-wide py-2.5 rounded hover:brightness-110 disabled:opacity-50 transition-all"
-        >
-          {loading ? "..." : "JOIN"}
-        </button>
       </div>
 
+      {/* Bottom section — features, errors, card, footer */}
+      <div className="relative z-10 flex-shrink-0 w-full flex flex-col items-center px-4 pb-6 sm:pb-10">
+        {/* Feature strip */}
+        <div className="w-full max-w-sm bg-bg/80 backdrop-blur-sm rounded-lg px-4 py-3 flex flex-col gap-1.5 mb-5">
+          <div className="flex items-start gap-2">
+            <span className="font-mono text-[10px] text-amber opacity-60 mt-0.5">//</span>
+            <span className="font-condensed text-[13px] text-muted leading-snug">
+              <strong className="text-white font-semibold">Predict every pick</strong> before the commissioner is on the clock
+            </span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="font-mono text-[10px] text-amber opacity-60 mt-0.5">//</span>
+            <span className="font-condensed text-[13px] text-muted leading-snug">
+              <strong className="text-white font-semibold">Compete live</strong> on a real-time leaderboard as each selection drops
+            </span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="font-mono text-[10px] text-amber opacity-60 mt-0.5">//</span>
+            <span className="font-condensed text-[13px] text-muted leading-snug">
+              <strong className="text-white font-semibold">Roast the picks</strong> between selections — write your hottest take and vote on the best roast
+            </span>
+          </div>
+        </div>
+
+        {/* Auth error banner */}
+        {authError && (
+          <p className="w-full max-w-sm bg-red/10 border border-red text-red font-condensed text-sm uppercase tracking-wide text-center py-2 rounded mb-2">
+            {authError}
+          </p>
+        )}
+
+        {/* Kicked banner */}
+        {kicked && (
+          <p className="w-full max-w-sm bg-red/10 border border-red text-red font-condensed text-sm uppercase tracking-wide text-center py-2 rounded mb-2">
+            You were removed from the room
+          </p>
+        )}
+
+        {/* Card */}
+        <div className="w-full max-w-sm bg-surface border border-border rounded-lg p-5 sm:p-6 space-y-3 sm:space-y-4">
+          {/* Name */}
+          <div>
+            <label className="block font-condensed text-sm text-white uppercase tracking-wide mb-1">
+              Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder=""
+              maxLength={20}
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+              data-form-type="other"
+              className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-xs focus:border-amber focus:outline-none"
+            />
+          </div>
+
+          {/* Room code */}
+          <div>
+            <label className="block font-condensed text-sm text-white uppercase tracking-wide mb-1">
+              Room Code
+            </label>
+            <input
+              type="text"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").toUpperCase())}
+              placeholder=""
+              maxLength={20}
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+              data-form-type="other"
+              className="w-full bg-bg border border-border rounded px-3 py-2 text-white font-mono text-xs uppercase tracking-widest focus:border-amber focus:outline-none"
+            />
+            <p className="font-mono text-[10px] text-muted mt-1">Letters and numbers only</p>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <p className="text-red text-sm font-condensed">{error}</p>
+          )}
+
+          {/* Single join button */}
+          <button
+            onClick={handleJoin}
+            disabled={loading}
+            className="w-full bg-amber text-bg font-condensed font-bold uppercase tracking-wide py-2.5 rounded hover:brightness-110 disabled:opacity-50 transition-all"
+          >
+            {loading ? "..." : "JOIN"}
+          </button>
+        </div>
+
+        {/* Footer */}
+        <p className="font-mono text-[10px] text-muted mt-4 text-center opacity-50">
+          Free &middot; No account required &middot; Works on any device
+        </p>
+      </div>
     </div>
   );
 }
