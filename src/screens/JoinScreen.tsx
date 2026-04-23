@@ -146,27 +146,24 @@ export default function JoinScreen() {
             <h1 className="font-display text-5xl sm:text-8xl tracking-wider text-amber mb-1 sm:mb-2 otc-title whitespace-nowrap">
               ON THE CLOCK
             </h1>
-            <p className="hidden md:block font-condensed text-base sm:text-lg text-muted tracking-wide uppercase">
-              NFL Draft Companion
-            </p>
 
             {/* Feature strip — hidden on mobile here, shown below */}
-            <div className="hidden md:flex flex-col gap-1.5 mt-6">
+            <div className="hidden md:flex flex-col gap-2 mt-6">
               <div className="flex items-start gap-2">
-                <span className="font-mono text-[10px] text-amber opacity-60 mt-0.5">//</span>
-                <span className="font-condensed text-[13px] text-muted leading-snug">
+                <span className="font-mono text-xs text-amber opacity-60 mt-0.5">//</span>
+                <span className="font-condensed text-base text-muted leading-snug">
                   <strong className="text-white font-semibold">Predict every pick</strong> before the commissioner is on the clock
                 </span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="font-mono text-[10px] text-amber opacity-60 mt-0.5">//</span>
-                <span className="font-condensed text-[13px] text-muted leading-snug">
+                <span className="font-mono text-xs text-amber opacity-60 mt-0.5">//</span>
+                <span className="font-condensed text-base text-muted leading-snug">
                   <strong className="text-white font-semibold">Compete live</strong> on a real-time leaderboard as each selection drops
                 </span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="font-mono text-[10px] text-amber opacity-60 mt-0.5">//</span>
-                <span className="font-condensed text-[13px] text-muted leading-snug">
+                <span className="font-mono text-xs text-amber opacity-60 mt-0.5">//</span>
+                <span className="font-condensed text-base text-muted leading-snug">
                   <strong className="text-white font-semibold">Roast the picks</strong> between selections and vote on the best one
                 </span>
               </div>
