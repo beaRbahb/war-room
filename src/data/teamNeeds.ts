@@ -25,7 +25,7 @@ export const TEAM_NEEDS: Record<string, string[]> = {
   PIT: ["QB", "WR", "OG", "CB"],
   LAC: ["OG", "EDGE", "DT", "WR"],
   PHI: ["EDGE", "OT", "TE", "WR"],
-  CHI: ["EDGE", "S", "C", "DT"],
+  CHI: ["EDGE", "DT", "S", "C"],
   BUF: ["EDGE", "LB", "OG", "WR"],
   SF: ["EDGE", "OG", "WR", "OT"],
   HOU: ["DT", "OG", "C", "LB"],
