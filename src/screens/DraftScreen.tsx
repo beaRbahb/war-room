@@ -10,7 +10,6 @@ import {
   clearRoastVotesForPick,
 } from "../lib/storage";
 import { getSession } from "../lib/session";
-
 import DraftRow from "../components/draft/DraftRow";
 import type { RowState } from "../components/draft/DraftRow";
 import ActivePickCard from "../components/draft/ActivePickCard";

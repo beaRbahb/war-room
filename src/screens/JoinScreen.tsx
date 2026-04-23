@@ -166,7 +166,7 @@ export default function JoinScreen() {
           <div className="flex items-start gap-2">
             <span className="font-mono text-[10px] text-amber opacity-60 mt-0.5">//</span>
             <span className="font-condensed text-[13px] text-muted leading-snug">
-              <strong className="text-white font-semibold">Roast the picks</strong> between selections — write your hottest take and vote on the best roast
+              <strong className="text-white font-semibold">Roast the picks</strong> between selections and vote on the best one
             </span>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function JoinScreen() {
         )}
 
         {/* Card */}
-        <div className="w-full max-w-sm bg-surface border border-border rounded-lg p-5 sm:p-6 space-y-3 sm:space-y-4">
+        <div className="w-full max-w-sm bg-surface border border-amber rounded-lg p-5 sm:p-6 space-y-3 sm:space-y-4 animate-[pulse-border_2s_ease-in-out_infinite]">
           {/* Name */}
           <div>
             <label className="block font-condensed text-sm text-white uppercase tracking-wide mb-1">
@@ -243,10 +243,6 @@ export default function JoinScreen() {
           </button>
         </div>
 
-        {/* Footer */}
-        <p className="font-mono text-[10px] text-muted mt-4 text-center opacity-50">
-          Free &middot; No account required &middot; Works on any device
-        </p>
       </div>
     </div>
   );
