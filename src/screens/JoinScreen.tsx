@@ -146,7 +146,7 @@ export default function JoinScreen() {
             <h1 className="font-display text-5xl sm:text-8xl tracking-wider text-amber mb-1 sm:mb-2 otc-title whitespace-nowrap">
               ON THE CLOCK
             </h1>
-            <p className="font-condensed text-base sm:text-lg text-muted tracking-wide uppercase">
+            <p className="hidden md:block font-condensed text-base sm:text-lg text-muted tracking-wide uppercase">
               NFL Draft Companion
             </p>
 
