@@ -203,7 +203,7 @@ export default function CommissionerDashboard({
         {onTrade && (
           <button
             onClick={onTrade}
-            className="font-condensed font-bold uppercase text-[11px] tracking-wide text-amber bg-transparent border border-amber/40 rounded px-3 py-0.5 mt-1 hover:bg-amber/10 hover:border-amber transition-all"
+            className="font-condensed font-bold uppercase text-[11px] tracking-wide text-bg bg-amber border border-amber rounded px-3 py-0.5 mt-1 hover:brightness-110 transition-all"
           >
             TRADE
           </button>
