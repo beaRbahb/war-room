@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import RoomRecap from "./RoomRecap";
 import WinnerCard from "./WinnerCard";
 import { PERSONA_META, type PersonaType } from "../../lib/personas";
@@ -67,6 +67,15 @@ export default function RecapOverlay({ recapData, personas, roomCode, confirmedP
 
   const slideKeys = ["room", ...(bracketWinner ? ["bracket"] : []), ...(liveWinner ? ["live"] : [])];
   const tabKeys = ["room", ...(bracketWinner ? ["bracket"] : []), ...(liveWinner ? ["live"] : [])];
+
+  // Derive sorted entries + hero based on active desktop tab
+  const scoreKey = desktopTab === "bracket" ? "bracketScore" : desktopTab === "live" ? "liveScore" : "totalScore";
+  const sortedEntries = useMemo(() =>
+    [...entries].sort((a, b) => b[scoreKey] - a[scoreKey] || a.name.localeCompare(b.name)),
+    [entries, scoreKey]
+  );
+  const hero = sortedEntries[0];
+  const heroLabel = desktopTab === "bracket" ? "Bracket Champion" : desktopTab === "live" ? "Live Champion" : "Overall Champion";
 
   function handleScroll() {
     if (!scrollRef.current) return;
@@ -170,51 +179,60 @@ export default function RecapOverlay({ recapData, personas, roomCode, confirmedP
         <div className="flex-1 flex flex-col items-center justify-center border-r border-border overflow-auto px-8 py-6">
           <div ref={heroRef} className="flex flex-col items-center">
             <div className="text-5xl mb-2">🏆</div>
-            <p className="font-condensed text-xs font-bold uppercase tracking-[4px] text-amber">Overall Champion</p>
+            <p className="font-condensed text-xs font-bold uppercase tracking-[4px] text-amber">{heroLabel}</p>
             <p className="font-display text-6xl text-white leading-none mt-1">
-              {champion?.name.toUpperCase() ?? "—"}
+              {hero?.name.toUpperCase() ?? "—"}
             </p>
 
-            {champion && (
+            {hero && (
               <div className="flex gap-8 mt-4">
-                <div className="text-center">
-                  <p className="font-mono text-2xl font-bold text-amber">{champion.totalScore}</p>
-                  <p className="font-condensed text-[10px] uppercase tracking-[2px] text-muted">Total</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-mono text-2xl font-bold text-white">{champion.bracketScore}</p>
-                  <p className="font-condensed text-[10px] uppercase tracking-[2px] text-muted">Bracket</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-mono text-2xl font-bold text-white">{champion.liveScore}</p>
-                  <p className="font-condensed text-[10px] uppercase tracking-[2px] text-muted">Live</p>
-                </div>
+                {desktopTab === "room" ? (
+                  <>
+                    <div className="text-center">
+                      <p className="font-mono text-2xl font-bold text-amber">{hero.totalScore}</p>
+                      <p className="font-condensed text-[10px] uppercase tracking-[2px] text-muted">Total</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-mono text-2xl font-bold text-white">{hero.bracketScore}</p>
+                      <p className="font-condensed text-[10px] uppercase tracking-[2px] text-muted">Bracket</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-mono text-2xl font-bold text-white">{hero.liveScore}</p>
+                      <p className="font-condensed text-[10px] uppercase tracking-[2px] text-muted">Live</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center">
+                    <p className="font-mono text-2xl font-bold text-amber">{hero[scoreKey]}</p>
+                    <p className="font-condensed text-[10px] uppercase tracking-[2px] text-muted">{desktopTab === "bracket" ? "Bracket" : "Live"} Points</p>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Podium */}
-            {entries.length >= 2 && (
+            {sortedEntries.length >= 2 && (
               <div className="flex gap-2 mt-8 items-end justify-center">
                 <div className="text-center w-28">
                   <div className="bg-surface border border-border rounded-t-lg p-3" style={{ minHeight: 80 }}>
                     <p className="font-display text-3xl text-[#aaa]">2</p>
-                    <p className="font-condensed text-xs font-bold text-white truncate">{entries[1].name}</p>
-                    <p className="font-mono text-sm font-bold text-amber">{entries[1].totalScore}</p>
+                    <p className="font-condensed text-xs font-bold text-white truncate">{sortedEntries[1].name}</p>
+                    <p className="font-mono text-sm font-bold text-amber">{sortedEntries[1][scoreKey]}</p>
                   </div>
                 </div>
                 <div className="text-center w-28">
                   <div className="bg-surface border border-amber rounded-t-lg p-3" style={{ minHeight: 110, background: "rgba(245,166,35,0.04)" }}>
                     <p className="font-display text-3xl text-amber">1</p>
-                    <p className="font-condensed text-xs font-bold text-white truncate">{entries[0].name}</p>
-                    <p className="font-mono text-sm font-bold text-amber">{entries[0].totalScore}</p>
+                    <p className="font-condensed text-xs font-bold text-white truncate">{sortedEntries[0].name}</p>
+                    <p className="font-mono text-sm font-bold text-amber">{sortedEntries[0][scoreKey]}</p>
                   </div>
                 </div>
-                {entries.length >= 3 && (
+                {sortedEntries.length >= 3 && (
                   <div className="text-center w-28">
                     <div className="bg-surface border border-border rounded-t-lg p-3" style={{ minHeight: 60 }}>
                       <p className="font-display text-3xl text-[#8b6914]">3</p>
-                      <p className="font-condensed text-xs font-bold text-white truncate">{entries[2].name}</p>
-                      <p className="font-mono text-sm font-bold text-amber">{entries[2].totalScore}</p>
+                      <p className="font-condensed text-xs font-bold text-white truncate">{sortedEntries[2].name}</p>
+                      <p className="font-mono text-sm font-bold text-amber">{sortedEntries[2][scoreKey]}</p>
                     </div>
                   </div>
                 )}
@@ -260,13 +278,13 @@ export default function RecapOverlay({ recapData, personas, roomCode, confirmedP
           )}
 
           <p className="font-condensed text-xs font-bold uppercase tracking-[2px] text-muted mt-6 mb-2">All Players</p>
-          {entries.map((entry, i) => (
+          {sortedEntries.map((entry, i) => (
             <div key={entry.name} className="flex items-center justify-between bg-bg border border-border rounded px-3 py-1.5 mb-1">
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-muted w-5 text-right">{i + 1}.</span>
                 <span className="font-condensed text-sm text-white font-bold">{entry.name}</span>
               </div>
-              <span className="font-mono text-sm text-amber font-bold">{entry.totalScore}</span>
+              <span className="font-mono text-sm text-amber font-bold">{entry[scoreKey]}</span>
             </div>
           ))}
         </div>
