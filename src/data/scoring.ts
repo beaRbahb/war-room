@@ -26,7 +26,7 @@ export function getTierScoring(pickNumber: number): TierScoring {
 }
 
 /** Maximum players per room */
-export const MAX_ROOM_PLAYERS = 20;
+export const MAX_ROOM_PLAYERS = 50;
 
 /** Live guess window duration in seconds */
 export const GUESS_WINDOW_SECONDS = 90;
