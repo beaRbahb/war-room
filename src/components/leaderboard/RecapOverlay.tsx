@@ -63,7 +63,6 @@ export default function RecapOverlay({ recapData, personas, roomCode, confirmedP
   const [feedback, setFeedback] = useState<{ key: string; result: "copied" | "saved" } | null>(null);
 
   const { room, entries, bracketWinner, liveWinner } = recapData;
-  const champion = entries[0];
 
   const slideKeys = ["room", ...(bracketWinner ? ["bracket"] : []), ...(liveWinner ? ["live"] : [])];
   const tabKeys = ["room", ...(bracketWinner ? ["bracket"] : []), ...(liveWinner ? ["live"] : [])];
