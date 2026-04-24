@@ -11,10 +11,10 @@ export interface TierScoring {
 }
 
 const TIERS: { maxPick: number; scoring: TierScoring }[] = [
-  { maxPick: 8, scoring: { bracketExact: 5, bracketPartial: 3, liveCorrect: 3 } },
-  { maxPick: 16, scoring: { bracketExact: 10, bracketPartial: 3, liveCorrect: 5 } },
-  { maxPick: 24, scoring: { bracketExact: 15, bracketPartial: 3, liveCorrect: 7 } },
-  { maxPick: 32, scoring: { bracketExact: 20, bracketPartial: 3, liveCorrect: 10 } },
+  { maxPick: 8, scoring: { bracketExact: 5, bracketPartial: 0, liveCorrect: 3 } },
+  { maxPick: 16, scoring: { bracketExact: 10, bracketPartial: 0, liveCorrect: 5 } },
+  { maxPick: 24, scoring: { bracketExact: 15, bracketPartial: 0, liveCorrect: 7 } },
+  { maxPick: 32, scoring: { bracketExact: 20, bracketPartial: 0, liveCorrect: 10 } },
 ];
 
 /** Get scoring values for a pick based on its tier */

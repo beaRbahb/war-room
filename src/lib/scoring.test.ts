@@ -57,18 +57,18 @@ describe("calcBracketScore", () => {
     expect(result).toEqual({ score: 20, exact: 1, partial: 0 });
   });
 
-  it("scores partial match at flat 3 points regardless of tier", () => {
+  it("scores partial match at 0 points (exact only)", () => {
     const b = bracket([{ slot: 5, playerName: "A" }]);
-    // Player A predicted at slot 5 but actually went at slot 1 → partial
+    // Player A predicted at slot 5 but actually went at slot 1 → partial, no points
     const result = calcBracketScore(b, [pick(1, "A")]);
-    expect(result).toEqual({ score: 3, exact: 0, partial: 1 });
+    expect(result).toEqual({ score: 0, exact: 0, partial: 1 });
   });
 
-  it("partial score uses actual pick tier, not bracket slot", () => {
+  it("partial score awards 0 regardless of tier", () => {
     const b = bracket([{ slot: 1, playerName: "A" }]);
-    // Player A predicted at slot 1 but actually went at slot 25 → partial at tier 4
+    // Player A predicted at slot 1 but actually went at slot 25 → partial, no points
     const result = calcBracketScore(b, [pick(25, "A")]);
-    expect(result).toEqual({ score: 3, exact: 0, partial: 1 });
+    expect(result).toEqual({ score: 0, exact: 0, partial: 1 });
   });
 
   it("prefers exact over partial for same player", () => {
@@ -85,9 +85,9 @@ describe("calcBracketScore", () => {
       { slot: 20, playerName: "C" },
     ]);
     const confirmed = [pick(1, "A"), pick(2, "B"), pick(20, "C")];
-    // A: exact at pick 1 (Chalk, 5pts), B: partial at pick 2 (3pts), C: exact at pick 20 (Deep Cut, 15pts)
+    // A: exact at pick 1 (Chalk, 5pts), B: partial at pick 2 (0pts), C: exact at pick 20 (Deep Cut, 15pts)
     expect(calcBracketScore(b, confirmed)).toEqual({
-      score: 23,
+      score: 20,
       exact: 2,
       partial: 1,
     });
@@ -108,10 +108,10 @@ describe("getBracketHitsForPick", () => {
       Carol: bracket([{ slot: 1, playerName: "Z" }]),
     };
     const hits = getBracketHitsForPick(pick(1, "A"), allBrackets);
-    // Alice: exact at pick 1 (Chalk, 5pts), Bob: partial at pick 1 (3pts)
+    // Alice: exact at pick 1 (Chalk, 5pts), Bob: partial at pick 1 (0pts)
     expect(hits).toEqual([
       { name: "Alice", points: 5 },
-      { name: "Bob", points: 3 },
+      { name: "Bob", points: 0 },
     ]);
   });
 
