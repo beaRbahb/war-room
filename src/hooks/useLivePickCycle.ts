@@ -309,8 +309,7 @@ export function useLivePickCycle({
       let bracketDelta = 0;
       if (userBracket) {
         const exact = userBracket.picks[latest.pick - 1]?.playerName === latest.playerName;
-        const partial = !exact && userBracket.picks.some((p) => p?.playerName === latest.playerName);
-        bracketDelta = exact ? tier.bracketExact : partial ? tier.bracketPartial : 0;
+        bracketDelta = exact ? tier.bracketExact : 0;
       }
       let liveDelta = guesses[userName] === latest.playerName ? tier.liveCorrect : 0;
       if (liveDelta > 0 && latest.isBearsPick) liveDelta *= 2;

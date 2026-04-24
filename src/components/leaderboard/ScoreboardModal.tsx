@@ -19,7 +19,6 @@ export default function ScoreboardModal({ scores, totalPicks, onClose }: Scorebo
       bracketScore: s.bracketScore,
       liveHits: s.liveHits || 0,
       bracketExact: s.bracketExact || 0,
-      bracketPartial: s.bracketPartial || 0,
     }))
     .sort((a, b) => {
       const scoreA = tab === "live" ? a.liveScore : a.bracketScore;
@@ -100,7 +99,7 @@ export default function ScoreboardModal({ scores, totalPicks, onClose }: Scorebo
                       <p className="font-mono text-xs text-muted">
                         {tab === "live"
                           ? `${entry.liveHits}/${totalPicks} correct`
-                          : `${entry.bracketExact} exact · ${entry.bracketPartial} partial`}
+                          : `${entry.bracketExact} exact`}
                       </p>
                     </div>
                   </div>
