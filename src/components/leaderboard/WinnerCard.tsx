@@ -33,9 +33,11 @@ export default function WinnerCard({
   const heroLabel = isBracket ? "Bracket Points" : "Live Points";
   const bestCall = isBracket ? stats.bestBracketCall : stats.bestCall;
   const bestCallLabel = isBracket ? "Best Bracket Call" : "Best Live Call";
-  const accuracy = stats.liveTotal > 0
-    ? Math.round(((isBracket ? stats.bracketPlayersCorrect : stats.liveCorrect) / stats.liveTotal) * 100)
-    : 0;
+  const accuracy = isBracket
+    ? Math.round((stats.bracketExactSlots / 32) * 100)
+    : stats.liveTotal > 0
+      ? Math.round((stats.liveCorrect / stats.liveTotal) * 100)
+      : 0;
 
   const personaMeta = persona ? PERSONA_META[persona] : null;
   const personaColors = persona ? PERSONA_COLORS[persona] : null;
@@ -87,8 +89,8 @@ export default function WinnerCard({
       <div className="px-5 py-4">
         {isBracket ? (
           <>
-            <StatRow label="Players Correct" value={`${stats.bracketPlayersCorrect}/${stats.liveTotal}`} color="text-white" />
-            <StatRow label="Exact Slot Hits" value={String(stats.bracketExactSlots)} color="text-green" />
+            <StatRow label="Exact Slot Hits" value={`${stats.bracketExactSlots}/32`} color="text-green" />
+            <StatRow label="Players in Round 1" value={`${stats.bracketPlayersCorrect}/${stats.liveTotal}`} color="text-white" />
             <StatRow label="Accuracy" value={`${accuracy}%`} color="text-amber" />
           </>
         ) : (

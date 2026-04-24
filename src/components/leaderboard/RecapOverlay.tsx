@@ -343,9 +343,11 @@ function RoomTabContent({ room }: { room: RoomRecapStats }) {
 
 function WinnerTabContent({ stats, category, persona }: { stats: UserRecapStats; category: "bracket" | "live"; persona?: PersonaType }) {
   const isBracket = category === "bracket";
-  const accuracy = stats.liveTotal > 0
-    ? Math.round(((isBracket ? stats.bracketPlayersCorrect : stats.liveCorrect) / stats.liveTotal) * 100)
-    : 0;
+  const accuracy = isBracket
+    ? Math.round((stats.bracketExactSlots / 32) * 100)
+    : stats.liveTotal > 0
+      ? Math.round((stats.liveCorrect / stats.liveTotal) * 100)
+      : 0;
   const bestCall = isBracket ? stats.bestBracketCall : stats.bestCall;
   const personaMeta = persona ? PERSONA_META[persona] : null;
 
@@ -363,8 +365,8 @@ function WinnerTabContent({ stats, category, persona }: { stats: UserRecapStats;
 
       {isBracket ? (
         <>
-          <DesktopStatRow label="Players Correct" value={`${stats.bracketPlayersCorrect}/${stats.liveTotal}`} color="text-white" />
-          <DesktopStatRow label="Exact Slot Hits" value={String(stats.bracketExactSlots)} color="text-green" />
+          <DesktopStatRow label="Exact Slot Hits" value={`${stats.bracketExactSlots}/32`} color="text-green" />
+          <DesktopStatRow label="Players in Round 1" value={`${stats.bracketPlayersCorrect}/${stats.liveTotal}`} color="text-white" />
           <DesktopStatRow label="Accuracy" value={`${accuracy}%`} color="text-amber" />
         </>
       ) : (
