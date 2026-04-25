@@ -76,8 +76,6 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
 
   const startingDraft = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const tripleTapRef = useRef<number[]>([]);
-  const [showStartButton, setShowStartButton] = useState(false);
   const handleStartDraftRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   // ── Team reassignment (commissioner admin tab) ──
@@ -386,32 +384,17 @@ export default function DraftScreen({ initialStatus }: { initialStatus?: RoomSta
       {/* Commissioner: Start Draft banner (bracket phase) — triple-tap countdown to reveal button */}
       {!isLive && isCommissioner && (
         <div className="shrink-0 bg-surface border-b border-border px-4 py-2 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            className="font-condensed text-sm sm:text-base uppercase select-none cursor-default bg-transparent border-none p-0 text-left"
-            onClick={() => {
-              const now = Date.now();
-              const recent = tripleTapRef.current.filter((t) => now - t < 500);
-              recent.push(now);
-              tripleTapRef.current = recent;
-              if (recent.length >= 3) {
-                setShowStartButton((v) => !v);
-                tripleTapRef.current = [];
-              }
-            }}
-          >
+          <span className="font-condensed text-sm sm:text-base uppercase">
             {bracket.bracketLocked ? <span className="text-white/70">Brackets locked</span> : <><span className="font-mono text-white/70">Brackets lock in </span><span className="font-mono text-white font-bold">{bracket.countdown}</span></>}
+          </span>
+          <button
+            onClick={async () => {
+              await handleStartDraft();
+            }}
+            className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
+          >
+            START DRAFT
           </button>
-          {showStartButton && (
-            <button
-              onClick={async () => {
-                await handleStartDraft();
-              }}
-              className="bg-green text-bg font-condensed font-bold uppercase text-xs px-4 py-1.5 rounded hover:brightness-110 transition-all"
-            >
-              START DRAFT
-            </button>
-          )}
         </div>
       )}
 

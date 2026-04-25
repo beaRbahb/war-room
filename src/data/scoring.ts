@@ -38,5 +38,5 @@ export const FLASH_WARNING_SECONDS = 10;
 export const REVEAL_PAUSE_MS = 1500;
 
 /** Bracket lock time: April 23, 2026 at 8:00pm ET (Round 1 kickoff) */
-export const BRACKET_LOCK_TIME = new Date("2026-04-23T20:00:00-04:00");
+export const BRACKET_LOCK_TIME = new Date("2027-04-23T20:00:00-04:00");
 
