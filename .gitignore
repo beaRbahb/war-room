@@ -34,3 +34,9 @@ docs/
 
 # Concept files
 lobby-concept*.html
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
